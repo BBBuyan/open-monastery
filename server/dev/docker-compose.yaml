@@ -1,0 +1,16 @@
+name: open-monastery
+services:
+  db: 
+    container_name: om-db
+    image: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: "Password123!"
+    ports:
+      - "3306:3306"
+    volumes:
+      - om_data:/var/lib/mysql
+
+volumes:
+  om_data:
+

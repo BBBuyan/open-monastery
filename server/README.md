@@ -1,0 +1,25 @@
+To run docker container:
+```
+docker run --name airb -e MYSQL_ROOT_PASSWORD=Password123! -p 3306:3306 -d mysql 
+```
+To create migration
+```
+migrate create -ext sql -dir .\migrations\ -seq <name>
+```
+Database Name: om
+
+To run migration:
+```
+migrate  -path migrations  -database "mysql://root:Password123!@tcp(localhost:3306)/om" up
+```
+
+Swagger:
+```
+go install github.com/swaggo/swag/cmd/swag@latest
+go get -u github.com/swaggo/gin-swagger
+go get -u github.com/swaggo/files
+```
+To generate swagger docs:
+```
+swag init -g .\cmd\api\main.go --parseInternal
+```

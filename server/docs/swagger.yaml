@@ -1,0 +1,351 @@
+basePath: /api/v1
+definitions:
+  api.CreateBookRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  api.CreateMonasteryRequest:
+    properties:
+      name:
+        type: string
+    type: object
+  api.CreateReadingRequest:
+    properties:
+      book_id:
+        type: integer
+      customer_id:
+        type: integer
+      monk_id:
+        type: integer
+    type: object
+  api.CreateUserRequest:
+    properties:
+      first_name:
+        type: string
+      last_name:
+        type: string
+      monastery_id:
+        type: integer
+      user_type:
+        $ref: '#/definitions/user.UserType'
+    type: object
+  book.Book:
+    properties:
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      price:
+        type: integer
+    type: object
+  monastery.Monastery:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  reading.Reading:
+    properties:
+      book_id:
+        type: integer
+      customer_id:
+        type: integer
+      id:
+        type: integer
+      monk_id:
+        type: integer
+    type: object
+  user.User:
+    properties:
+      first_name:
+        type: string
+      id:
+        type: integer
+      last_name:
+        type: string
+      monastery_id:
+        type: integer
+      user_type:
+        $ref: '#/definitions/user.UserType'
+    type: object
+  user.UserType:
+    enum:
+    - monk
+    - customer
+    type: string
+    x-enum-varnames:
+    - Monk
+    - Customer
+info:
+  contact: {}
+  description: API for Open Monastery
+  title: Open Monastery API
+  version: "1.0"
+paths:
+  /books:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Book to create
+        in: body
+        name: book
+        required: true
+        schema:
+          $ref: '#/definitions/api.CreateBookRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/book.Book'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a book
+      tags:
+      - books
+  /books/{id}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Book ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/book.Book'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get Book
+      tags:
+      - books
+  /monasteries:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Monastery to create
+        in: body
+        name: monastery
+        required: true
+        schema:
+          $ref: '#/definitions/api.CreateMonasteryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/monastery.Monastery'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a monastery
+      tags:
+      - monasteries
+  /monasteries/{id}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Monastery ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/monastery.Monastery'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get a monastery
+      tags:
+      - monasteries
+  /readings:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Reading to create
+        in: body
+        name: reading
+        required: true
+        schema:
+          $ref: '#/definitions/api.CreateReadingRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/reading.Reading'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a reading
+      tags:
+      - readings
+  /readings/{id}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Reading ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/reading.Reading'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get a reading
+      tags:
+      - readings
+  /users:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: User to create
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/api.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.User'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a user
+      tags:
+      - users
+  /users/{id}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.User'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get a user
+      tags:
+      - users
+swagger: "2.0"
