@@ -77,9 +77,8 @@ func (h *ReadingHandler) AddReading(c *gin.Context) {
 
 	result, err := h.service.CreateReading(
 		c.Request.Context(),
-		req.MonkId,
-		req.CustomerId,
 		req.BookId,
+		req.CustomerId,
 	)
 	if err != nil {
 		_ = c.Error(err)
