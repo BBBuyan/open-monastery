@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">Open Monastery</title>
+  <desc id="desc">Minimal yellow Dharma wheel icon with an open-source inspired break in the outer ring.</desc>
+
+  <g fill="none" stroke="#EAB308" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Open outer ring -->
+    <path d="M128 28
+             A100 100 0 0 1 222 94" />
+    <path d="M228 128
+             A100 100 0 0 1 162 222" />
+    <path d="M128 228
+             A100 100 0 0 1 34 162" />
+    <path d="M28 128
+             A100 100 0 0 1 94 34" />
+
+    <!-- Inner wheel -->
+    <circle cx="128" cy="128" r="56" />
+
+    <!-- Hub -->
+    <circle cx="128" cy="128" r="12" fill="#EAB308" stroke="none"/>
+
+    <!-- Eight spokes -->
+    <path d="M128 72V116" />
+    <path d="M128 140V184" />
+    <path d="M72 128H116" />
+    <path d="M140 128H184" />
+    <path d="M88.4 88.4L119.5 119.5" />
+    <path d="M136.5 136.5L167.6 167.6" />
+    <path d="M167.6 88.4L136.5 119.5" />
+    <path d="M119.5 136.5L88.4 167.6" />
+
+    <!-- Small open-source style nodes -->
+    <circle cx="222" cy="94" r="5" fill="#EAB308" stroke="none"/>
+    <circle cx="228" cy="128" r="5" fill="#EAB308" stroke="none"/>
+    <circle cx="162" cy="222" r="5" fill="#EAB308" stroke="none"/>
+    <circle cx="128" cy="228" r="5" fill="#EAB308" stroke="none"/>
+    <circle cx="34" cy="162" r="5" fill="#EAB308" stroke="none"/>
+    <circle cx="28" cy="128" r="5" fill="#EAB308" stroke="none"/>
+    <circle cx="94" cy="34" r="5" fill="#EAB308" stroke="none"/>
+    <circle cx="128" cy="28" r="5" fill="#EAB308" stroke="none"/>
+  </g>
+</svg>

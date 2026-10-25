@@ -1,0 +1,12 @@
+@import url('https://fonts.bunny.net/css?family=cormorant-garamond:600');
+@import 'tailwindcss';
+
+@theme {
+  --font-brand: 'Cormorant Garamond', Georgia, serif;
+
+  --color-cream: #f7f4ec;
+  --color-cream-dark: #eee9dc;
+  --color-ink: #242b21;
+  --color-monastery: #1f3528;
+  --color-muted: #6e746c;
+}
