@@ -57,7 +57,7 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /users [post]
-func (h *UserHandler) AddUser(c *gin.Context) {
+func (h *UserHandler) RegisterUser(c *gin.Context) {
 	var req api.CreateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		_ = c.Error(apperror.New(

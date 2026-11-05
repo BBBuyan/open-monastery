@@ -4,6 +4,7 @@ import (
 	_ "example.com/open-monastery/docs"
 
 	"example.com/open-monastery/internal/book"
+	"example.com/open-monastery/internal/category"
 	"example.com/open-monastery/internal/handlers"
 	"example.com/open-monastery/internal/monastery"
 	"example.com/open-monastery/internal/mysql"
@@ -27,6 +28,9 @@ func main() {
 	bookRepository := mysql.NewBookRepo(db)
 	bookService := book.NewService(bookRepository)
 	bookHandler := handlers.NewBookHandler(bookService)
+	categoryRepository := mysql.NewCategoryRepo(db)
+	categoryService := category.NewService(categoryRepository)
+	categoryHandler := handlers.NewCategoryHandler(categoryService)
 
 	monasteryRepository := mysql.NewMonasteryRepo(db)
 	monasteryService := monastery.NewService(monasteryRepository)
@@ -51,7 +55,17 @@ func main() {
 	books := api.Group("/books")
 	{
 		books.GET("/:id", bookHandler.GetBook)
+		books.GET("", bookHandler.GetBooks)
 		books.POST("", bookHandler.AddBook)
+		books.GET("/:id/categories", categoryHandler.GetCategoriesByBookId)
+	}
+
+	categories := api.Group("/categories")
+	{
+		categories.GET("", categoryHandler.GetCategories)
+		categories.POST("", categoryHandler.AddCategory)
+		categories.POST("/:id/books", categoryHandler.AddBook)
+		categories.GET("/:id/books", categoryHandler.GetBooksByCategoryId)
 	}
 
 	monasteries := api.Group("/monasteries")
@@ -63,7 +77,7 @@ func main() {
 	users := api.Group("/users")
 	{
 		users.GET("/:id", userHandler.GetUser)
-		users.POST("", userHandler.AddUser)
+		users.POST("", userHandler.RegisterUser)
 	}
 
 	readings := api.Group("/readings")

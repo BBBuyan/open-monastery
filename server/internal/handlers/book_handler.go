@@ -51,6 +51,33 @@ func (h *BookHandler) GetBook(
 	c.JSON(http.StatusOK, result)
 }
 
+// @Summary Get a page of books
+// @Tags books
+// @Produce json
+// @Param limit query int false "Page size (default 20, capped at 100)"
+// @Param after_id query int false "Last book ID from the previous page"
+// @Param q query string false "Search name or description"
+// @Success 200 {object} book.Page
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /books [get]
+func (h *BookHandler) GetBooks(
+	c *gin.Context,
+) {
+	options, err := bookListOptions(c)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+	books, err := h.service.GetBooks(c.Request.Context(), options)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, books)
+}
+
 // @Summary Create a book
 // @Tags books
 // @Accept json
