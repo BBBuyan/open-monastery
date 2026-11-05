@@ -1,121 +1,119 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
+import Readings from './components/Readings.vue'
+import About from './components/About.vue'
 
 const sections = [
   { id: 'home', label: 'Home' },
-  { id: 'readings', label: 'Readings' },
+  { id: 'readings', label: 'Books' },
   { id: 'about', label: 'About' },
 ] as const
-
-type Section = (typeof sections)[number]['id']
-
-const activeSection = ref<Section>('home')
+const active = ref<string>('home')
+function sync() {
+  const section =
+    sections.find((section) => section.id === location.hash.slice(1)) ??
+    sections[0]
+  active.value = section.id
+  document.title = section.label + ' · Open Monastery'
+}
+onMounted(() => {
+  sync()
+  window.addEventListener('hashchange', sync)
+})
+onUnmounted(() => window.removeEventListener('hashchange', sync))
 </script>
 
 <template>
-  <div class="min-h-screen bg-cream text-ink">
-    <header class="border-b border-[#344c3b]/20 bg-cream-dark">
-      <div
-        class="mx-auto flex min-h-[88px] max-w-[1600px] flex-wrap items-center gap-4 px-6 py-4 lg:flex-nowrap lg:px-12"
-      >
-        <div class="inline-flex shrink-0 items-center gap-3">
-          <span class="grid size-[50px] place-items-center" aria-hidden="true">
-            <img
-              class="size-full"
-              src="/open-monastery-icon-yellow.svg"
-              alt=""
-            />
-          </span>
-          <strong class="font-brand text-2xl font-semibold tracking-wide">
-            Open Monastery
-          </strong>
-        </div>
-
-        <nav
-          class="order-3 flex w-full justify-center lg:order-none lg:w-auto lg:flex-1"
-          aria-label="Main sections"
-          role="tablist"
-        >
-          <div
-            class="inline-flex rounded-full border border-monastery/15 bg-cream p-1"
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <div class="app-shell">
+    <header>
+      <div class="header-inner">
+        <a class="brand" href="#home" aria-label="Open Monastery home">
+          <img
+            src="/open-monastery-icon-yellow.svg"
+            width="44"
+            height="44"
+            alt=""
+          />
+          <span>Open Monastery</span>
+        </a>
+        <nav aria-label="Main navigation">
+          <a
+            v-for="section in sections"
+            :key="section.id"
+            :href="'#' + section.id"
+            :aria-current="active === section.id ? 'page' : undefined"
+            >{{ section.label }}</a
           >
-            <button
-              v-for="section in sections"
-              :id="`${section.id}-tab`"
-              :key="section.id"
-              type="button"
-              role="tab"
-              :aria-selected="activeSection === section.id"
-              :aria-controls="`${section.id}-panel`"
-              class="rounded-full px-5 py-2 text-sm font-medium transition-colors"
-              :class="
-                activeSection === section.id
-                  ? 'bg-monastery text-cream'
-                  : 'text-muted hover:bg-cream-dark hover:text-ink'
-              "
-              @click="activeSection = section.id"
-            >
-              {{ section.label }}
-            </button>
-          </div>
         </nav>
-
-        <div class="ml-auto flex items-center gap-3">
-          <button
-            type="button"
-            class="h-10 shrink-0 rounded-full bg-monastery px-5 text-sm font-semibold text-cream transition-opacity hover:opacity-85"
-          >
-            Log in
-          </button>
-        </div>
       </div>
     </header>
-
-    <main class="mx-auto max-w-6xl px-6 py-16 lg:px-12">
-      <section
-        v-if="activeSection === 'home'"
-        id="home-panel"
-        role="tabpanel"
-        aria-labelledby="home-tab"
-      >
-        <p class="text-sm font-semibold tracking-widest text-muted uppercase">
-          Home
-        </p>
-        <h1 class="mt-3 text-4xl font-semibold">Welcome to Open Monastery</h1>
-        <p class="mt-4 max-w-2xl text-muted">
-          The home view will be developed here.
-        </p>
-      </section>
-
-      <section
-        v-else-if="activeSection === 'readings'"
-        id="readings-panel"
-        role="tabpanel"
-        aria-labelledby="readings-tab"
-      >
-        <p class="text-sm font-semibold tracking-widest text-muted uppercase">
-          Readings
-        </p>
-        <h1 class="mt-3 text-4xl font-semibold">Reading library</h1>
-        <p class="mt-4 max-w-2xl text-muted">
-          The readings view will be developed here.
-        </p>
-      </section>
-
-      <section
-        v-else
-        id="about-panel"
-        role="tabpanel"
-        aria-labelledby="about-tab"
-      >
-        <p class="text-sm font-semibold tracking-widest text-muted uppercase">
-          About
-        </p>
-        <h1 class="mt-3 text-4xl font-semibold">About the monastery</h1>
-        <p class="mt-4 max-w-2xl text-muted">
-          The about view will be developed here.
-        </p>
-      </section>
+    <main id="main-content" tabindex="-1">
+      <template v-if="active === 'home'">
+        <section class="welcome" aria-labelledby="welcome-title">
+          <div>
+            <p class="eyebrow">Buddhist prayers in Mongolia</p>
+            <h1 id="welcome-title">
+              Prayers for you.<br />For those you hold dear.
+            </h1>
+            <p class="intro">
+              In Mongolia’s Buddhist tradition, monks recite sacred texts and
+              perform rituals on behalf of people and their loved ones. Find a
+              prayer for the intention you hold.
+            </p>
+            <div class="actions">
+              <a class="button primary" href="#readings"
+                >Browse books <span aria-hidden="true">→</span></a
+              >
+              <a class="text-link" href="#about">About prayer requests</a>
+            </div>
+          </div>
+          <aside
+            class="welcome-note"
+            aria-label="The tradition of prayer recitation"
+          >
+            <p class="eyebrow" lang="mn">Ном хуруулах</p>
+            <h2>Recited by monks.<br />Dedicated to others.</h2>
+            <p>
+              Prayers are requested with intentions such as wellbeing,
+              protection, removing obstacles, and remembrance of those who have
+              died.
+            </p>
+          </aside>
+        </section>
+        <section class="overview" aria-labelledby="discover-title">
+          <div class="overview-heading">
+            <p class="eyebrow">Prayer offerings</p>
+            <h2 id="discover-title">Choose a prayer with care</h2>
+          </div>
+          <a class="destination" href="#readings">
+            <div>
+              <h3>Books</h3>
+              <p>
+                Browse the Mongolian names and traditional purposes of the
+                prayers monks recite.
+              </p>
+            </div>
+            <span aria-hidden="true">→</span>
+          </a>
+          <a class="destination" href="#about">
+            <div>
+              <h3>Praying for someone</h3>
+              <p>
+                Learn about requesting a recitation for yourself, your family,
+                or someone you wish to remember.
+              </p>
+            </div>
+            <span aria-hidden="true">→</span>
+          </a>
+        </section>
+      </template>
+      <Readings v-else-if="active === 'readings'" />
+      <About v-else />
     </main>
+    <footer>
+      <span>Open Monastery</span
+      ><span>Prayers for people and their loved ones.</span>
+    </footer>
   </div>
 </template>

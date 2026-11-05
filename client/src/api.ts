@@ -8,6 +8,7 @@ export type User = {
   monastery_id?: number | null
 }
 
+// A catalog prayer or ritual; Book is the existing API name.
 export type Book = {
   id: number
   name: string
@@ -15,8 +16,14 @@ export type Book = {
   price: number
 }
 
+export type Category = {
+  id: number
+  name: string
+}
+
 export type ReadingStatus = 'pending' | 'scheduled' | 'cancelled' | 'refunded'
 
+// A request for monks to recite a prayer, rather than a text-reading session.
 export type Reading = {
   id: number
   book_id: number
@@ -67,17 +74,76 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return response.json() as Promise<T>
 }
 
-export async function getBooks(): Promise<Book[]> {
-  const payload = await request<unknown>('/books')
-  return pickCollection(payload, 'books').map((value, index) => {
+export type BookPage = {
+  books: Book[]
+  next_cursor: number | null
+  has_more: boolean
+}
+
+export type BookListOptions = {
+  limit?: number
+  afterId?: number
+  query?: string
+  signal?: AbortSignal
+}
+
+// Omit categoryId to search across the catalog. Both endpoints are paginated.
+export async function getBooks(
+  categoryId?: number,
+  options: BookListOptions = {},
+): Promise<BookPage> {
+  const path =
+    categoryId === undefined ? '/books' : `/categories/${categoryId}/books`
+  const params = new URLSearchParams({ limit: String(options.limit ?? 20) })
+  if (options.afterId !== undefined)
+    params.set('after_id', String(options.afterId))
+  if (options.query?.trim()) params.set('q', options.query.trim())
+  const payload = await request<BookPage>(`${path}?${params}`, {
+    signal: options.signal,
+  })
+  if (
+    !payload ||
+    !Array.isArray(payload.books) ||
+    typeof payload.has_more !== 'boolean'
+  ) {
+    throw new Error('The server returned an unexpected book page.')
+  }
+  const books = payload.books.map((value) => {
     const book = value as Partial<Book>
+    if (!Number.isSafeInteger(book.id) || Number(book.id) <= 0) {
+      throw new Error('The server returned an invalid book ID.')
+    }
     return {
-      id: Number(book.id ?? index),
-      name: String(book.name ?? 'Untitled sutra'),
+      id: Number(book.id),
+      name: String(book.name ?? 'Unnamed book'),
       description: String(book.description ?? ''),
       price: Number(book.price ?? 0),
     }
   })
+  return { books, next_cursor: payload.next_cursor, has_more: payload.has_more }
+}
+
+export async function getCategories(signal?: AbortSignal): Promise<Category[]> {
+  const payload = await request<unknown>('/categories', { signal })
+  return pickCollection(payload, 'categories').map((value) => {
+    const category = value as Partial<Category> | null
+    const id = Number(category?.id)
+    if (
+      !Number.isSafeInteger(id) ||
+      id <= 0 ||
+      typeof category?.name !== 'string'
+    ) {
+      throw new Error('The server returned an invalid category.')
+    }
+    return { id, name: category.name }
+  })
+}
+
+export async function getCategoriesByBookId(
+  bookId: number,
+): Promise<Category[]> {
+  const payload = await request<unknown>(`/books/${bookId}/categories`)
+  return pickCollection(payload, 'categories') as Category[]
 }
 
 export function getUser(id: number): Promise<User> {
