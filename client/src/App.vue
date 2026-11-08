@@ -132,7 +132,10 @@ onUnmounted(() => window.removeEventListener('hashchange', sync))
     <main
       id="main-content"
       tabindex="-1"
-      :class="{ 'home-main': active === 'home' }"
+      :class="{
+        'home-main': active === 'home',
+        'transaction-main': active !== 'home',
+      }"
     >
       <template v-if="active === 'home'">
         <h1 class="visually-hidden">Open Monastery</h1>

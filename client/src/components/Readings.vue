@@ -13,6 +13,7 @@ import { createCatalog } from '../catalog'
 import { formatPrice } from '../money'
 import BasketQuantity from './BasketQuantity.vue'
 import BookDescription from './BookDescription.vue'
+import CategoryFilter from './CategoryFilter.vue'
 
 const { books, loading, error, hasMore, loadMore, reset, dispose } =
   createCatalog(({ categoryId, ...options }) =>
@@ -141,26 +142,14 @@ onUnmounted(() => {
           />
         </div>
       </label>
-      <label for="book-category" class="category-filter">
-        Category
-        <select
-          id="book-category"
+      <div class="category-filter">
+        <label id="book-category-label" for="book-category">Category</label>
+        <CategoryFilter
           v-model="selectedCategory"
-          :disabled="categoriesLoading || !categories.length"
-        >
-          <option :value="undefined">
-            {{ categoriesLoading ? 'Loading categories…' : 'All categories' }}
-          </option>
-          <option
-            v-for="category in categories"
-            :key="category.id"
-            :value="category.id"
-            lang="mn"
-          >
-            {{ category.name }}
-          </option>
-        </select>
-      </label>
+          :categories="categories"
+          :loading="categoriesLoading"
+        />
+      </div>
     </div>
     <p
       class="visually-hidden"

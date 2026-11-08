@@ -1,9 +1,16 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { basket } from '../basket'
 import { formatPrice } from '../money'
 import BasketQuantity from './BasketQuantity.vue'
+import CheckoutPayment from './CheckoutPayment.vue'
 defineProps<{ checkout?: boolean }>()
 const { items, count, total, persistent } = basket
+const selectionKey = computed(() =>
+  JSON.stringify(
+    items.value.map((item) => [item.book.id, item.quantity, item.book.price]),
+  ),
+)
 </script>
 
 <template>
@@ -52,18 +59,7 @@ const { items, count, total, persistent } = basket
             <span>Total</span><strong>{{ formatPrice(total) }}</strong>
           </div>
           <template v-if="checkout">
-            <p id="payment-status" class="checkout-notice">
-              Payment is not available yet. No payment has been taken and no
-              prayer request has been submitted.
-            </p>
-            <button
-              class="button primary"
-              type="button"
-              disabled
-              aria-describedby="payment-status"
-            >
-              Payment coming soon
-            </button>
+            <CheckoutPayment :total="total" :selection-key="selectionKey" />
             <a class="basket-secondary-link" href="#readings"
               >Continue browsing</a
             >
