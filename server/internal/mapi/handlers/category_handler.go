@@ -8,6 +8,7 @@ import (
 	"example.com/open-monastery/internal/app/apperr"
 	"example.com/open-monastery/internal/app/services"
 	"example.com/open-monastery/internal/mapi/dtos"
+	"example.com/open-monastery/internal/mapi/helpers"
 	"github.com/gin-gonic/gin"
 )
 
@@ -22,7 +23,7 @@ func NewCategoryHandler(service *services.CategoryService) *CategoryHandler {
 // @Summary Get categories
 // @Tags categories
 // @Produce json
-// @Success 200 {array} category.Category
+// @Success 200 {array} models.Category
 // @Failure 500 {object} map[string]string
 // @Router /categories [get]
 func (h *CategoryHandler) GetCategories(c *gin.Context) {
@@ -38,8 +39,8 @@ func (h *CategoryHandler) GetCategories(c *gin.Context) {
 // @Tags categories
 // @Accept json
 // @Produce json
-// @Param category body api.CreateCategoryRequest true "Category to create"
-// @Success 201 {object} category.Category
+// @Param category body dtos.CreateCategoryRequest true "Category to create"
+// @Success 201 {object} models.Category
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /categories [post]
@@ -66,7 +67,7 @@ func (h *CategoryHandler) AddCategory(c *gin.Context) {
 // @Tags categories
 // @Accept json
 // @Param id path int true "Category ID"
-// @Param book body api.AddBookToCategoryRequest true "Book to add"
+// @Param book body dtos.AddBookToCategoryRequest true "Book to add"
 // @Success 204 "Book added"
 // @Failure 400 {object} map[string]string
 // @Failure 404 {object} map[string]string
@@ -99,9 +100,9 @@ func (h *CategoryHandler) AddBook(c *gin.Context) {
 // @Produce json
 // @Param id path int true "Category ID"
 // @Param limit query int false "Page size (default 20, capped at 100)"
-// @Param after_id query int false "Last book ID from the previous page"
+// @Param cursor query string false "Last book ID from the previous page"
 // @Param q query string false "Search name or description"
-// @Success 200 {object} book.Page
+// @Success 200 {array} models.Book
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /categories/{id}/books [get]
@@ -111,34 +112,12 @@ func (h *CategoryHandler) GetBooksByCategoryId(c *gin.Context) {
 		_ = c.Error(apperr.NewBadRequest("invalid category id", err))
 		return
 	}
-	options, err := bookListOptions(c)
+	options, err := helpers.ToListOpts(c)
 	if err != nil {
 		_ = c.Error(err)
 		return
 	}
 	result, err := h.categoryService.GetBooksByCategoryId(c.Request.Context(), id, options)
-	if err != nil {
-		_ = c.Error(err)
-		return
-	}
-	c.JSON(http.StatusOK, result)
-}
-
-// @Summary Get categories belonging to a book
-// @Tags categories
-// @Produce json
-// @Param id path int true "Book ID"
-// @Success 200 {array} category.Category
-// @Failure 400 {object} map[string]string
-// @Failure 500 {object} map[string]string
-// @Router /books/{id}/categories [get]
-func (h *CategoryHandler) GetCategoriesByBookId(c *gin.Context) {
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err != nil || id <= 0 {
-		_ = c.Error(apperr.NewBadRequest("invalid book id", err))
-		return
-	}
-	result, err := h.categoryService.GetCategoriesByBookId(c.Request.Context(), id)
 	if err != nil {
 		_ = c.Error(err)
 		return

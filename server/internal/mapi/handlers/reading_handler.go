@@ -23,7 +23,7 @@ func NewReadingHandler(service *services.ReadingService) *ReadingHandler {
 // @Tags readings
 // @Accept json
 // @Produce json
-// @Success 200 {object} reading.Reading
+// @Success 200 {object} models.Reading
 // @Failure 400 {object} map[string]string
 // @Failure 404 {object} map[string]string
 // @Router /readings/{id} [get]
@@ -50,8 +50,8 @@ func (h *ReadingHandler) GetReading(c *gin.Context) {
 // @Tags readings
 // @Accept json
 // @Produce json
-// @Param reading body api.CreateReadingRequest true "Reading to create"
-// @Success 201 {object} reading.Reading
+// @Param reading body dtos.CreateReadingRequest true "Reading to create"
+// @Success 201 {object} models.Reading
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /readings [post]

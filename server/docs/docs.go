@@ -32,9 +32,9 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Last book ID from the previous page",
-                        "name": "after_id",
+                        "name": "cursor",
                         "in": "query"
                     },
                     {
@@ -48,7 +48,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/book.Page"
+                            "$ref": "#/definitions/dtos.BookPageResponse"
                         }
                     },
                     "400": {
@@ -89,7 +89,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.CreateBookRequest"
+                            "$ref": "#/definitions/dtos.CreateBookRequest"
                         }
                     }
                 ],
@@ -97,7 +97,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/book.Book"
+                            "$ref": "#/definitions/models.Book"
                         }
                     },
                     "400": {
@@ -146,7 +146,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/book.Book"
+                            "$ref": "#/definitions/models.Book"
                         }
                     },
                     "400": {
@@ -176,7 +176,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "categories"
+                    "books"
                 ],
                 "summary": "Get categories belonging to a book",
                 "parameters": [
@@ -194,7 +194,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/category.Category"
+                                "$ref": "#/definitions/models.Category"
                             }
                         }
                     },
@@ -234,7 +234,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/category.Category"
+                                "$ref": "#/definitions/models.Category"
                             }
                         }
                     },
@@ -267,7 +267,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.CreateCategoryRequest"
+                            "$ref": "#/definitions/dtos.CreateCategoryRequest"
                         }
                     }
                 ],
@@ -275,7 +275,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/category.Category"
+                            "$ref": "#/definitions/models.Category"
                         }
                     },
                     "400": {
@@ -323,9 +323,9 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Last book ID from the previous page",
-                        "name": "after_id",
+                        "name": "cursor",
                         "in": "query"
                     },
                     {
@@ -339,7 +339,10 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/book.Page"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Book"
+                            }
                         }
                     },
                     "400": {
@@ -384,7 +387,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.AddBookToCategoryRequest"
+                            "$ref": "#/definitions/dtos.AddBookToCategoryRequest"
                         }
                     }
                 ],
@@ -441,7 +444,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.CreateMonasteryRequest"
+                            "$ref": "#/definitions/dtos.CreateMonasteryRequest"
                         }
                     }
                 ],
@@ -449,7 +452,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/monastery.Monastery"
+                            "$ref": "#/definitions/models.Monastery"
                         }
                     },
                     "400": {
@@ -498,7 +501,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/monastery.Monastery"
+                            "$ref": "#/definitions/models.Monastery"
                         }
                     },
                     "400": {
@@ -541,7 +544,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.CreateReadingRequest"
+                            "$ref": "#/definitions/dtos.CreateReadingRequest"
                         }
                     }
                 ],
@@ -549,7 +552,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/reading.Reading"
+                            "$ref": "#/definitions/models.Reading"
                         }
                     },
                     "400": {
@@ -598,7 +601,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/reading.Reading"
+                            "$ref": "#/definitions/models.Reading"
                         }
                     },
                     "400": {
@@ -641,7 +644,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.CreateUserRequest"
+                            "$ref": "#/definitions/dtos.CreateUserRequest"
                         }
                     }
                 ],
@@ -649,7 +652,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/user.User"
+                            "$ref": "#/definitions/models.User"
                         }
                     },
                     "400": {
@@ -698,7 +701,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/user.User"
+                            "$ref": "#/definitions/models.User"
                         }
                     },
                     "400": {
@@ -733,7 +736,18 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "api.AddBookToCategoryRequest": {
+        "appmodels.PageInfo": {
+            "type": "object",
+            "properties": {
+                "hasMore": {
+                    "type": "boolean"
+                },
+                "nextCursor": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.AddBookToCategoryRequest": {
             "type": "object",
             "properties": {
                 "book_id": {
@@ -741,7 +755,21 @@ const docTemplate = `{
                 }
             }
         },
-        "api.CreateBookRequest": {
+        "dtos.BookPageResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Book"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/appmodels.PageInfo"
+                }
+            }
+        },
+        "dtos.CreateBookRequest": {
             "type": "object",
             "properties": {
                 "description": {
@@ -752,7 +780,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.CreateCategoryRequest": {
+        "dtos.CreateCategoryRequest": {
             "type": "object",
             "properties": {
                 "name": {
@@ -760,7 +788,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.CreateMonasteryRequest": {
+        "dtos.CreateMonasteryRequest": {
             "type": "object",
             "properties": {
                 "name": {
@@ -768,7 +796,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.CreateReadingRequest": {
+        "dtos.CreateReadingRequest": {
             "type": "object",
             "properties": {
                 "book_id": {
@@ -782,7 +810,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.CreateUserRequest": {
+        "dtos.CreateUserRequest": {
             "type": "object",
             "properties": {
                 "first_name": {
@@ -795,11 +823,26 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "user_type": {
-                    "$ref": "#/definitions/user.UserType"
+                    "$ref": "#/definitions/models.UserType"
                 }
             }
         },
-        "book.Book": {
+        "enums.ReadingStatus": {
+            "type": "string",
+            "enum": [
+                "pending",
+                "scheduled",
+                "cancelled",
+                "refunded"
+            ],
+            "x-enum-varnames": [
+                "Pending",
+                "Scheduled",
+                "Cancelled",
+                "Refunded"
+            ]
+        },
+        "models.Book": {
             "type": "object",
             "properties": {
                 "description": {
@@ -816,24 +859,7 @@ const docTemplate = `{
                 }
             }
         },
-        "book.Page": {
-            "type": "object",
-            "properties": {
-                "books": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/book.Book"
-                    }
-                },
-                "has_more": {
-                    "type": "boolean"
-                },
-                "next_cursor": {
-                    "type": "integer"
-                }
-            }
-        },
-        "category.Category": {
+        "models.Category": {
             "type": "object",
             "properties": {
                 "id": {
@@ -844,7 +870,7 @@ const docTemplate = `{
                 }
             }
         },
-        "monastery.Monastery": {
+        "models.Monastery": {
             "type": "object",
             "properties": {
                 "id": {
@@ -855,7 +881,7 @@ const docTemplate = `{
                 }
             }
         },
-        "reading.Reading": {
+        "models.Reading": {
             "type": "object",
             "properties": {
                 "book_id": {
@@ -874,26 +900,11 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "status": {
-                    "$ref": "#/definitions/reading.Status"
+                    "$ref": "#/definitions/enums.ReadingStatus"
                 }
             }
         },
-        "reading.Status": {
-            "type": "string",
-            "enum": [
-                "pending",
-                "scheduled",
-                "cancelled",
-                "refunded"
-            ],
-            "x-enum-varnames": [
-                "Pending",
-                "Scheduled",
-                "Cancelled",
-                "Refunded"
-            ]
-        },
-        "user.User": {
+        "models.User": {
             "type": "object",
             "properties": {
                 "first_name": {
@@ -909,11 +920,11 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "user_type": {
-                    "$ref": "#/definitions/user.UserType"
+                    "$ref": "#/definitions/models.UserType"
                 }
             }
         },
-        "user.UserType": {
+        "models.UserType": {
             "type": "string",
             "enum": [
                 "monk",

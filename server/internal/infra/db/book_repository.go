@@ -18,8 +18,14 @@ type BookRepository struct {
 
 var _ abstractions.BookRepository = (*BookRepository)(nil)
 
-func (r *BookRepository) GetBooks(ctx context.Context, options appmodels.ListOptions) ([]*models.Book, error) {
-	query := `SELECT id, name, description, price FROM book WHERE id > ?`
+func (r *BookRepository) GetBooks(
+	ctx context.Context,
+	options appmodels.ListOptions,
+) ([]*models.Book, error) {
+	query := `
+		SELECT id, name, description, price 
+		FROM book WHERE id > ?
+	`
 	args := []any{options.AfterId}
 	if options.Search != "" {
 		query += ` AND (LOCATE(?, name) > 0 OR LOCATE(?, description) > 0)`
@@ -35,7 +41,12 @@ func (r *BookRepository) GetBooks(ctx context.Context, options appmodels.ListOpt
 	books := make([]*models.Book, 0)
 	for rows.Next() {
 		var found models.Book
-		if err := rows.Scan(&found.Id, &found.Name, &found.Description, &found.Price); err != nil {
+		if err := rows.Scan(
+			&found.Id,
+			&found.Name,
+			&found.Description,
+			&found.Price,
+		); err != nil {
 			return nil, fmt.Errorf("scan book: %w", err)
 		}
 		books = append(books, &found)

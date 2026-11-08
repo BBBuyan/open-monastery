@@ -25,7 +25,7 @@ func NewMonasteryHandler(service *services.MonasteryService) *MonasteryHandler {
 // @Tags monasteries
 // @Accept json
 // @Produce json
-// @Success 200 {object} monastery.Monastery
+// @Success 200 {object} models.Monastery
 // @Failure 400 {object} map[string]string
 // @Failure 404 {object} map[string]string
 // @Router /monasteries/{id} [get]
@@ -54,8 +54,8 @@ func (h *MonasteryHandler) GetMonastery(
 // @Tags monasteries
 // @Accept json
 // @Produce json
-// @Param monastery body api.CreateMonasteryRequest true "Monastery to create"
-// @Success 201 {object} monastery.Monastery
+// @Param monastery body dtos.CreateMonasteryRequest true "Monastery to create"
+// @Success 201 {object} models.Monastery
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /monasteries [post]

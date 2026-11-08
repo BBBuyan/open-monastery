@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func BookListOptions(c *gin.Context) (appmodels.ListOptions, error) {
+func ToListOpts(c *gin.Context) (appmodels.ListOptions, error) {
 	options := appmodels.ListOptions{Limit: 20, Search: c.Query("q")}
 	if value, exists := c.GetQueryArray("limit"); exists {
 		limit, err := strconv.Atoi(value[0])
@@ -17,12 +17,12 @@ func BookListOptions(c *gin.Context) (appmodels.ListOptions, error) {
 		}
 		options.Limit = limit
 	}
-	if value, exists := c.GetQueryArray("after_id"); exists {
-		id, err := strconv.ParseInt(value[0], 10, 64)
-		if err != nil || id < 0 {
-			return options, apperr.NewBadRequest("invalid after_id", err)
+	if value, exists := c.GetQueryArray("cursor"); exists {
+		decodedCursor, err := appmodels.DecodeCursor(value[0])
+		if err != nil {
+			return options, apperr.NewBadRequest("invalid cursor", err)
 		}
-		options.AfterId = id
+		options.AfterId = decodedCursor.ID
 	}
 	return options.Normalize()
 }

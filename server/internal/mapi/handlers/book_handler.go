@@ -7,6 +7,7 @@ import (
 	"example.com/open-monastery/internal/app/apperr"
 	"example.com/open-monastery/internal/app/services"
 	"example.com/open-monastery/internal/mapi/dtos"
+	"example.com/open-monastery/internal/mapi/helpers"
 	"github.com/gin-gonic/gin"
 )
 
@@ -25,7 +26,7 @@ func NewBookHandler(service *services.BookService) *BookHandler {
 // @Tags books
 // @Accept json
 // @Produce json
-// @Success 200 {object} book.Book
+// @Success 200 {object} models.Book
 // @Failure 400 {object} map[string]string
 // @Failure 404 {object} map[string]string
 // @Router /books/{id} [get]
@@ -54,16 +55,16 @@ func (h *BookHandler) GetBook(
 // @Tags books
 // @Produce json
 // @Param limit query int false "Page size (default 20, capped at 100)"
-// @Param after_id query int false "Last book ID from the previous page"
+// @Param cursor query string false "Last book ID from the previous page"
 // @Param q query string false "Search name or description"
-// @Success 200 {object} book.Page
+// @Success 200 {object} dtos.BookPageResponse
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /books [get]
 func (h *BookHandler) GetBooks(
 	c *gin.Context,
 ) {
-	options, err := bookListOptions(c)
+	options, err := helpers.ToListOpts(c)
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -81,8 +82,8 @@ func (h *BookHandler) GetBooks(
 // @Tags books
 // @Accept json
 // @Produce json
-// @Param book body api.CreateBookRequest true "Book to create"
-// @Success 201 {object} book.Book
+// @Param book body dtos.CreateBookRequest true "Book to create"
+// @Success 201 {object} models.Book
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /books [post]
@@ -117,6 +118,14 @@ func (h *BookHandler) AddBook(
 	c.JSON(http.StatusCreated, result)
 }
 
+// @Summary Get categories belonging to a book
+// @Tags books
+// @Produce json
+// @Param id path int true "Book ID"
+// @Success 200 {array} models.Category
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /books/{id}/categories [get]
 func (h *BookHandler) GetBookCategories(
 	c *gin.Context,
 ){

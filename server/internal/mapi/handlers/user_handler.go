@@ -24,7 +24,7 @@ func NewUserHandler(service *services.UserService) *UserHandler {
 // @Tags users
 // @Accept json
 // @Produce json
-// @Success 200 {object} user.User
+// @Success 200 {object} models.User
 // @Failure 400 {object} map[string]string
 // @Failure 404 {object} map[string]string
 // @Failure 500 {object} map[string]string
@@ -52,8 +52,8 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 // @Tags users
 // @Accept json
 // @Produce json
-// @Param user body api.CreateUserRequest true "User to create"
-// @Success 201 {object} user.User
+// @Param user body dtos.CreateUserRequest true "User to create"
+// @Success 201 {object} models.User
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /users [post]

@@ -45,19 +45,6 @@ func (s *CategoryService) GetBooksByCategoryId(
 	return books, nil
 }
 
-func (s *CategoryService) GetCategoriesByBookId(
-	ctx context.Context,
-	bookId int64,
-) ([]*models.Category, error) {
-	return s.repo.GetCategoriesByBookId(ctx, bookId)
-}
-
-func (s *CategoryService) GetCategoryBooks(
-	ctx context.Context,
-) ([]*models.CategoryBook, error) {
-	return s.repo.GetCategoryBooks(ctx)
-}
-
 func (s *CategoryService) AddBook(
 	ctx context.Context,
 	categoryId,

@@ -66,35 +66,6 @@ func (r *CategoryRepository) GetBooksByCategoryId(
 	return books, nil
 }
 
-func (r *CategoryRepository) GetCategoriesByBookId(
-	ctx context.Context,
-	bookId int64,
-) ([]*models.Category, error) {
-	query := `SELECT c.id, c.name FROM category c
-		WHERE EXISTS (
-			SELECT 1 FROM category_book cb 
-			WHERE cb.category_id = c.id AND cb.book_id = ?
-		) ORDER BY c.id`
-	rows, err := r.db.QueryContext(ctx, query, bookId)
-	if err != nil {
-		return nil, fmt.Errorf("get categories by book ID: %w", err)
-	}
-	defer rows.Close()
-
-	categories := make([]*models.Category, 0)
-	for rows.Next() {
-		var found models.Category
-		if err := rows.Scan(&found.Id, &found.Name); err != nil {
-			return nil, fmt.Errorf("scan book category: %w", err)
-		}
-		categories = append(categories, &found)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate categories by book ID: %w", err)
-	}
-	return categories, nil
-}
-
 func (r *CategoryRepository) GetCategoryBooks(
 	ctx context.Context,
 ) ([]*models.CategoryBook, error) {

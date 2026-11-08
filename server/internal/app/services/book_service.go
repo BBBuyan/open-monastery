@@ -28,7 +28,7 @@ func (s *BookService) GetBook(
 func (s *BookService) GetBooks(
 	ctx context.Context,
 	opts appmodels.ListOptions,
-) ([]*models.Book, error) {
+) (*appmodels.Paginated[*models.Book], error) {
 	opts, err := opts.Normalize()
 	if err != nil {
 		return nil, err
@@ -37,7 +37,17 @@ func (s *BookService) GetBooks(
 	if err != nil {
 		return nil, err
 	}
-	return books, nil
+	var cursor *appmodels.Cursor
+	hasMore := len(books) > opts.Limit
+	if hasMore {
+		books = books[:opts.Limit]
+		cursor = &appmodels.Cursor{
+			ID: books[len(books)-1].Id,
+		}
+	}
+	paginated := appmodels.ToPage(books, hasMore, cursor)
+
+	return paginated, nil
 }
 
 func (s *BookService) CreateBook(
@@ -59,6 +69,25 @@ func (s *BookService) CreateBook(
 func (s *BookService) GetBookCategories(
 	ctx context.Context,
 	bookId int64,
-) ([]*models.Category, error) {
-	return s.repo.GetCategories(ctx, bookId)
+	opts appmodels.ListOptions,
+) (*appmodels.Paginated[*models.Category], error) {
+	opts, err := opts.Normalize()
+	if err != nil {
+		return nil, err
+	}
+	categories, err := s.repo.GetCategories(ctx, bookId)
+	if err != nil {
+		return nil, err
+	}
+	var cursor *appmodels.Cursor
+	hasMore := len(categories) > opts.Limit
+	if hasMore {
+		categories = categories[:opts.Limit]
+		cursor = &appmodels.Cursor{
+			ID: categories[len(categories)-1].Id,
+		}
+	}
+	paginated := appmodels.ToPage(categories, hasMore, cursor)
+
+	return paginated, nil
 }
