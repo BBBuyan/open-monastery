@@ -23,47 +23,49 @@ async function addBook(book: BasketBook, event: MouseEvent) {
 </script>
 
 <template>
-  <button
-    v-if="!quantity(book.id)"
-    ref="addButton"
-    class="button secondary add-book"
-    type="button"
-    :disabled="disabled"
-    :aria-label="`Add ${book.name} to basket`"
-    title="Add to basket"
-    @click="addBook(book, $event)"
-  >
-    <span aria-hidden="true">+</span>
-  </button>
-  <div
-    v-else
-    class="quantity-control"
-    role="group"
-    :aria-label="`Quantity for ${book.name}`"
-  >
+  <div class="basket-controls">
     <button
+      v-if="!quantity(book.id)"
+      ref="addButton"
+      class="button secondary add-book"
       type="button"
       :disabled="disabled"
-      :aria-label="
-        quantity(book.id) === 1
-          ? `Remove ${book.name} from basket`
-          : `Decrease quantity of ${book.name}`
-      "
-      @click="decrease(book, $event)"
+      :aria-label="`Add ${book.name} to basket`"
+      title="Add to basket"
+      @click="addBook(book, $event)"
     >
-      −
+      <span aria-hidden="true">+</span>
     </button>
-    <output :aria-label="`Quantity: ${quantity(book.id)}`">{{
-      quantity(book.id)
-    }}</output>
-    <button
-      type="button"
-      ref="increaseButton"
-      :disabled="disabled || quantity(book.id) >= MAX_QUANTITY"
-      :aria-label="`Increase quantity of ${book.name}`"
-      @click="basket.add(book)"
+    <div
+      v-else
+      class="quantity-control"
+      role="group"
+      :aria-label="`Quantity for ${book.name}`"
     >
-      +
-    </button>
+      <button
+        type="button"
+        :disabled="disabled"
+        :aria-label="
+          quantity(book.id) === 1
+            ? `Remove ${book.name} from basket`
+            : `Decrease quantity of ${book.name}`
+        "
+        @click="decrease(book, $event)"
+      >
+        −
+      </button>
+      <output :aria-label="`Quantity: ${quantity(book.id)}`">{{
+        quantity(book.id)
+      }}</output>
+      <button
+        type="button"
+        ref="increaseButton"
+        :disabled="disabled || quantity(book.id) >= MAX_QUANTITY"
+        :aria-label="`Increase quantity of ${book.name}`"
+        @click="basket.add(book)"
+      >
+        +
+      </button>
+    </div>
   </div>
 </template>

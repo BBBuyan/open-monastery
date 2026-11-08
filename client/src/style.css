@@ -405,7 +405,7 @@ select:disabled {
   gap: 0.6rem;
 }
 .add-book > span {
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   line-height: 1;
 }
 .quantity-control {
@@ -416,6 +416,8 @@ select:disabled {
   overflow: hidden;
 }
 .quantity-control button {
+  line-height: 1;
+  font-weight: 500;
   display: grid;
   place-items: center;
   width: 44px;
@@ -602,6 +604,7 @@ select:disabled {
 }
 .add-book {
   width: 46px;
+  height: 46px;
   padding: 0;
 }
 
@@ -780,4 +783,16 @@ main.home-main {
   :root[data-theme='light'] {
     --line: var(--muted);
   }
+}
+
+.basket-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 130px;
+  height: 46px;
+  flex-shrink: 0;
+}
+.quantity-control {
+  flex-shrink: 0;
 }
