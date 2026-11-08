@@ -48,7 +48,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dtos.BookPageResponse"
+                            "$ref": "#/definitions/appmodels.Paginated-models_Book"
                         }
                     },
                     "400": {
@@ -339,10 +339,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Book"
-                            }
+                            "$ref": "#/definitions/appmodels.Paginated-models_Book"
                         }
                     },
                     "400": {
@@ -747,15 +744,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dtos.AddBookToCategoryRequest": {
-            "type": "object",
-            "properties": {
-                "book_id": {
-                    "type": "integer"
-                }
-            }
-        },
-        "dtos.BookPageResponse": {
+        "appmodels.Paginated-models_Book": {
             "type": "object",
             "properties": {
                 "data": {
@@ -766,6 +755,14 @@ const docTemplate = `{
                 },
                 "pagination": {
                     "$ref": "#/definitions/appmodels.PageInfo"
+                }
+            }
+        },
+        "dtos.AddBookToCategoryRequest": {
+            "type": "object",
+            "properties": {
+                "book_id": {
+                    "type": "integer"
                 }
             }
         },

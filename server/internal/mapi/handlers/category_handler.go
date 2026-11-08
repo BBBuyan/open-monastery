@@ -6,7 +6,9 @@ import (
 	"strings"
 
 	"example.com/open-monastery/internal/app/apperr"
+	_ "example.com/open-monastery/internal/app/appmodels"
 	"example.com/open-monastery/internal/app/services"
+	_ "example.com/open-monastery/internal/domain/models"
 	"example.com/open-monastery/internal/mapi/dtos"
 	"example.com/open-monastery/internal/mapi/helpers"
 	"github.com/gin-gonic/gin"
@@ -102,7 +104,7 @@ func (h *CategoryHandler) AddBook(c *gin.Context) {
 // @Param limit query int false "Page size (default 20, capped at 100)"
 // @Param cursor query string false "Last book ID from the previous page"
 // @Param q query string false "Search name or description"
-// @Success 200 {array} models.Book
+// @Success 200 {object} appmodels.Paginated[models.Book]
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /categories/{id}/books [get]

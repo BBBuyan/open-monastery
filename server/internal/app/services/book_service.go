@@ -12,7 +12,9 @@ type BookService struct {
 	repo abstractions.BookRepository
 }
 
-func NewBookService(repo abstractions.BookRepository) *BookService {
+func NewBookService(
+	repo abstractions.BookRepository,
+) *BookService {
 	return &BookService{
 		repo: repo,
 	}
@@ -69,25 +71,11 @@ func (s *BookService) CreateBook(
 func (s *BookService) GetBookCategories(
 	ctx context.Context,
 	bookId int64,
-	opts appmodels.ListOptions,
-) (*appmodels.Paginated[*models.Category], error) {
-	opts, err := opts.Normalize()
-	if err != nil {
-		return nil, err
-	}
+) ([]*models.Category, error) {
 	categories, err := s.repo.GetCategories(ctx, bookId)
 	if err != nil {
 		return nil, err
 	}
-	var cursor *appmodels.Cursor
-	hasMore := len(categories) > opts.Limit
-	if hasMore {
-		categories = categories[:opts.Limit]
-		cursor = &appmodels.Cursor{
-			ID: categories[len(categories)-1].Id,
-		}
-	}
-	paginated := appmodels.ToPage(categories, hasMore, cursor)
 
-	return paginated, nil
+	return categories, nil
 }

@@ -33,7 +33,7 @@ export type Reading = {
   created_at?: string
 }
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/api/v1').replace(
+const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL || '/api/v1').replace(
   /\/$/,
   '',
 )
@@ -74,15 +74,19 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return response.json() as Promise<T>
 }
 
-export type BookPage = {
-  books: Book[]
-  next_cursor: number | null
-  has_more: boolean
+export type Paginated<T> = {
+  data: T[]
+  pagination: {
+    nextCursor: string | null
+    hasMore: boolean
+  }
 }
+
+export type BookPage = Paginated<Book>
 
 export type BookListOptions = {
   limit?: number
-  afterId?: number
+  cursor?: string
   query?: string
   signal?: AbortSignal
 }
@@ -95,22 +99,28 @@ export async function getBooks(
   const path =
     categoryId === undefined ? '/books' : `/categories/${categoryId}/books`
   const params = new URLSearchParams({ limit: String(options.limit ?? 20) })
-  if (options.afterId !== undefined)
-    params.set('after_id', String(options.afterId))
+  if (options.cursor !== undefined) params.set('cursor', options.cursor)
   if (options.query?.trim()) params.set('q', options.query.trim())
   const payload = await request<BookPage>(`${path}?${params}`, {
     signal: options.signal,
   })
   if (
     !payload ||
-    !Array.isArray(payload.books) ||
-    typeof payload.has_more !== 'boolean'
+    !Array.isArray(payload.data) ||
+    !payload.pagination ||
+    typeof payload.pagination.hasMore !== 'boolean' ||
+    !(
+      payload.pagination.nextCursor === null ||
+      (typeof payload.pagination.nextCursor === 'string' &&
+        payload.pagination.nextCursor.length > 0)
+    ) ||
+    (payload.pagination.hasMore && payload.pagination.nextCursor === null)
   ) {
     throw new Error('The server returned an unexpected book page.')
   }
-  const books = payload.books.map((value) => {
-    const book = value as Partial<Book>
-    if (!Number.isSafeInteger(book.id) || Number(book.id) <= 0) {
+  const books = payload.data.map((value) => {
+    const book = value as Partial<Book> | null
+    if (!book || !Number.isSafeInteger(book.id) || Number(book.id) <= 0) {
       throw new Error('The server returned an invalid book ID.')
     }
     return {
@@ -120,7 +130,7 @@ export async function getBooks(
       price: Number(book.price ?? 0),
     }
   })
-  return { books, next_cursor: payload.next_cursor, has_more: payload.has_more }
+  return { data: books, pagination: payload.pagination }
 }
 
 export async function getCategories(signal?: AbortSignal): Promise<Category[]> {

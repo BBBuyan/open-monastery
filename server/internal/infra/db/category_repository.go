@@ -27,12 +27,14 @@ func (r *CategoryRepository) GetBooksByCategoryId(
 	categoryId int64,
 	options appmodels.ListOptions,
 ) ([]*models.Book, error) {
-	query := `SELECT b.id, b.name, b.description, b.price 
+	query := `
+	SELECT b.id, b.name, b.description, b.price 
 	FROM book b
 		WHERE b.id > ? AND EXISTS (
 			SELECT 1 FROM category_book cb 
 			WHERE cb.book_id = b.id AND cb.category_id = ?
-		)`
+		)
+	`
 
 	args := []any{options.AfterId, categoryId}
 	if options.Search != "" {

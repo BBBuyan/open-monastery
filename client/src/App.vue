@@ -1,23 +1,41 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import Readings from './components/Readings.vue'
-import About from './components/About.vue'
+import Basket from './components/Basket.vue'
+import { basket } from './basket'
+import { formatPrice } from './money'
+import { useTheme } from './theme'
+const { theme, toggle: toggleTheme } = useTheme()
 
-const sections = [
-  { id: 'home', label: 'Home' },
-  { id: 'readings', label: 'Books' },
-  { id: 'about', label: 'About' },
-] as const
-const active = ref<string>('home')
-function sync() {
-  const section =
-    sections.find((section) => section.id === location.hash.slice(1)) ??
-    sections[0]
-  active.value = section.id
-  document.title = section.label + ' · Open Monastery'
+const { count: basketCount, total: basketTotal, announcement } = basket
+function pageFromHash() {
+  return location.hash === '#basket'
+    ? 'basket'
+    : location.hash === '#checkout'
+      ? 'checkout'
+      : 'home'
+}
+const active = ref(pageFromHash())
+async function sync() {
+  if (location.hash === '#main-content') return
+  const previous = active.value
+  active.value = pageFromHash()
+  document.title =
+    active.value === 'home'
+      ? 'Open Monastery'
+      : `${active.value === 'basket' ? 'Basket' : 'Checkout'} · Open Monastery`
+  await nextTick()
+  if (location.hash === '#readings') {
+    const catalog = document.getElementById('readings')
+    catalog?.scrollIntoView({ block: 'start' })
+    catalog?.focus({ preventScroll: true })
+  } else if (previous !== active.value || location.hash === '#home') {
+    window.scrollTo({ top: 0, behavior: 'instant' })
+    document.getElementById('main-content')?.focus({ preventScroll: true })
+  }
 }
 onMounted(() => {
-  sync()
+  void sync()
   window.addEventListener('hashchange', sync)
 })
 onUnmounted(() => window.removeEventListener('hashchange', sync))
@@ -26,9 +44,17 @@ onUnmounted(() => window.removeEventListener('hashchange', sync))
 <template>
   <a class="skip-link" href="#main-content">Skip to content</a>
   <div class="app-shell">
-    <header>
-      <div class="header-inner">
-        <a class="brand" href="#home" aria-label="Open Monastery home">
+    <p
+      class="visually-hidden"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+    >
+      {{ announcement }}
+    </p>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <a class="site-brand" href="#home" aria-label="Open Monastery home">
           <img
             src="/open-monastery-icon-yellow.svg"
             width="44"
@@ -37,83 +63,109 @@ onUnmounted(() => window.removeEventListener('hashchange', sync))
           />
           <span>Open Monastery</span>
         </a>
-        <nav aria-label="Main navigation">
+        <div class="header-actions">
           <a
-            v-for="section in sections"
-            :key="section.id"
-            :href="'#' + section.id"
-            :aria-current="active === section.id ? 'page' : undefined"
-            >{{ section.label }}</a
+            class="basket-link"
+            href="#basket"
+            :aria-current="active === 'basket' ? 'page' : undefined"
           >
-        </nav>
+            <span class="basket-link-heading">
+              <svg
+                viewBox="0 0 24 24"
+                width="20"
+                height="20"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                aria-hidden="true"
+              >
+                <path d="M3 9h18l-2 11H5L3 9Zm4 0 5-6 5 6M9 12v5m6-5v5" />
+              </svg>
+              Basket <span class="basket-count">{{ basketCount }}</span>
+            </span>
+            <span class="basket-link-total">{{
+              formatPrice(basketTotal)
+            }}</span>
+          </a>
+          <button
+            class="theme-toggle"
+            type="button"
+            :aria-label="
+              theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
+            "
+            :title="
+              theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
+            "
+            @click="toggleTheme"
+          >
+            <svg
+              v-if="theme === 'dark'"
+              viewBox="0 0 24 24"
+              width="21"
+              height="21"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="4" />
+              <path
+                d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"
+              />
+            </svg>
+            <svg
+              v-else
+              viewBox="0 0 24 24"
+              width="21"
+              height="21"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              aria-hidden="true"
+            >
+              <path d="M20.5 14A8.5 8.5 0 0 1 10 3.5 8.5 8.5 0 1 0 20.5 14Z" />
+            </svg>
+          </button>
+        </div>
       </div>
     </header>
-    <main id="main-content" tabindex="-1">
+    <main
+      id="main-content"
+      tabindex="-1"
+      :class="{ 'home-main': active === 'home' }"
+    >
       <template v-if="active === 'home'">
-        <section class="welcome" aria-labelledby="welcome-title">
-          <div>
-            <p class="eyebrow">Buddhist prayers in Mongolia</p>
-            <h1 id="welcome-title">
-              Prayers for you.<br />For those you hold dear.
-            </h1>
-            <p class="intro">
-              In Mongolia’s Buddhist tradition, monks recite sacred texts and
-              perform rituals on behalf of people and their loved ones. Find a
-              prayer for the intention you hold.
-            </p>
-            <div class="actions">
-              <a class="button primary" href="#readings"
-                >Browse books <span aria-hidden="true">→</span></a
-              >
-              <a class="text-link" href="#about">About prayer requests</a>
-            </div>
-          </div>
-          <aside
-            class="welcome-note"
-            aria-label="The tradition of prayer recitation"
-          >
-            <p class="eyebrow" lang="mn">Ном хуруулах</p>
-            <h2>Recited by monks.<br />Dedicated to others.</h2>
-            <p>
-              Prayers are requested with intentions such as wellbeing,
-              protection, removing obstacles, and remembrance of those who have
-              died.
-            </p>
-          </aside>
+        <h1 class="visually-hidden">Open Monastery</h1>
+        <section class="monastery-banner" aria-label="Monastery illustration">
+          <img
+            class="banner-atmosphere"
+            src="/home-atmosphere.png"
+            alt=""
+            fetchpriority="high"
+          />
+          <img
+            class="banner-monastery"
+            src="/home-monastery.png"
+            alt="A fictional Mongolian Buddhist monastery with amber-lit roofs against a dark mountain landscape."
+            fetchpriority="high"
+          />
+          <div class="banner-shade" aria-hidden="true"></div>
         </section>
-        <section class="overview" aria-labelledby="discover-title">
-          <div class="overview-heading">
-            <p class="eyebrow">Prayer offerings</p>
-            <h2 id="discover-title">Choose a prayer with care</h2>
-          </div>
-          <a class="destination" href="#readings">
-            <div>
-              <h3>Books</h3>
-              <p>
-                Browse the Mongolian names and traditional purposes of the
-                prayers monks recite.
-              </p>
-            </div>
-            <span aria-hidden="true">→</span>
-          </a>
-          <a class="destination" href="#about">
-            <div>
-              <h3>Praying for someone</h3>
-              <p>
-                Learn about requesting a recitation for yourself, your family,
-                or someone you wish to remember.
-              </p>
-            </div>
-            <span aria-hidden="true">→</span>
-          </a>
+        <section
+          id="readings"
+          class="home-catalog"
+          tabindex="-1"
+          aria-label="Books"
+        >
+          <Readings />
         </section>
       </template>
-      <Readings v-else-if="active === 'readings'" />
-      <About v-else />
+      <div v-else class="catalog-view">
+        <a class="return-link" href="#readings"
+          ><span aria-hidden="true">←</span> Back to books</a
+        >
+        <Basket :checkout="active === 'checkout'" />
+      </div>
     </main>
-    <footer>
-      <span>Open Monastery</span
-      ><span>Prayers for people and their loved ones.</span>
-    </footer>
   </div>
 </template>

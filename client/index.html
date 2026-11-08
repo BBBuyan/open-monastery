@@ -8,7 +8,23 @@
       href="/open-monastery-icon-yellow.svg"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#344c3b" />
+    <meta name="theme-color" content="#211e19" />
+    <script>
+      // Resolve the theme before the first paint, including saved preferences.
+      var savedTheme
+      try {
+        savedTheme = localStorage.getItem('open-monastery:theme')
+      } catch {}
+      var initialTheme =
+        savedTheme === 'light' || savedTheme === 'dark'
+          ? savedTheme
+          : window.matchMedia('(prefers-color-scheme: dark)').matches
+            ? 'dark'
+            : 'light'
+      document.documentElement.dataset.theme = initialTheme
+      document.querySelector('meta[name="theme-color"]').content =
+        initialTheme === 'dark' ? '#211e19' : '#f6f1e7'
+    </script>
     <meta
       name="description"
       content="Explore Buddhist prayers and rituals recited by monks on behalf of people and their loved ones in Mongolia."

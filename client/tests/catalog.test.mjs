@@ -11,14 +11,14 @@ test('category pagination retains the category and search on subsequent pages', 
   await catalog.reset('Манал', true, 3)
   await catalog.loadMore()
   assert.deepEqual(
-    calls.map(({ categoryId, query, afterId }) => ({
+    calls.map(({ categoryId, query, cursor }) => ({
       categoryId,
       query,
-      afterId,
+      cursor,
     })),
     [
-      { categoryId: 3, query: 'Манал', afterId: undefined },
-      { categoryId: 3, query: 'Манал', afterId: 12 },
+      { categoryId: 3, query: 'Манал', cursor: undefined },
+      { categoryId: 3, query: 'Манал', cursor: 'opaque/12+=' },
     ],
   )
   assert.deepEqual(
@@ -43,7 +43,7 @@ test('switching category ignores a late old page and starts with no cursor', asy
   oldPage.resolve(page([4]))
   await oldLoad
   assert.equal(calls[2].categoryId, 2)
-  assert.equal(calls[2].afterId, undefined)
+  assert.equal(calls[2].cursor, undefined)
   assert.deepEqual(
     catalog.books.value.map((item) => item.id),
     [8],
@@ -59,14 +59,16 @@ test('clearing a category returns to the full catalog and resets its cursor', as
   await catalog.reset('', true, 7)
   await catalog.reset()
   assert.equal(calls[1].categoryId, undefined)
-  assert.equal(calls[1].afterId, undefined)
+  assert.equal(calls[1].cursor, undefined)
 })
 
 const book = (id) => ({ id, name: `Book ${id}` })
 const page = (ids, next = null) => ({
-  books: ids.map(book),
-  next_cursor: next,
-  has_more: next !== null,
+  data: ids.map(book),
+  pagination: {
+    nextCursor: next === null ? null : `opaque/${next}+=`,
+    hasMore: next !== null,
+  },
 })
 function deferred() {
   let resolve
@@ -90,8 +92,8 @@ test('appends pages using the returned cursor and stops at the final page', asyn
     [2, 7, 10],
   )
   assert.equal(calls.length, 2)
-  assert.equal(calls[0].afterId, undefined)
-  assert.equal(calls[1].afterId, 7)
+  assert.equal(calls[0].cursor, undefined)
+  assert.equal(calls[1].cursor, 'opaque/7+=')
   assert.equal(calls[1].query, 'Манал')
   assert.equal(catalog.hasMore.value, false)
 })
@@ -114,8 +116,8 @@ test('repeated scroll triggers do not start concurrent page requests', async () 
 
 test('a failed next page keeps earlier books and retries the same cursor', async () => {
   const cursors = []
-  const catalog = createCatalog(async ({ afterId }) => {
-    cursors.push(afterId)
+  const catalog = createCatalog(async ({ cursor }) => {
+    cursors.push(cursor)
     if (cursors.length === 1) return page([1, 3], 3)
     if (cursors.length === 2) throw new Error('Network unavailable')
     return page([3, 9])
@@ -128,7 +130,7 @@ test('a failed next page keeps earlier books and retries the same cursor', async
     [1, 3],
   )
   await catalog.loadMore()
-  assert.deepEqual(cursors, [undefined, 3, 3])
+  assert.deepEqual(cursors, [undefined, 'opaque/3+=', 'opaque/3+='])
   assert.deepEqual(
     catalog.books.value.map((item) => item.id),
     [1, 3, 9],
@@ -158,7 +160,7 @@ test('search reset aborts and ignores stale responses even if fetch ignores abor
     [20],
   )
   assert.equal(calls[1].query, 'new')
-  assert.equal(calls[1].afterId, undefined)
+  assert.equal(calls[1].cursor, undefined)
 })
 
 test('disposing aborts the request and prevents late updates', async () => {

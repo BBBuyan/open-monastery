@@ -32,17 +32,28 @@ func (s *CategoryService) GetCategories(
 func (s *CategoryService) GetBooksByCategoryId(
 	ctx context.Context,
 	categoryId int64,
-	options appmodels.ListOptions,
-) ([]*models.Book, error) {
-	options, err := options.Normalize()
+	opts appmodels.ListOptions,
+) (*appmodels.Paginated[*models.Book], error) {
+	opts, err := opts.Normalize()
 	if err != nil {
 		return nil, err
 	}
-	books, err := s.repo.GetBooksByCategoryId(ctx, categoryId, options)
+	books, err := s.repo.GetBooksByCategoryId(ctx, categoryId, opts)
 	if err != nil {
 		return nil, err
 	}
-	return books, nil
+
+	var cursor *appmodels.Cursor
+	hasMore := len(books) > opts.Limit
+	if hasMore {
+		books = books[:opts.Limit]
+		cursor = &appmodels.Cursor{
+			ID: books[len(books)-1].Id,
+		}
+	}
+	paginated := appmodels.ToPage(books, hasMore, cursor)
+
+	return paginated, nil
 }
 
 func (s *CategoryService) AddBook(

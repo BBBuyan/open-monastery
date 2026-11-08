@@ -1,8 +1,8 @@
+import type { Paginated } from './api'
 import { ref, shallowRef } from 'vue'
 
-type Page<T> = { books: T[]; next_cursor: number | null; has_more: boolean }
 type PageRequest = {
-  afterId?: number
+  cursor?: string
   query: string
   categoryId?: number
   signal: AbortSignal
@@ -10,13 +10,13 @@ type PageRequest = {
 
 /** Keeps cursor, retry, and search cancellation consistent for every catalog load. */
 export function createCatalog<T extends { id: number }>(
-  fetchPage: (options: PageRequest) => Promise<Page<T>>,
+  fetchPage: (options: PageRequest) => Promise<Paginated<T>>,
 ) {
   const books = shallowRef<T[]>([])
   const loading = ref(false)
   const error = ref(false)
   const hasMore = ref(true)
-  let cursor: number | undefined
+  let cursor: string | undefined
   let query = ''
   let categoryId: number | undefined
   let generation = 0
@@ -31,31 +31,32 @@ export function createCatalog<T extends { id: number }>(
     error.value = false
     try {
       const page = await fetchPage({
-        afterId: cursor,
+        cursor,
         query,
         categoryId,
         signal: request.signal,
       })
       if (current !== generation || request.signal.aborted) return
       if (
-        page.has_more &&
-        (!page.books.length ||
-          !Number.isSafeInteger(page.next_cursor) ||
-          page.next_cursor! <= (cursor ?? 0))
+        page.pagination.hasMore &&
+        (!page.data.length ||
+          typeof page.pagination.nextCursor !== 'string' ||
+          !page.pagination.nextCursor.length ||
+          page.pagination.nextCursor === cursor)
       ) {
         throw new Error('The catalog cursor did not advance.')
       }
       const existing = new Set(books.value.map((book) => book.id))
       books.value = [
         ...books.value,
-        ...page.books.filter((book) => {
+        ...page.data.filter((book) => {
           if (existing.has(book.id)) return false
           existing.add(book.id)
           return true
         }),
       ]
-      cursor = page.next_cursor ?? undefined
-      hasMore.value = page.has_more
+      cursor = page.pagination.nextCursor ?? undefined
+      hasMore.value = page.pagination.hasMore
     } catch {
       if (current === generation && !request.signal.aborted) error.value = true
     } finally {
