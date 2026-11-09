@@ -6,7 +6,6 @@ import (
 
 	"example.com/open-monastery/internal/app/apperr"
 	"example.com/open-monastery/internal/app/services"
-	"example.com/open-monastery/internal/domain/models"
 	"example.com/open-monastery/internal/mapi/dtos"
 	"github.com/gin-gonic/gin"
 )
@@ -49,69 +48,57 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 }
 
 // @Summary Create a user
+// @Description Requires first_name, last_name, and at least one of email or phone_number. Creates a customer.
 // @Tags users
 // @Accept json
 // @Produce json
 // @Param user body dtos.CreateUserRequest true "User to create"
 // @Success 201 {object} models.User
 // @Failure 400 {object} map[string]string
+// @Failure 422 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /users [post]
 func (h *UserHandler) RegisterUser(c *gin.Context) {
 	var req dtos.CreateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		_ = c.Error(apperr.NewBadRequest(
-			"invalid request body",
-			err,
-		))
+		_ = c.Error(apperr.NewBadRequest("invalid request body", err))
 		return
 	}
-	if req.FirstName == "" || req.LastName == "" {
-		_ = c.Error(apperr.NewBadRequest(
-			"first_name and last_name are required",
-			nil,
-		))
-		return
-	}
-
-	var (
-		result *models.User
-		err    error
+	result, err := h.service.CreateUser(
+		c.Request.Context(), req.FirstName, req.LastName,
+		req.Email, req.PhoneNumber,
 	)
-
-	switch req.UserType {
-	case models.Customer:
-		result, err = h.service.CreateUser(
-			c.Request.Context(),
-			req.FirstName,
-			req.LastName,
-		)
-	case models.Monk:
-		if req.MonasteryId == nil || *req.MonasteryId <= 0 {
-			_ = c.Error(apperr.NewBadRequest(
-				"a positive monastery_id is required for monks",
-				nil,
-			))
-			return
-		}
-		result, err = h.service.CreateMonk(
-			c.Request.Context(),
-			req.FirstName,
-			req.LastName,
-			*req.MonasteryId,
-		)
-	default:
-		_ = c.Error(apperr.NewBadRequest(
-			"user_type must be customer or monk",
-			nil,
-		))
-		return
-	}
-
 	if err != nil {
 		_ = c.Error(err)
 		return
 	}
-
 	c.JSON(http.StatusCreated, result)
+}
+
+// @Summary Create a monk
+// @Description Requires first_name, last_name, a positive monastery_id, and at least one of email or phone_number.
+// @Tags monks
+// @Accept json
+// @Produce json
+// @Param monk body dtos.CreateMonkRequest true "Monk to create"
+// @Success 201 {object} models.User
+// @Failure 400 {object} map[string]string
+// @Failure 422 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /monks [post]
+func (h *UserHandler) RegisterMonk(c *gin.Context) {
+	var req dtos.CreateMonkRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		_ = c.Error(apperr.NewBadRequest("invalid request body", err))
+		return
+	}
+	monk, err := h.service.CreateMonk(
+		c.Request.Context(), req.FirstName, req.LastName,
+		req.Email, req.PhoneNumber, req.MonasteryId,
+	)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+	c.JSON(http.StatusCreated, monk)
 }
