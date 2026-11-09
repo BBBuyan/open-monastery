@@ -19,7 +19,7 @@ go install github.com/swaggo/swag/cmd/swag@latest
 go get -u github.com/swaggo/gin-swagger
 go get -u github.com/swaggo/files
 ```
-To generate swagger docs:
+To generate swagger docs, run from `server/`:
 ```
-swag init -g .\cmd\api\main.go --parseInternal
+swag init -g main.go -d cmd/api,internal/app/appmodels,internal/domain/models,internal/mapi/handlers,internal/mapi/dtos,internal/domain/enums --parseInternal
 ```

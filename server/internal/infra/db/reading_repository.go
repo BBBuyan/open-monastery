@@ -6,13 +6,17 @@ import (
 	"errors"
 	"fmt"
 
+	"example.com/open-monastery/internal/app/abstractions"
 	"example.com/open-monastery/internal/app/apperr"
+	"example.com/open-monastery/internal/app/appmodels"
 	"example.com/open-monastery/internal/domain/models"
 )
 
 type ReadingRepository struct {
 	db *sql.DB
 }
+
+var _ abstractions.ReadingRepository = (*ReadingRepository)(nil)
 
 func NewReadingRepository(db *sql.DB) *ReadingRepository {
 	return &ReadingRepository{
@@ -75,11 +79,11 @@ func (r *ReadingRepository) UserExists(
 	id int64,
 ) (exists bool, err error) {
 	err = r.db.QueryRowContext(ctx,
-        "SELECT EXISTS(SELECT 1 FROM user WHERE id = ?)",
-        id,
-    ).Scan(&exists)
+		"SELECT EXISTS(SELECT 1 FROM user WHERE id = ?)",
+		id,
+	).Scan(&exists)
 
-	return 
+	return
 }
 
 func (r *ReadingRepository) BookExists(
@@ -87,9 +91,48 @@ func (r *ReadingRepository) BookExists(
 	id int64,
 ) (exists bool, err error) {
 	err = r.db.QueryRowContext(ctx,
-        "SELECT EXISTS(SELECT 1 FROM book WHERE id = ?)",
-        id,
-    ).Scan(&exists)
+		"SELECT EXISTS(SELECT 1 FROM book WHERE id = ?)",
+		id,
+	).Scan(&exists)
 
-	return 
+	return
+}
+
+// GetReadingsByUserId implements [abstractions.ReadingRepository].
+func (r *ReadingRepository) GetReadingsByUserId(
+	ctx context.Context,
+	id int64,
+	opts appmodels.ListOptions,
+) ([]*models.Reading, error) {
+	query := `
+	SELECT id, book_id, monk_id, customer_id
+	FROM reading 
+	WHERE user_id = ? AND id > ?
+	ORDER BY id LIMIT ?
+	`
+	args := []any{id, opts.AfterId, opts.Limit + 1}
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("get readings by user_id: %w", err)
+	}
+	defer rows.Close()
+	readings := make([]*models.Reading, 0)
+	for rows.Next() {
+		var found models.Reading
+		if err := rows.Scan(
+			&found.Id,
+			&found.BookId,
+			&found.MonkId,
+			&found.CustomerId,
+		); err != nil {
+			return nil, fmt.Errorf("scan reading: %w", err)
+		}
+		readings = append(readings, &found)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate readings by user id: %w", err)
+	}
+
+	return readings, nil
 }

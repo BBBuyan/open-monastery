@@ -67,6 +67,7 @@ func registerUser(
 	userRepository := database.NewUserRepository(db)
 	userService := services.NewUserService(userRepository)
 	userHandler := handlers.NewUserHandler(userService)
+	api.POST("/monks", userHandler.RegisterMonk)
 
 	users := api.Group("/users")
 	{

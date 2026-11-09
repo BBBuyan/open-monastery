@@ -38,6 +38,23 @@ definitions:
       name:
         type: string
     type: object
+  dtos.CreateMonkRequest:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      monastery_id:
+        type: integer
+      phone_number:
+        type: string
+    required:
+    - first_name
+    - last_name
+    - monastery_id
+    type: object
   dtos.CreateReadingRequest:
     properties:
       book_id:
@@ -49,14 +66,17 @@ definitions:
     type: object
   dtos.CreateUserRequest:
     properties:
+      email:
+        type: string
       first_name:
         type: string
       last_name:
         type: string
-      monastery_id:
-        type: integer
-      user_type:
-        $ref: '#/definitions/models.UserType'
+      phone_number:
+        type: string
+    required:
+    - first_name
+    - last_name
     type: object
   enums.ReadingStatus:
     enum:
@@ -97,9 +117,11 @@ definitions:
     type: object
   models.Reading:
     properties:
+      assigned_at:
+        type: string
       book_id:
         type: integer
-      createdAt:
+      created_at:
         type: string
       customer_id:
         type: integer
@@ -112,6 +134,8 @@ definitions:
     type: object
   models.User:
     properties:
+      email:
+        type: string
       first_name:
         type: string
       id:
@@ -120,6 +144,8 @@ definitions:
         type: string
       monastery_id:
         type: integer
+      phone_number:
+        type: string
       user_type:
         $ref: '#/definitions/models.UserType'
     type: object
@@ -468,6 +494,47 @@ paths:
       summary: Get a monastery
       tags:
       - monasteries
+  /monks:
+    post:
+      consumes:
+      - application/json
+      description: Requires first_name, last_name, a positive monastery_id, and at
+        least one of email or phone_number.
+      parameters:
+      - description: Monk to create
+        in: body
+        name: monk
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateMonkRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a monk
+      tags:
+      - monks
   /readings:
     post:
       consumes:
@@ -537,6 +604,8 @@ paths:
     post:
       consumes:
       - application/json
+      description: Requires first_name, last_name, and at least one of email or phone_number.
+        Creates a customer.
       parameters:
       - description: User to create
         in: body
@@ -553,6 +622,12 @@ paths:
             $ref: '#/definitions/models.User'
         "400":
           description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "422":
+          description: Unprocessable Entity
           schema:
             additionalProperties:
               type: string

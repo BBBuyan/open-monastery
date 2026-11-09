@@ -25,7 +25,7 @@ func NewCategoryRepo(db *sql.DB) *CategoryRepository {
 func (r *CategoryRepository) GetBooksByCategoryId(
 	ctx context.Context,
 	categoryId int64,
-	options appmodels.ListOptions,
+	opts appmodels.ListOptions,
 ) ([]*models.Book, error) {
 	query := `
 	SELECT b.id, b.name, b.description, b.price 
@@ -36,13 +36,13 @@ func (r *CategoryRepository) GetBooksByCategoryId(
 		)
 	`
 
-	args := []any{options.AfterId, categoryId}
-	if options.Search != "" {
+	args := []any{opts.AfterId, categoryId}
+	if opts.Search != "" {
 		query += ` AND (LOCATE(?, b.name) > 0 OR LOCATE(?, b.description) > 0)`
-		args = append(args, options.Search, options.Search)
+		args = append(args, opts.Search, opts.Search)
 	}
 	query += " ORDER BY b.id LIMIT ?"
-	args = append(args, options.Limit+1)
+	args = append(args, opts.Limit+1)
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("get books by category ID: %w", err)

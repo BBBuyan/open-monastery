@@ -24,7 +24,7 @@ func (r *UserRepository) FindById(
 	ctx context.Context,
 	id int64,
 ) (*models.User, error) {
-	query := `SELECT id, first_name, last_name, user_type, monastery_id 
+	query := `SELECT id, first_name, last_name, user_type, monastery_id, email, phone_number
 	FROM users WHERE id = ?`
 	var foundUser models.User
 
@@ -34,6 +34,8 @@ func (r *UserRepository) FindById(
 		&foundUser.LastName,
 		&foundUser.UserType,
 		&foundUser.MonasteryId,
+		&foundUser.Email,
+		&foundUser.PhoneNumber,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, apperr.NewNotFound("user not found", err)
@@ -50,8 +52,8 @@ func (r *UserRepository) Add(
 	ctx context.Context,
 	user *models.User,
 ) error {
-	query := `INSERT INTO users (first_name, last_name, user_type, monastery_id) 
-	VALUES (?,?,?,?)`
+	query := `INSERT INTO users (first_name, last_name, user_type, monastery_id, email, phone_number)
+	VALUES (?,?,?,?,?,?)`
 
 	result, err := r.db.ExecContext(
 		ctx,
@@ -60,6 +62,8 @@ func (r *UserRepository) Add(
 		user.LastName,
 		user.UserType,
 		user.MonasteryId,
+		user.Email,
+		user.PhoneNumber,
 	)
 	if err != nil {
 		return translateWriteError("add user", err)

@@ -522,6 +522,67 @@ const docTemplate = `{
                 }
             }
         },
+        "/monks": {
+            "post": {
+                "description": "Requires first_name, last_name, a positive monastery_id, and at least one of email or phone_number.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "monks"
+                ],
+                "summary": "Create a monk",
+                "parameters": [
+                    {
+                        "description": "Monk to create",
+                        "name": "monk",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CreateMonkRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/readings": {
             "post": {
                 "consumes": [
@@ -624,6 +685,7 @@ const docTemplate = `{
         },
         "/users": {
             "post": {
+                "description": "Requires first_name, last_name, and at least one of email or phone_number. Creates a customer.",
                 "consumes": [
                     "application/json"
                 ],
@@ -654,6 +716,15 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -793,6 +864,31 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.CreateMonkRequest": {
+            "type": "object",
+            "required": [
+                "first_name",
+                "last_name",
+                "monastery_id"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "monastery_id": {
+                    "type": "integer"
+                },
+                "phone_number": {
+                    "type": "string"
+                }
+            }
+        },
         "dtos.CreateReadingRequest": {
             "type": "object",
             "properties": {
@@ -809,18 +905,22 @@ const docTemplate = `{
         },
         "dtos.CreateUserRequest": {
             "type": "object",
+            "required": [
+                "first_name",
+                "last_name"
+            ],
             "properties": {
+                "email": {
+                    "type": "string"
+                },
                 "first_name": {
                     "type": "string"
                 },
                 "last_name": {
                     "type": "string"
                 },
-                "monastery_id": {
-                    "type": "integer"
-                },
-                "user_type": {
-                    "$ref": "#/definitions/models.UserType"
+                "phone_number": {
+                    "type": "string"
                 }
             }
         },
@@ -881,10 +981,13 @@ const docTemplate = `{
         "models.Reading": {
             "type": "object",
             "properties": {
+                "assigned_at": {
+                    "type": "string"
+                },
                 "book_id": {
                     "type": "integer"
                 },
-                "createdAt": {
+                "created_at": {
                     "type": "string"
                 },
                 "customer_id": {
@@ -904,6 +1007,9 @@ const docTemplate = `{
         "models.User": {
             "type": "object",
             "properties": {
+                "email": {
+                    "type": "string"
+                },
                 "first_name": {
                     "type": "string"
                 },
@@ -915,6 +1021,9 @@ const docTemplate = `{
                 },
                 "monastery_id": {
                     "type": "integer"
+                },
+                "phone_number": {
+                    "type": "string"
                 },
                 "user_type": {
                     "$ref": "#/definitions/models.UserType"

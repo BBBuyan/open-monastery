@@ -1,0 +1,3 @@
+ALTER TABLE users
+    ADD COLUMN email VARCHAR(254) NULL,
+    ADD COLUMN phone_number VARCHAR(12) NULL;
