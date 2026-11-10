@@ -5,13 +5,25 @@ import Basket from './components/Basket.vue'
 import UserProfile from './components/UserProfile.vue'
 import PrayerRequests from './components/PrayerRequests.vue'
 import ProfileMenu from './components/ProfileMenu.vue'
+import LoginPage from './components/LoginPage.vue'
+import { createDemoAuth, type LoginMethod } from './demo-auth'
 import { basket } from './basket'
 import { formatPrice } from './money'
 import { useTheme } from './theme'
 const { theme, toggle: toggleTheme } = useTheme()
+const { loggedIn, enter, signOut } = createDemoAuth()
+function enterDemo(method: LoginMethod) {
+  if (enter(method)) location.hash = '#profile'
+}
+function endDemo() {
+  signOut()
+  location.hash = '#login'
+}
 
 const { count: basketCount, total: basketTotal, announcement } = basket
 function pageFromHash() {
+  if (location.hash === '#login') return 'login'
+  if (location.hash === '#signup') return 'signup'
   if (/^#(?:requests(?:\/\d+)?|profile\/\d+)$/.test(location.hash))
     return 'requests'
   if (location.hash === '#profile') return 'profile'
@@ -27,13 +39,20 @@ async function sync() {
   if (location.hash === '#main-content') return
   const previous = active.value
   active.value = pageFromHash()
+  if (
+    !loggedIn.value &&
+    (active.value === 'profile' || active.value === 'requests')
+  ) {
+    active.value = 'login'
+    history.replaceState(null, '', '#login')
+  }
   requestId.value = /^#(?:profile|requests)\/\d+$/.test(location.hash)
     ? Number(location.hash.split('/')[1])
     : undefined
   document.title =
     active.value === 'home'
       ? 'Open Monastery'
-      : `${active.value === 'requests' ? (requestId.value ? `Prayer request #${requestId.value}` : 'Readings') : active.value === 'profile' ? 'Profile Settings' : active.value === 'basket' ? 'Basket' : 'Checkout'} · Open Monastery`
+      : `${active.value === 'login' ? 'Log in' : active.value === 'signup' ? 'Sign up' : active.value === 'requests' ? (requestId.value ? `Prayer request #${requestId.value}` : 'Readings') : active.value === 'profile' ? 'Profile Settings' : active.value === 'basket' ? 'Basket' : 'Checkout'} · Open Monastery`
   await nextTick()
   if (location.hash === '#readings') {
     const catalog = document.getElementById('readings')
@@ -100,7 +119,9 @@ onUnmounted(() => window.removeEventListener('hashchange', sync))
           <ProfileMenu
             :theme="theme"
             :active="active"
+            :logged-in="loggedIn"
             @toggle-theme="toggleTheme"
+            @sign-out="endDemo"
           />
         </div>
       </div>
@@ -139,10 +160,19 @@ onUnmounted(() => window.removeEventListener('hashchange', sync))
           <Readings />
         </section>
       </template>
-      <div v-else-if="active === 'profile'" class="catalog-view">
+      <div
+        v-else-if="active === 'login' || active === 'signup'"
+        class="catalog-view"
+      >
+        <LoginPage
+          :signup="active === 'signup'"
+          @enter-demo="enterDemo"
+        />
+      </div>
+      <div v-else-if="active === 'profile' && loggedIn" class="catalog-view">
         <UserProfile />
       </div>
-      <div v-else-if="active === 'requests'" class="catalog-view">
+      <div v-else-if="active === 'requests' && loggedIn" class="catalog-view">
         <a class="return-link" href="#readings">← Back to books</a>
         <PrayerRequests :request-id="requestId" />
       </div>

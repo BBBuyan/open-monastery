@@ -1,4 +1,94 @@
 @import 'tailwindcss';
+.login-page {
+  max-width: 30rem;
+  margin-inline: auto;
+}
+.login-page h1 {
+  font-size: clamp(1.8rem, 5vw, 2.4rem);
+}
+.login-intro {
+  margin-top: 0.5rem;
+  color: var(--muted);
+}
+.login-demo {
+  margin-block: 1.5rem;
+  padding: 1rem;
+  background: var(--grouped);
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  font-size: 0.9375rem;
+}
+.login-options {
+  display: grid;
+  gap: 0.85rem;
+  max-width: 290px;
+  margin-inline: auto;
+}
+.login-options > button {
+  width: 100%;
+  min-height: 60px;
+}
+.login-options .button {
+  gap: 0.75rem;
+}
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--muted);
+  font-size: 0.875rem;
+  margin-block: 0.3rem;
+}
+.login-divider::before,
+.login-divider::after {
+  content: '';
+  height: 1px;
+  flex: 1;
+  background: var(--line);
+}
+.provider-facebook,
+.provider-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--content);
+  font-size: 0.9375rem;
+  font-family: inherit;
+  font-weight: 500;
+}
+.provider-facebook img,
+.provider-google img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.provider-facebook:hover,
+.provider-google:hover {
+  border-color: var(--accent);
+}
+.login-mode {
+  margin-top: 2rem;
+  text-align: center;
+  color: var(--muted);
+}
+.login-mode a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.login-preview {
+  display: grid;
+  gap: 1rem;
+}
 html {
   scroll-padding-top: 6rem;
 }
@@ -1056,7 +1146,9 @@ main.transaction-main {
 .profile-menu {
   position: static;
 }
-.header-actions { position: relative; }
+.header-actions {
+  position: relative;
+}
 .profile-menu > summary {
   cursor: pointer;
   list-style: none;

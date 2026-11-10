@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
 
-defineProps<{ theme: 'light' | 'dark'; active: string }>()
-defineEmits<{ toggleTheme: [] }>()
+defineProps<{ theme: 'light' | 'dark'; active: string; loggedIn: boolean }>()
+const emit = defineEmits<{ toggleTheme: []; signOut: [] }>()
 const disclosure = ref<HTMLDetailsElement>()
 const trigger = ref<HTMLElement>()
 function close() {
   if (disclosure.value) disclosure.value.open = false
+}
+function endSession() {
+  close()
+  emit('signOut')
 }
 function escape(event: KeyboardEvent) {
   if (!disclosure.value?.open) return
@@ -53,18 +57,36 @@ onUnmounted(() => document.removeEventListener('pointerdown', outside))
     <div class="profile-menu-panel">
       <nav aria-label="Account">
         <a
+          v-if="loggedIn"
           href="#profile"
           :aria-current="active === 'profile' ? 'page' : undefined"
           @click="close"
           >Profile Settings</a
         >
         <a
+          v-else
+          href="#login"
+          :aria-current="
+            active === 'login' || active === 'signup' ? 'page' : undefined
+          "
+          @click="close"
+          >Login / Sign up</a
+        >
+        <a
+          v-if="loggedIn"
           href="#requests"
           :aria-current="active === 'requests' ? 'page' : undefined"
           @click="close"
           >Readings</a
         >
       </nav>
+      <button
+        v-if="loggedIn"
+        type="button"
+        @click="endSession"
+      >
+        End demo session
+      </button>
       <button
         type="button"
         :aria-pressed="theme === 'dark'"
