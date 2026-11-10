@@ -10,5 +10,5 @@ type ProblemDetails struct {
 
 type ValidationProblemDetails struct {
 	ProblemDetails
-	Errors map[string]string `json:"errors"`
+	Errors []string `json:"errors"`
 }

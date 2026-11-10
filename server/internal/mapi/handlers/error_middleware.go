@@ -25,9 +25,9 @@ func ErrorHandler() gin.HandlerFunc {
 			vProblem.Status = http.StatusBadRequest
 			vProblem.Title = "validation.error"
 			vProblem.Instance = c.Request.URL.Path
-			errs := make(map[string]string)
+			errs := make([]string,0, len(vErr))
 			for _, e := range vErr {
-				errs[e.Namespace()] = e.Tag()
+				errs = append(errs, e.Error())
 			}
 			vProblem.Errors = errs
 
