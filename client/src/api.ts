@@ -29,8 +29,58 @@ export type Reading = {
   book_id: number
   monk_id: number | null
   customer_id: number
-  status: ReadingStatus
+  status: ReadingStatus | 'unknown'
   created_at?: string
+  assigned_at?: string
+}
+
+// Proposed list route: confirm with the server contract before enabling live history.
+export async function getUserReadings(
+  userId: number,
+  options: { cursor?: string; signal?: AbortSignal } = {},
+): Promise<Paginated<Reading>> {
+  if (!Number.isSafeInteger(userId) || userId <= 0)
+    throw new Error('Invalid user ID.')
+  const params = new URLSearchParams({ user_id: String(userId), limit: '20' })
+  if (options.cursor) params.set('cursor', options.cursor)
+  const page = await request<Paginated<Reading>>(`/readings?${params}`, {
+    signal: options.signal,
+  })
+  if (
+    !Array.isArray(page?.data) ||
+    typeof page.pagination?.hasMore !== 'boolean' ||
+    !(
+      page.pagination.nextCursor === null ||
+      (typeof page.pagination.nextCursor === 'string' &&
+        page.pagination.nextCursor.length > 0)
+    ) ||
+    (page.pagination.hasMore &&
+      (!page.data.length ||
+        page.pagination.nextCursor === null ||
+        page.pagination.nextCursor === options.cursor))
+  ) {
+    throw new Error('The server returned an unexpected prayer request page.')
+  }
+  const statuses: string[] = ['pending', 'scheduled', 'cancelled', 'refunded']
+  return {
+    ...page,
+    data: page.data.map((reading) => {
+      if (
+        !reading ||
+        reading.customer_id !== userId ||
+        !Number.isSafeInteger(reading.id) ||
+        reading.id <= 0 ||
+        !Number.isSafeInteger(reading.book_id) ||
+        reading.book_id <= 0
+      ) {
+        throw new Error('The server returned an invalid prayer request.')
+      }
+      return {
+        ...reading,
+        status: statuses.includes(reading.status) ? reading.status : 'unknown',
+      }
+    }),
+  }
 }
 
 const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL || '/api/v1').replace(

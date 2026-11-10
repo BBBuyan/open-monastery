@@ -2,6 +2,9 @@
 import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import Readings from './components/Readings.vue'
 import Basket from './components/Basket.vue'
+import UserProfile from './components/UserProfile.vue'
+import PrayerRequests from './components/PrayerRequests.vue'
+import ProfileMenu from './components/ProfileMenu.vue'
 import { basket } from './basket'
 import { formatPrice } from './money'
 import { useTheme } from './theme'
@@ -9,6 +12,9 @@ const { theme, toggle: toggleTheme } = useTheme()
 
 const { count: basketCount, total: basketTotal, announcement } = basket
 function pageFromHash() {
+  if (/^#(?:requests(?:\/\d+)?|profile\/\d+)$/.test(location.hash))
+    return 'requests'
+  if (location.hash === '#profile') return 'profile'
   return location.hash === '#basket'
     ? 'basket'
     : location.hash === '#checkout'
@@ -16,14 +22,18 @@ function pageFromHash() {
       : 'home'
 }
 const active = ref(pageFromHash())
+const requestId = ref<number>()
 async function sync() {
   if (location.hash === '#main-content') return
   const previous = active.value
   active.value = pageFromHash()
+  requestId.value = /^#(?:profile|requests)\/\d+$/.test(location.hash)
+    ? Number(location.hash.split('/')[1])
+    : undefined
   document.title =
     active.value === 'home'
       ? 'Open Monastery'
-      : `${active.value === 'basket' ? 'Basket' : 'Checkout'} · Open Monastery`
+      : `${active.value === 'requests' ? (requestId.value ? `Prayer request #${requestId.value}` : 'Readings') : active.value === 'profile' ? 'Profile Settings' : active.value === 'basket' ? 'Basket' : 'Checkout'} · Open Monastery`
   await nextTick()
   if (location.hash === '#readings') {
     const catalog = document.getElementById('readings')
@@ -87,45 +97,11 @@ onUnmounted(() => window.removeEventListener('hashchange', sync))
               formatPrice(basketTotal)
             }}</span>
           </a>
-          <button
-            class="theme-toggle"
-            type="button"
-            :aria-label="
-              theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
-            "
-            :title="
-              theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
-            "
-            @click="toggleTheme"
-          >
-            <svg
-              v-if="theme === 'dark'"
-              viewBox="0 0 24 24"
-              width="21"
-              height="21"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-              aria-hidden="true"
-            >
-              <circle cx="12" cy="12" r="4" />
-              <path
-                d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"
-              />
-            </svg>
-            <svg
-              v-else
-              viewBox="0 0 24 24"
-              width="21"
-              height="21"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-              aria-hidden="true"
-            >
-              <path d="M20.5 14A8.5 8.5 0 0 1 10 3.5 8.5 8.5 0 1 0 20.5 14Z" />
-            </svg>
-          </button>
+          <ProfileMenu
+            :theme="theme"
+            :active="active"
+            @toggle-theme="toggleTheme"
+          />
         </div>
       </div>
     </header>
@@ -163,6 +139,13 @@ onUnmounted(() => window.removeEventListener('hashchange', sync))
           <Readings />
         </section>
       </template>
+      <div v-else-if="active === 'profile'" class="catalog-view">
+        <UserProfile />
+      </div>
+      <div v-else-if="active === 'requests'" class="catalog-view">
+        <a class="return-link" href="#readings">← Back to books</a>
+        <PrayerRequests :request-id="requestId" />
+      </div>
       <div v-else class="catalog-view">
         <a class="return-link" href="#readings"
           ><span aria-hidden="true">←</span> Back to books</a
