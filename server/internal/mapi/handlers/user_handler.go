@@ -31,7 +31,7 @@ func NewUserHandler(service *services.UserService) *UserHandler {
 func (h *UserHandler) GetUser(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil || id <= 0 {
-		_ = c.Error(apperr.NewBadRequest(
+		_ = c.Error(apperr.NewBadRequestWithMsg(
 			"err",
 			"invalid user id",
 			err,

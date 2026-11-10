@@ -110,7 +110,7 @@ func (r *CategoryRepository) AddBook(
 		bookId,
 	)
 	if err != nil {
-		return translateWriteError("add book to category", err)
+		return translateWriteError("AddBook", err)
 	}
 	return nil
 }
@@ -127,7 +127,7 @@ func (r *CategoryRepository) RemoveBook(
 		bookId,
 	)
 	if err != nil {
-		return translateWriteError("remove book from category", err)
+		return translateWriteError("RemoveBook", err)
 	}
 	return nil
 }
@@ -144,7 +144,6 @@ func (r *CategoryRepository) FindById(
 	).Scan(&found.Id, &found.Name)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, apperr.NewNotFound(
-			"category not found",
 			"category not found",
 			err,
 		)
@@ -191,7 +190,7 @@ func (r *CategoryRepository) Add(
 		category.Name,
 	)
 	if err != nil {
-		return translateWriteError("add category", err)
+		return translateWriteError("AddCategory", err)
 	}
 	id, err := result.LastInsertId()
 	if err != nil {

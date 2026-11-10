@@ -25,7 +25,7 @@ func ErrorHandler() gin.HandlerFunc {
 			vProblem.Status = http.StatusBadRequest
 			vProblem.Title = "validation.error"
 			vProblem.Instance = c.Request.URL.Path
-			errs := make([]string,0, len(vErr))
+			errs := make([]string, 0, len(vErr))
 			for _, e := range vErr {
 				errs = append(errs, e.Error())
 			}
@@ -39,7 +39,9 @@ func ErrorHandler() gin.HandlerFunc {
 		if aErr, ok := errors.AsType[*apperr.AppErr](err); ok {
 			problem.Status = statusFor(aErr.Type)
 			problem.Title = aErr.Code
-			problem.Detail = aErr.Message
+			if aErr.Message != nil {
+				problem.Detail = *aErr.Message
+			}
 			problem.Instance = c.Request.URL.Path
 			c.AbortWithStatusJSON(problem.Status, problem)
 			return

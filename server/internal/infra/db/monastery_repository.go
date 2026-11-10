@@ -36,7 +36,6 @@ func (r *MonasteryRepository) FindById(
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, apperr.NewNotFound(
 			"monastery not found",
-			"monastery not found",
 			err,
 		)
 	}
@@ -54,7 +53,7 @@ func (r *MonasteryRepository) Add(
 	result, err := r.db.ExecContext(ctx, query, monastery.Name)
 
 	if err != nil {
-		return translateWriteError("add monastery", err)
+		return translateWriteError("AddMonastery", err)
 	}
 
 	id, err := result.LastInsertId()

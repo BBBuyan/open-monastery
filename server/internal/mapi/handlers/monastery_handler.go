@@ -36,7 +36,6 @@ func (h *MonasteryHandler) GetMonastery(
 	if err != nil || id <= 0 {
 		_ = c.Error(apperr.NewBadRequest(
 			"invalid monastery id",
-			"invalid monastery id",
 			err,
 		))
 		return

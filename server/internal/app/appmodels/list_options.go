@@ -17,7 +17,7 @@ func (o ListOptions) Normalize() (ListOptions, error) {
 		o.Limit = 20
 	}
 	if o.Limit < 1 || o.AfterId < 0 {
-		return o, apperr.NewBadRequest(
+		return o, apperr.NewBadRequestWithMsg(
 			"request validation",
 			"limit must be positive and after_id must be nonnegative",
 			nil,

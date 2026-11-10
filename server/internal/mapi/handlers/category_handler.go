@@ -76,7 +76,6 @@ func (h *CategoryHandler) AddBook(c *gin.Context) {
 	if err != nil || id <= 0 {
 		_ = c.Error(apperr.NewBadRequest(
 			"invalid category id",
-			"invalid category id",
 			err,
 		))
 		return
@@ -113,8 +112,7 @@ func (h *CategoryHandler) GetBooksByCategoryId(c *gin.Context) {
 	if err != nil || id <= 0 {
 		_ = c.Error(apperr.NewBadRequest(
 			"invalid category id",
-			"invalid category id",
-			err,))
+			err))
 		return
 	}
 	options, err := helpers.ToListOpts(c)

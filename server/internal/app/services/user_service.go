@@ -32,9 +32,9 @@ func createBaseUser(
 	phone *string,
 ) (*models.User, error) {
 	if email == nil && phone == nil {
-		return nil, apperr.NewBadRequest(
-			"empty email, phone number",
-			"email and phone number is both empty",
+		return nil, apperr.NewBadRequestWithMsg(
+			"empty email and phone number",
+			"both email and phone number must not be empty",
 			nil,
 		)
 	}

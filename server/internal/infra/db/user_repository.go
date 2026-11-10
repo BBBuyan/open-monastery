@@ -40,7 +40,6 @@ func (r *UserRepository) FindById(
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, apperr.NewNotFound(
 			"user not found",
-			"user not found",
 			err,
 		)
 	}
@@ -70,7 +69,7 @@ func (r *UserRepository) Add(
 		user.PhoneNumber,
 	)
 	if err != nil {
-		return translateWriteError("add user", err)
+		return translateWriteError("AddUser", err)
 	}
 
 	id, err := result.LastInsertId()

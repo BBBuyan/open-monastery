@@ -41,7 +41,6 @@ func (r *ReadingRepository) FindById(
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, apperr.NewNotFound(
 			"reading not found",
-			"reading not found",
 			err,
 		)
 	}
@@ -66,7 +65,7 @@ func (r *ReadingRepository) Add(
 	)
 
 	if err != nil {
-		return translateWriteError("add reading", err)
+		return translateWriteError("AddReading", err)
 	}
 
 	id, err := result.LastInsertId()
