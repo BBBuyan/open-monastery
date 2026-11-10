@@ -31,7 +31,8 @@ func (h *ReadingHandler) GetReading(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil || id <= 0 {
 		_ = c.Error(apperr.NewBadRequest(
-			"invalid reading id",
+			"invalid.id",
+			err.Error(),
 			err,
 		))
 		return
@@ -58,17 +59,7 @@ func (h *ReadingHandler) GetReading(c *gin.Context) {
 func (h *ReadingHandler) AddReading(c *gin.Context) {
 	var req dtos.CreateReadingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		_ = c.Error(apperr.NewBadRequest(
-			"invalid request body",
-			err,
-		))
-		return
-	}
-	if req.BookId <= 0 || req.MonkId <= 0 || req.CustomerId <= 0 {
-		_ = c.Error(apperr.NewBadRequest(
-			"book_id, monk_id, and customer_id must be positive",
-			nil,
-		))
+		_ = c.Error(err)
 		return
 	}
 

@@ -65,11 +65,19 @@ func (s *ReadingService) CreateReading(
 ) (*models.Reading, error) {
 	_, err := s.repo.UserExists(ctx, customerId)
 	if err != nil {
-		return nil, apperr.NewNotFound("user not found", err)
+		return nil, apperr.NewNotFound(
+			"user not found",
+			"user not found",
+			err,
+		)
 	}
 	_, err = s.repo.BookExists(ctx, bookId)
 	if err != nil {
-		return nil, apperr.NewNotFound("book not found", err)
+		return nil, apperr.NewNotFound(
+			"book not found",
+			"book not found",
+			err,
+		)
 	}
 
 	reading := models.NewReading(bookId, customerId)

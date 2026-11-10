@@ -39,6 +39,7 @@ func (h *BookHandler) GetBook(
 	if err != nil || id <= 0 {
 		_ = c.Error(apperr.NewBadRequest(
 			"invalid book id",
+			"invalid book id",
 			err,
 		))
 		return
@@ -95,15 +96,9 @@ func (h *BookHandler) AddBook(
 	var req dtos.CreateBookRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		_ = c.Error(apperr.NewBadRequest(
-			"invalid request body",
+			"invalid.body",
+			err.Error(),
 			err,
-		))
-		return
-	}
-	if req.Name == "" {
-		_ = c.Error(apperr.NewBadRequest(
-			"name is required",
-			nil,
 		))
 		return
 	}
@@ -133,7 +128,11 @@ func (h *BookHandler) GetBookCategories(
 ) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil || id <= 0 {
-		_ = c.Error(apperr.NewBadRequest("invalid book id", err))
+		_ = c.Error(apperr.NewBadRequest(
+			"invalid book id",
+			"invalid book id",
+			err,
+		))
 		return
 	}
 	result, err := h.service.GetBookCategories(c.Request.Context(), id)

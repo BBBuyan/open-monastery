@@ -10,18 +10,24 @@ import (
 func NewEmail(email string) (string, error) {
 	email = strings.TrimSpace(email)
 	if len(email) > 254 {
-		return "", apperr.NewInvalid("email is too long", nil)
+		return "", apperr.NewInvalid(
+			"email is too long",
+			"email must be less than 254 characters",
+			nil,
+		)
 	}
 
 	address, err := mail.ParseAddress(email)
 	if err != nil {
 		return "", apperr.NewInvalid(
 			"email not parseable",
+			"email not parseable",
 			err,
 		)
 	}
 	if address.Address != email {
 		return "", apperr.NewInvalid(
+			"invalid email",
 			"invalid email",
 			nil,
 		)

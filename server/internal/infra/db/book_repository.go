@@ -78,7 +78,11 @@ func (r *BookRepository) FindById(
 	)
 
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, apperr.NewNotFound("book not found", err)
+		return nil, apperr.NewNotFound(
+			"book not found",
+			"book not found",
+			err,
+		)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("find book: %w", err)

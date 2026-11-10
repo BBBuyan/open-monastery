@@ -1,16 +1,17 @@
 package apperr
 
-type AppErrCode string
+type AppErrType string
 
 const (
-	BadRequest AppErrCode = "bad_request"
-	NotFound   AppErrCode = "not_found"
-	Invalid    AppErrCode = "invalid"
-	Conflict   AppErrCode = "conflict"
+	BadRequest AppErrType = "bad_request"
+	NotFound   AppErrType = "not_found"
+	Invalid    AppErrType = "invalid"
+	Conflict   AppErrType = "conflict"
 )
 
 type AppErr struct {
-	Code    AppErrCode
+	Type    AppErrType
+	Code    string
 	Message string
 	Err     error
 }
@@ -26,33 +27,53 @@ func (e *AppErr) Unwrap() error {
 	return e.Err
 }
 
-func NewConflict(msg string, err error) *AppErr {
+func NewConflict(
+	code string,
+	msg string,
+	err error,
+) *AppErr {
 	return &AppErr{
-		Code:    Conflict,
+		Type:    Conflict,
+		Code:    code,
 		Message: msg,
 		Err:     err,
 	}
 }
 
-func NewNotFound(msg string, err error) *AppErr {
+func NewNotFound(
+	code string,
+	msg string,
+	err error,
+) *AppErr {
 	return &AppErr{
-		Code:    NotFound,
+		Type:    NotFound,
+		Code:    code,
 		Message: msg,
 		Err:     err,
 	}
 }
 
-func NewInvalid(msg string, err error) *AppErr {
+func NewInvalid(
+	code string,
+	msg string,
+	err error,
+) *AppErr {
 	return &AppErr{
-		Code:    Invalid,
+		Type:    Invalid,
+		Code:    code,
 		Message: msg,
 		Err:     err,
 	}
 }
 
-func NewBadRequest(msg string, err error) *AppErr {
+func NewBadRequest(
+	code string,
+	msg string,
+	err error,
+) *AppErr {
 	return &AppErr{
-		Code:    BadRequest,
+		Type:    BadRequest,
+		Code:    code,
 		Message: msg,
 		Err:     err,
 	}

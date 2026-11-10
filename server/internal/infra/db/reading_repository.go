@@ -39,7 +39,11 @@ func (r *ReadingRepository) FindById(
 		&foundReading.CustomerId,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, apperr.NewNotFound("reading not found", err)
+		return nil, apperr.NewNotFound(
+			"reading not found",
+			"reading not found",
+			err,
+		)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("find reading: %w", err)

@@ -38,7 +38,11 @@ func (r *UserRepository) FindById(
 		&foundUser.PhoneNumber,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, apperr.NewNotFound("user not found", err)
+		return nil, apperr.NewNotFound(
+			"user not found",
+			"user not found",
+			err,
+		)
 	}
 
 	if err != nil {

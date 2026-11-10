@@ -49,14 +49,10 @@ func (h *CategoryHandler) GetCategories(c *gin.Context) {
 func (h *CategoryHandler) AddCategory(c *gin.Context) {
 	var req dtos.CreateCategoryRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		_ = c.Error(apperr.NewBadRequest("invalid request body", err))
+		_ = c.Error(err)
 		return
 	}
 	name := strings.TrimSpace(req.Name)
-	if name == "" {
-		_ = c.Error(apperr.NewBadRequest("name is required", nil))
-		return
-	}
 	result, err := h.categoryService.CreateCategory(c.Request.Context(), name)
 	if err != nil {
 		_ = c.Error(err)
@@ -78,19 +74,23 @@ func (h *CategoryHandler) AddCategory(c *gin.Context) {
 func (h *CategoryHandler) AddBook(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil || id <= 0 {
-		_ = c.Error(apperr.NewBadRequest("invalid category id", err))
+		_ = c.Error(apperr.NewBadRequest(
+			"invalid category id",
+			"invalid category id",
+			err,
+		))
 		return
 	}
 	var req dtos.AddBookToCategoryRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		_ = c.Error(apperr.NewBadRequest("invalid request body", err))
+		_ = c.Error(err)
 		return
 	}
-	if req.BookId <= 0 {
-		_ = c.Error(apperr.NewBadRequest("book_id must be positive", nil))
-		return
-	}
-	if err := h.categoryService.AddBook(c.Request.Context(), id, req.BookId); err != nil {
+	if err := h.categoryService.AddBook(
+		c.Request.Context(),
+		id,
+		req.BookId,
+	); err != nil {
 		_ = c.Error(err)
 		return
 	}
@@ -111,7 +111,10 @@ func (h *CategoryHandler) AddBook(c *gin.Context) {
 func (h *CategoryHandler) GetBooksByCategoryId(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil || id <= 0 {
-		_ = c.Error(apperr.NewBadRequest("invalid category id", err))
+		_ = c.Error(apperr.NewBadRequest(
+			"invalid category id",
+			"invalid category id",
+			err,))
 		return
 	}
 	options, err := helpers.ToListOpts(c)

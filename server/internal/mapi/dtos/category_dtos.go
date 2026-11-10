@@ -5,5 +5,5 @@ type CreateCategoryRequest struct {
 }
 
 type AddBookToCategoryRequest struct {
-	BookId int64 `json:"book_id"`
+	BookId int64 `json:"book_id" binding:"required,gt=0"`
 }

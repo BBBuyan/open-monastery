@@ -34,7 +34,11 @@ func (r *MonasteryRepository) FindById(
 	)
 
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, apperr.NewNotFound("monastery not found", err)
+		return nil, apperr.NewNotFound(
+			"monastery not found",
+			"monastery not found",
+			err,
+		)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("find monastery: %w", err)

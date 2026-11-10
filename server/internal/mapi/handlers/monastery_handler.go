@@ -36,6 +36,7 @@ func (h *MonasteryHandler) GetMonastery(
 	if err != nil || id <= 0 {
 		_ = c.Error(apperr.NewBadRequest(
 			"invalid monastery id",
+			"invalid monastery id",
 			err,
 		))
 		return
@@ -64,17 +65,7 @@ func (h *MonasteryHandler) AddMonastery(
 ) {
 	var req dtos.CreateMonasteryRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		_ = c.Error(apperr.NewBadRequest(
-			"invalid request body",
-			err,
-		))
-		return
-	}
-	if req.Name == "" {
-		_ = c.Error(apperr.NewBadRequest(
-			"name is required",
-			nil,
-		))
+		_ = c.Error(err)
 		return
 	}
 	result, err := h.service.CreateMonastery(c.Request.Context(), req.Name)

@@ -143,7 +143,11 @@ func (r *CategoryRepository) FindById(
 		id,
 	).Scan(&found.Id, &found.Name)
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, apperr.NewNotFound("category not found", err)
+		return nil, apperr.NewNotFound(
+			"category not found",
+			"category not found",
+			err,
+		)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("find category: %w", err)

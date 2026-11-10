@@ -32,6 +32,7 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil || id <= 0 {
 		_ = c.Error(apperr.NewBadRequest(
+			"err",
 			"invalid user id",
 			err,
 		))
@@ -61,7 +62,7 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 func (h *UserHandler) RegisterUser(c *gin.Context) {
 	var req dtos.CreateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		_ = c.Error(apperr.NewBadRequest("invalid request body", err))
+		_ = c.Error(err)
 		return
 	}
 	result, err := h.service.CreateUser(
@@ -89,7 +90,7 @@ func (h *UserHandler) RegisterUser(c *gin.Context) {
 func (h *UserHandler) RegisterMonk(c *gin.Context) {
 	var req dtos.CreateMonkRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		_ = c.Error(apperr.NewBadRequest("invalid request body", err))
+		_ = c.Error(err)
 		return
 	}
 	monk, err := h.service.CreateMonk(

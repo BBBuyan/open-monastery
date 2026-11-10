@@ -13,14 +13,22 @@ func ToListOpts(c *gin.Context) (appmodels.ListOptions, error) {
 	if value, exists := c.GetQueryArray("limit"); exists {
 		limit, err := strconv.Atoi(value[0])
 		if err != nil || limit <= 0 {
-			return options, apperr.NewBadRequest("invalid limit", err)
+			return options, apperr.NewBadRequest(
+				"invalid limit",
+				"limit must be greater than 0",
+				err,
+			)
 		}
 		options.Limit = limit
 	}
 	if value, exists := c.GetQueryArray("cursor"); exists {
 		decodedCursor, err := appmodels.DecodeCursor(value[0])
 		if err != nil {
-			return options, apperr.NewBadRequest("invalid cursor", err)
+			return options, apperr.NewBadRequest(
+				"invalid cursor",
+				"cursor must be not null",
+				err,
+			)
 		}
 		options.AfterId = decodedCursor.ID
 	}
