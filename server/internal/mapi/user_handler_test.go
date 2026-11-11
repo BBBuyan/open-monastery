@@ -1,4 +1,4 @@
-package handlers
+package mapi
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 
 	"example.com/open-monastery/internal/app/services"
 	"example.com/open-monastery/internal/domain/models"
+	"example.com/open-monastery/internal/mapi/handlers"
 	"github.com/gin-gonic/gin"
 )
 
@@ -50,8 +51,8 @@ func TestRegisterMonk(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			repo := &monkTestRepository{err: tc.repoErr}
 			router := gin.New()
-			router.Use(ErrorHandler())
-			router.POST("/monks", NewUserHandler(services.NewUserService(repo)).RegisterMonk)
+
+			router.POST("/monks", withProblemDetails(handlers.NewUserHandler(services.NewUserService(repo)).RegisterMonk))
 			request := httptest.NewRequest("POST", "/monks", strings.NewReader(tc.body))
 			request.Header.Set("Content-Type", "application/json")
 			response := httptest.NewRecorder()
@@ -93,8 +94,8 @@ func TestRegisterUserCreatesCustomer(t *testing.T) {
 	} {
 		repo := &monkTestRepository{}
 		router := gin.New()
-		router.Use(ErrorHandler())
-		router.POST("/users", NewUserHandler(services.NewUserService(repo)).RegisterUser)
+
+		router.POST("/users", withProblemDetails(handlers.NewUserHandler(services.NewUserService(repo)).RegisterUser))
 		request := httptest.NewRequest("POST", "/users", strings.NewReader(body))
 		request.Header.Set("Content-Type", "application/json")
 		response := httptest.NewRecorder()
@@ -125,8 +126,8 @@ func TestRegisterUserRequiresNames(t *testing.T) {
 	} {
 		repo := &monkTestRepository{}
 		router := gin.New()
-		router.Use(ErrorHandler())
-		router.POST("/users", NewUserHandler(services.NewUserService(repo)).RegisterUser)
+
+		router.POST("/users", withProblemDetails(handlers.NewUserHandler(services.NewUserService(repo)).RegisterUser))
 		request := httptest.NewRequest("POST", "/users", strings.NewReader(body))
 		request.Header.Set("Content-Type", "application/json")
 		response := httptest.NewRecorder()

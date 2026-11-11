@@ -21,5 +21,5 @@ go get -u github.com/swaggo/files
 ```
 To generate swagger docs, run from `server/`:
 ```
-swag init -g main.go -d cmd/api,internal/app/appmodels,internal/domain/models,internal/mapi/handlers,internal/mapi/dtos,internal/domain/enums --parseInternal
+swag init -g main.go -d cmd/api,internal/app/appmodels,internal/domain/models,internal/mapi/handlers,internal/mapi/dtos,internal/mapi/apimodels,internal/domain/enums --parseInternal
 ```

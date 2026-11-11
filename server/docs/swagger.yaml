@@ -1,5 +1,18 @@
 basePath: /api/v1
 definitions:
+  apimodels.ProblemDetails:
+    properties:
+      detail:
+        type: string
+      instance:
+        type: string
+      status:
+        type: integer
+      title:
+        type: string
+      type:
+        type: string
+    type: object
   appmodels.PageInfo:
     properties:
       hasMore:
@@ -20,6 +33,8 @@ definitions:
     properties:
       book_id:
         type: integer
+    required:
+    - book_id
     type: object
   dtos.CreateBookRequest:
     properties:
@@ -37,6 +52,8 @@ definitions:
     properties:
       name:
         type: string
+    required:
+    - name
     type: object
   dtos.CreateMonkRequest:
     properties:
@@ -180,6 +197,7 @@ paths:
         type: string
       produces:
       - application/json
+      - application/problem+json
       responses:
         "200":
           description: OK
@@ -188,15 +206,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
       summary: Get a page of books
       tags:
       - books
@@ -212,6 +226,7 @@ paths:
           $ref: '#/definitions/dtos.CreateBookRequest'
       produces:
       - application/json
+      - application/problem+json
       responses:
         "201":
           description: Created
@@ -220,15 +235,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
       summary: Create a book
       tags:
       - books
@@ -244,6 +255,7 @@ paths:
         type: integer
       produces:
       - application/json
+      - application/problem+json
       responses:
         "200":
           description: OK
@@ -252,15 +264,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "404":
           description: Not Found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
       summary: Get Book
       tags:
       - books
@@ -274,6 +282,7 @@ paths:
         type: integer
       produces:
       - application/json
+      - application/problem+json
       responses:
         "200":
           description: OK
@@ -284,15 +293,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
       summary: Get categories belonging to a book
       tags:
       - books
@@ -300,6 +305,7 @@ paths:
     get:
       produces:
       - application/json
+      - application/problem+json
       responses:
         "200":
           description: OK
@@ -310,9 +316,7 @@ paths:
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
       summary: Get categories
       tags:
       - categories
@@ -328,6 +332,7 @@ paths:
           $ref: '#/definitions/dtos.CreateCategoryRequest'
       produces:
       - application/json
+      - application/problem+json
       responses:
         "201":
           description: Created
@@ -336,15 +341,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
       summary: Create a category
       tags:
       - categories
@@ -370,6 +371,7 @@ paths:
         type: string
       produces:
       - application/json
+      - application/problem+json
       responses:
         "200":
           description: OK
@@ -378,15 +380,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
       summary: Get books belonging to a category
       tags:
       - categories
@@ -405,27 +403,23 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/dtos.AddBookToCategoryRequest'
+      produces:
+      - application/problem+json
       responses:
         "204":
           description: Book added
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "404":
           description: Not Found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
       summary: Add a book to a category
       tags:
       - categories
@@ -442,6 +436,7 @@ paths:
           $ref: '#/definitions/dtos.CreateMonasteryRequest'
       produces:
       - application/json
+      - application/problem+json
       responses:
         "201":
           description: Created
@@ -450,15 +445,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
       summary: Create a monastery
       tags:
       - monasteries
@@ -474,6 +465,7 @@ paths:
         type: integer
       produces:
       - application/json
+      - application/problem+json
       responses:
         "200":
           description: OK
@@ -482,15 +474,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "404":
           description: Not Found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
       summary: Get a monastery
       tags:
       - monasteries
@@ -509,6 +497,7 @@ paths:
           $ref: '#/definitions/dtos.CreateMonkRequest'
       produces:
       - application/json
+      - application/problem+json
       responses:
         "201":
           description: Created
@@ -517,21 +506,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "422":
           description: Unprocessable Entity
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
       summary: Create a monk
       tags:
       - monks
@@ -548,6 +531,7 @@ paths:
           $ref: '#/definitions/dtos.CreateReadingRequest'
       produces:
       - application/json
+      - application/problem+json
       responses:
         "201":
           description: Created
@@ -556,15 +540,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
       summary: Create a reading
       tags:
       - readings
@@ -580,6 +560,7 @@ paths:
         type: integer
       produces:
       - application/json
+      - application/problem+json
       responses:
         "200":
           description: OK
@@ -588,15 +569,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "404":
           description: Not Found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
       summary: Get a reading
       tags:
       - readings
@@ -615,6 +592,7 @@ paths:
           $ref: '#/definitions/dtos.CreateUserRequest'
       produces:
       - application/json
+      - application/problem+json
       responses:
         "201":
           description: Created
@@ -623,21 +601,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "422":
           description: Unprocessable Entity
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
       summary: Create a user
       tags:
       - users
@@ -653,6 +625,7 @@ paths:
         type: integer
       produces:
       - application/json
+      - application/problem+json
       responses:
         "200":
           description: OK
@@ -661,21 +634,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "404":
           description: Not Found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
       summary: Get a user
       tags:
       - users

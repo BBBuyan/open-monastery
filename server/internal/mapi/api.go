@@ -22,10 +22,10 @@ func registerBook(
 
 	books := api.Group("/books")
 	{
-		books.GET("/:id", bookHandler.GetBook)
-		books.GET("", bookHandler.GetBooks)
-		books.POST("", bookHandler.AddBook)
-		books.GET("/:id/categories", bookHandler.GetBookCategories)
+		books.GET("/:id", withProblemDetails(bookHandler.GetBook))
+		books.GET("", withProblemDetails(bookHandler.GetBooks))
+		books.POST("", withProblemDetails(bookHandler.AddBook))
+		books.GET("/:id/categories", withProblemDetails(bookHandler.GetBookCategories))
 	}
 }
 func registerCategory(
@@ -38,10 +38,10 @@ func registerCategory(
 
 	categories := api.Group("/categories")
 	{
-		categories.GET("", categoryHandler.GetCategories)
-		categories.POST("", categoryHandler.AddCategory)
-		categories.POST("/:id/books", categoryHandler.AddBook)
-		categories.GET("/:id/books", categoryHandler.GetBooksByCategoryId)
+		categories.GET("", withProblemDetails(categoryHandler.GetCategories))
+		categories.POST("", withProblemDetails(categoryHandler.AddCategory))
+		categories.POST("/:id/books", withProblemDetails(categoryHandler.AddBook))
+		categories.GET("/:id/books", withProblemDetails(categoryHandler.GetBooksByCategoryId))
 	}
 }
 
@@ -55,8 +55,8 @@ func registerMonastery(
 
 	monasteries := api.Group("/monasteries")
 	{
-		monasteries.GET("/:id", monasteryHandler.GetMonastery)
-		monasteries.POST("", monasteryHandler.AddMonastery)
+		monasteries.GET("/:id", withProblemDetails(monasteryHandler.GetMonastery))
+		monasteries.POST("", withProblemDetails(monasteryHandler.AddMonastery))
 	}
 }
 
@@ -67,12 +67,12 @@ func registerUser(
 	userRepository := database.NewUserRepository(db)
 	userService := services.NewUserService(userRepository)
 	userHandler := handlers.NewUserHandler(userService)
-	api.POST("/monks", userHandler.RegisterMonk)
+	api.POST("/monks", withProblemDetails(userHandler.RegisterMonk))
 
 	users := api.Group("/users")
 	{
-		users.GET("/:id", userHandler.GetUser)
-		users.POST("", userHandler.RegisterUser)
+		users.GET("/:id", withProblemDetails(userHandler.GetUser))
+		users.POST("", withProblemDetails(userHandler.RegisterUser))
 	}
 }
 
@@ -85,8 +85,8 @@ func registerReadings(
 	readingHandler := handlers.NewReadingHandler(readingService)
 	readings := api.Group("/readings")
 	{
-		readings.GET("/:id", readingHandler.GetReading)
-		readings.POST("", readingHandler.AddReading)
+		readings.GET("/:id", withProblemDetails(readingHandler.GetReading))
+		readings.POST("", withProblemDetails(readingHandler.AddReading))
 	}
 }
 
@@ -103,7 +103,6 @@ func RegisterAPI(
 	db *sql.DB,
 ) *gin.Engine {
 	r := gin.Default()
-	r.Use(handlers.ErrorHandler())
 	api := r.Group("/api/v1")
 
 	registerBook(db, api)
