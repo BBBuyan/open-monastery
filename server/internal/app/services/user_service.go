@@ -2,20 +2,25 @@ package services
 
 import (
 	"context"
+	"errors"
 
 	"example.com/open-monastery/internal/app/abstractions"
 	"example.com/open-monastery/internal/app/apperr"
-	"example.com/open-monastery/internal/app/helpers"
 	"example.com/open-monastery/internal/domain/models"
 )
 
 type UserService struct {
-	repo abstractions.UserRepository
+	repo           abstractions.UserRepository
+	passwordHasher abstractions.PasswordHasher
 }
 
-func NewUserService(repo abstractions.UserRepository) *UserService {
+func NewUserService(
+	repo abstractions.UserRepository,
+	passwordHasher abstractions.PasswordHasher,
+) *UserService {
 	return &UserService{
-		repo: repo,
+		repo:           repo,
+		passwordHasher: passwordHasher,
 	}
 }
 
@@ -31,37 +36,29 @@ func createBaseUser(
 	email *string,
 	phone *string,
 ) (*models.User, error) {
-	if email == nil && phone == nil {
-		return nil, apperr.NewBadRequestWithMsg(
-			"empty email and phone number",
-			"both email and phone number must not be empty",
-			nil,
+	user, err := models.NewUser(firstName, lastName, email, phone)
+	switch {
+	case errors.Is(err, models.ErrContactRequired):
+		return nil, apperr.NewInvalid("empty email and phone number", err)
+	case errors.Is(err, models.ErrEmailTooLong):
+		return nil, apperr.NewInvalidWithMsg(
+			"email is too long", "email must be less than 254 characters", err,
 		)
+	case errors.Is(err, models.ErrEmailNotParseable):
+		return nil, apperr.NewInvalid("email not parseable", err)
+	case errors.Is(err, models.ErrInvalidEmail):
+		return nil, apperr.NewInvalid("invalid email", err)
+	case errors.Is(err, models.ErrPhoneNumberTooLong):
+		return nil, apperr.NewInvalidWithMsg(
+			"phone number is too long", "phone number must be less than 12 characters", err,
+		)
+	case errors.Is(err, models.ErrInvalidPhoneNumber):
+		return nil, apperr.NewInvalidWithMsg(
+			"invalid phone number", "phone number is not mongolian", err,
+		)
+	default:
+		return user, err
 	}
-	if email != nil {
-		e, err := helpers.NewEmail(*email)
-		if err != nil {
-			return nil, err
-		}
-		email = &e
-	}
-	if phone != nil {
-		p, err := helpers.NewPhoneNumber(*phone)
-		if err != nil {
-			return nil, err
-		}
-		phone = &p
-	}
-
-	user, err := models.NewUser(
-		firstName, lastName,
-		email, phone,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return user, nil
 }
 
 func (s *UserService) CreateUser(

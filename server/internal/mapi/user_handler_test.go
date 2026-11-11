@@ -52,7 +52,7 @@ func TestRegisterMonk(t *testing.T) {
 			repo := &monkTestRepository{err: tc.repoErr}
 			router := gin.New()
 
-			router.POST("/monks", withProblemDetails(handlers.NewUserHandler(services.NewUserService(repo)).RegisterMonk))
+			router.POST("/monks", withProblemDetails(handlers.NewUserHandler(services.NewUserService(repo, nil)).RegisterMonk))
 			request := httptest.NewRequest("POST", "/monks", strings.NewReader(tc.body))
 			request.Header.Set("Content-Type", "application/json")
 			response := httptest.NewRecorder()
@@ -95,7 +95,7 @@ func TestRegisterUserCreatesCustomer(t *testing.T) {
 		repo := &monkTestRepository{}
 		router := gin.New()
 
-		router.POST("/users", withProblemDetails(handlers.NewUserHandler(services.NewUserService(repo)).RegisterUser))
+		router.POST("/users", withProblemDetails(handlers.NewUserHandler(services.NewUserService(repo, nil)).RegisterUser))
 		request := httptest.NewRequest("POST", "/users", strings.NewReader(body))
 		request.Header.Set("Content-Type", "application/json")
 		response := httptest.NewRecorder()
@@ -127,7 +127,7 @@ func TestRegisterUserRequiresNames(t *testing.T) {
 		repo := &monkTestRepository{}
 		router := gin.New()
 
-		router.POST("/users", withProblemDetails(handlers.NewUserHandler(services.NewUserService(repo)).RegisterUser))
+		router.POST("/users", withProblemDetails(handlers.NewUserHandler(services.NewUserService(repo, nil)).RegisterUser))
 		request := httptest.NewRequest("POST", "/users", strings.NewReader(body))
 		request.Header.Set("Content-Type", "application/json")
 		response := httptest.NewRecorder()

@@ -2,10 +2,12 @@ package mapi
 
 import (
 	"database/sql"
+
 	_ "example.com/open-monastery/docs"
 
 	"example.com/open-monastery/internal/app/services"
 	database "example.com/open-monastery/internal/infra/db"
+	"example.com/open-monastery/internal/infra/password"
 	"example.com/open-monastery/internal/mapi/handlers"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -65,7 +67,8 @@ func registerUser(
 	api *gin.RouterGroup,
 ) {
 	userRepository := database.NewUserRepository(db)
-	userService := services.NewUserService(userRepository)
+	passwordHasher := password.NewArgonPasswordHasher()
+	userService := services.NewUserService(userRepository, passwordHasher)
 	userHandler := handlers.NewUserHandler(userService)
 	api.POST("/monks", withProblemDetails(userHandler.RegisterMonk))
 

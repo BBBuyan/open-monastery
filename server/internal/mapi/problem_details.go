@@ -11,7 +11,7 @@ import (
 )
 
 const internalServerErrorTitle = "internal server error"
-const validationErrorTitle = "internal server error"
+const validationErrorTitle = "validation.error"
 
 func withProblemDetails(handle func(*gin.Context) error) gin.HandlerFunc {
 	return func(c *gin.Context) {
