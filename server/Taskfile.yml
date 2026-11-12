@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: '3'
+
+vars:
+  GREETING: Hello, world!
+
+tasks:
+  default:
+    desc: Print a greeting message
+    cmds:
+      - echo "{{.GREETING}}"
+    silent: true
+  swag:
+    desc: generate swagger
+    cmds:
+      - swag init -g main.go -d cmd/api,internal/app/appmodels,internal/domain/models,internal/mapi/handlers,internal/mapi/dtos,internal/mapi/apimodels,internal/domain/enums --parseInternal
