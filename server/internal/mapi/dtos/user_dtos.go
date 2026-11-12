@@ -1,6 +1,7 @@
 package dtos
 
 type CreateUserRequest struct {
+	Password    string  `json:"password" binding:"required"`
 	FirstName   string  `json:"first_name" binding:"required"`
 	LastName    string  `json:"last_name" binding:"required"`
 	Email       *string `json:"email"`
@@ -8,6 +9,7 @@ type CreateUserRequest struct {
 }
 
 type CreateMonkRequest struct {
+	Password    string  `json:"password" binding:"required"`
 	FirstName   string  `json:"first_name" binding:"required"`
 	LastName    string  `json:"last_name" binding:"required"`
 	Email       *string `json:"email"`

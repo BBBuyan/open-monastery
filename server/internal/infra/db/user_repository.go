@@ -54,9 +54,10 @@ func (r *UserRepository) FindById(
 func (r *UserRepository) Add(
 	ctx context.Context,
 	user *models.User,
+	passwordHash string,
 ) error {
-	query := `INSERT INTO users (first_name, last_name, user_type, monastery_id, email, phone_number)
-	VALUES (?,?,?,?,?,?)`
+	query := `INSERT INTO users (first_name, last_name, user_type, monastery_id, email, phone_number, password_hash)
+	VALUES (?,?,?,?,?,?,?)`
 
 	result, err := r.db.ExecContext(
 		ctx,
@@ -67,6 +68,7 @@ func (r *UserRepository) Add(
 		user.MonasteryId,
 		user.Email,
 		user.PhoneNumber,
+		passwordHash,
 	)
 	if err != nil {
 		return translateWriteError("AddUser", err)

@@ -67,13 +67,14 @@ func (s *UserService) CreateUser(
 	lastName string,
 	email *string,
 	phone *string,
+	password string,
 ) (*models.User, error) {
 
 	user, err := createBaseUser(firstName, lastName, email, phone)
 	if err != nil {
 		return nil, err
 	}
-	err = s.repo.Add(ctx, user)
+	err = s.addUser(ctx, user, password)
 	if err != nil {
 		return nil, err
 	}
@@ -88,6 +89,7 @@ func (s *UserService) CreateMonk(
 	email *string,
 	phone *string,
 	monasteryId int64,
+	password string,
 ) (*models.User, error) {
 	user, err := createBaseUser(firstName, lastName, email, phone)
 	if err != nil {
@@ -98,10 +100,17 @@ func (s *UserService) CreateMonk(
 	if err != nil {
 		return nil, err
 	}
-	err = s.repo.Add(ctx, monk)
+	err = s.addUser(ctx, monk, password)
 	if err != nil {
 		return nil, err
 	}
 
 	return monk, nil
+}
+
+func (s *UserService) addUser(ctx context.Context, user *models.User, password string) error {
+	if password == "" {
+		return apperr.NewBadRequest("password.required", nil)
+	}
+	return s.repo.Add(ctx, user, s.passwordHasher.HashPassword(password))
 }

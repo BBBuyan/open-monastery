@@ -8,5 +8,5 @@ import (
 
 type UserRepository interface {
 	FindById(ctx context.Context, id int64) (*models.User, error)
-	Add(ctx context.Context, user *models.User) error
+	Add(ctx context.Context, user *models.User, passwordHash string) error
 }

@@ -24,15 +24,16 @@ func NewReadingRepository(db *sql.DB) *ReadingRepository {
 	}
 }
 
-func (r *ReadingRepository) FindById(
+func (r *ReadingRepository) FindByIdForCustomer(
 	ctx context.Context,
 	id int64,
+	customerID int64,
 ) (*models.Reading, error) {
-	query := `SELECT id, book_id, monk_id, customer_id FROM reading WHERE id = ?`
+	query := `SELECT id, book_id, monk_id, customer_id FROM reading WHERE id = ? AND customer_id = ?`
 
 	var foundReading models.Reading
 
-	err := r.db.QueryRowContext(ctx, query, id).Scan(
+	err := r.db.QueryRowContext(ctx, query, id, customerID).Scan(
 		&foundReading.Id,
 		&foundReading.BookId,
 		&foundReading.MonkId,
@@ -82,7 +83,7 @@ func (r *ReadingRepository) UserExists(
 	id int64,
 ) (exists bool, err error) {
 	err = r.db.QueryRowContext(ctx,
-		"SELECT EXISTS(SELECT 1 FROM user WHERE id = ?)",
+		"SELECT EXISTS(SELECT 1 FROM users WHERE id = ?)",
 		id,
 	).Scan(&exists)
 

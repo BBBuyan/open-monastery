@@ -10,24 +10,27 @@ import (
 
 	"example.com/open-monastery/internal/app/services"
 	"example.com/open-monastery/internal/domain/models"
+	"example.com/open-monastery/internal/infra/password"
 	"example.com/open-monastery/internal/mapi/handlers"
 	"github.com/gin-gonic/gin"
 )
 
 type monkTestRepository struct {
-	saved *models.User
-	err   error
+	saved        *models.User
+	passwordHash string
+	err          error
 }
 
 func (r *monkTestRepository) FindById(context.Context, int64) (*models.User, error) {
 	return r.saved, nil
 }
-func (r *monkTestRepository) Add(_ context.Context, user *models.User) error {
+func (r *monkTestRepository) Add(_ context.Context, user *models.User, passwordHash string) error {
 	if r.err != nil {
 		return r.err
 	}
 	user.Id = 42
 	r.saved = user
+	r.passwordHash = passwordHash
 	return nil
 }
 
@@ -38,21 +41,22 @@ func TestRegisterMonk(t *testing.T) {
 		repoErr    error
 		status     int
 	}{
-		{name: "email", body: `{"first_name":"A","last_name":"B","email":" a@example.com ","monastery_id":7}`, status: 201},
-		{name: "phone", body: `{"first_name":"A","last_name":"B","phone_number":"+97699112233","monastery_id":7}`, status: 201},
-		{name: "missing monastery", body: `{"first_name":"A","last_name":"B","email":"a@example.com"}`, status: 400},
-		{name: "negative monastery", body: `{"first_name":"A","last_name":"B","email":"a@example.com","monastery_id":-1}`, status: 400},
-		{name: "missing name", body: `{"email":"a@example.com","monastery_id":7}`, status: 400},
-		{name: "missing contact", body: `{"first_name":"A","last_name":"B","monastery_id":7}`, status: 400},
-		{name: "invalid contact", body: `{"first_name":"A","last_name":"B","email":"invalid","monastery_id":7}`, status: 422},
+		{name: "email", body: `{"password":"example password","first_name":"A","last_name":"B","email":" a@example.com ","monastery_id":7}`, status: 201},
+		{name: "phone", body: `{"password":"example password","first_name":"A","last_name":"B","phone_number":"+97699112233","monastery_id":7}`, status: 201},
+		{name: "missing monastery", body: `{"password":"example password","first_name":"A","last_name":"B","email":"a@example.com"}`, status: 400},
+		{name: "negative monastery", body: `{"password":"example password","first_name":"A","last_name":"B","email":"a@example.com","monastery_id":-1}`, status: 400},
+		{name: "missing name", body: `{"password":"example password","email":"a@example.com","monastery_id":7}`, status: 400},
+		{name: "missing contact", body: `{"password":"example password","first_name":"A","last_name":"B","monastery_id":7}`, status: 422},
+		{name: "invalid contact", body: `{"password":"example password","first_name":"A","last_name":"B","email":"invalid","monastery_id":7}`, status: 422},
+		{name: "missing password", body: `{"first_name":"A","last_name":"B","email":"a@example.com","monastery_id":7}`, status: 400},
 		{name: "malformed JSON", body: `{`, status: 400},
-		{name: "write failure", body: `{"first_name":"A","last_name":"B","email":"a@example.com","monastery_id":7}`, repoErr: errors.New("write failed"), status: 500},
+		{name: "write failure", body: `{"password":"example password","first_name":"A","last_name":"B","email":"a@example.com","monastery_id":7}`, repoErr: errors.New("write failed"), status: 500},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			repo := &monkTestRepository{err: tc.repoErr}
 			router := gin.New()
 
-			router.POST("/monks", withProblemDetails(handlers.NewUserHandler(services.NewUserService(repo, nil)).RegisterMonk))
+			router.POST("/monks", withProblemDetails(handlers.NewUserHandler(services.NewUserService(repo, password.NewArgonPasswordHasher())).RegisterMonk))
 			request := httptest.NewRequest("POST", "/monks", strings.NewReader(tc.body))
 			request.Header.Set("Content-Type", "application/json")
 			response := httptest.NewRecorder()
@@ -65,6 +69,12 @@ func TestRegisterMonk(t *testing.T) {
 					t.Fatal("invalid request persisted a user")
 				}
 				return
+			}
+			if !password.NewArgonPasswordHasher().VerifyPassword("example password", repo.passwordHash) {
+				t.Fatal("expected a stored password hash")
+			}
+			if strings.Contains(response.Body.String(), "password") || strings.Contains(response.Body.String(), repo.passwordHash) {
+				t.Fatal("response exposed password information")
 			}
 			var user models.User
 			if err := json.Unmarshal(response.Body.Bytes(), &user); err != nil {
@@ -89,19 +99,25 @@ func TestRegisterMonk(t *testing.T) {
 func TestRegisterUserCreatesCustomer(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	for _, body := range []string{
-		`{"first_name":"A","last_name":"B","email":"a@example.com"}`,
-		`{"first_name":"A","last_name":"B","email":"a@example.com","user_type":"monk","monastery_id":7}`,
+		`{"password":"example password","first_name":"A","last_name":"B","email":"a@example.com"}`,
+		`{"password":"example password","first_name":"A","last_name":"B","email":"a@example.com","user_type":"monk","monastery_id":7}`,
 	} {
 		repo := &monkTestRepository{}
 		router := gin.New()
 
-		router.POST("/users", withProblemDetails(handlers.NewUserHandler(services.NewUserService(repo, nil)).RegisterUser))
+		router.POST("/users", withProblemDetails(handlers.NewUserHandler(services.NewUserService(repo, password.NewArgonPasswordHasher())).RegisterUser))
 		request := httptest.NewRequest("POST", "/users", strings.NewReader(body))
 		request.Header.Set("Content-Type", "application/json")
 		response := httptest.NewRecorder()
 		router.ServeHTTP(response, request)
 		if response.Code != 201 {
 			t.Fatalf("status = %d: %s", response.Code, response.Body.String())
+		}
+		if !password.NewArgonPasswordHasher().VerifyPassword("example password", repo.passwordHash) {
+			t.Fatal("expected a stored password hash")
+		}
+		if strings.Contains(response.Body.String(), "password") || strings.Contains(response.Body.String(), repo.passwordHash) {
+			t.Fatal("response exposed password information")
 		}
 		var user models.User
 		if err := json.Unmarshal(response.Body.Bytes(), &user); err != nil {
@@ -119,15 +135,15 @@ func TestRegisterUserCreatesCustomer(t *testing.T) {
 func TestRegisterUserRequiresNames(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	for _, body := range []string{
-		`{"last_name":"B","email":"a@example.com"}`,
-		`{"first_name":"A","email":"a@example.com"}`,
-		`{"first_name":"","last_name":"B","email":"a@example.com"}`,
-		`{"first_name":"A","last_name":null,"email":"a@example.com"}`,
+		`{"password":"example password","last_name":"B","email":"a@example.com"}`,
+		`{"password":"example password","first_name":"A","email":"a@example.com"}`,
+		`{"password":"example password","first_name":"","last_name":"B","email":"a@example.com"}`,
+		`{"password":"example password","first_name":"A","last_name":null,"email":"a@example.com"}`,
 	} {
 		repo := &monkTestRepository{}
 		router := gin.New()
 
-		router.POST("/users", withProblemDetails(handlers.NewUserHandler(services.NewUserService(repo, nil)).RegisterUser))
+		router.POST("/users", withProblemDetails(handlers.NewUserHandler(services.NewUserService(repo, password.NewArgonPasswordHasher())).RegisterUser))
 		request := httptest.NewRequest("POST", "/users", strings.NewReader(body))
 		request.Header.Set("Content-Type", "application/json")
 		response := httptest.NewRecorder()

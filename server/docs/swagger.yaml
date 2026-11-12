@@ -1,5 +1,13 @@
 basePath: /api/v1
 definitions:
+  apimodels.LoginResponse:
+    properties:
+      access_token:
+        type: string
+      token_type:
+        example: Bearer
+        type: string
+    type: object
   apimodels.ProblemDetails:
     properties:
       detail:
@@ -65,20 +73,19 @@ definitions:
         type: string
       monastery_id:
         type: integer
+      password:
+        type: string
       phone_number:
         type: string
     required:
     - first_name
     - last_name
     - monastery_id
+    - password
     type: object
   dtos.CreateReadingRequest:
     properties:
       book_id:
-        type: integer
-      customer_id:
-        type: integer
-      monk_id:
         type: integer
     type: object
   dtos.CreateUserRequest:
@@ -89,11 +96,24 @@ definitions:
         type: string
       last_name:
         type: string
+      password:
+        type: string
       phone_number:
         type: string
     required:
     - first_name
     - last_name
+    - password
+    type: object
+  dtos.LoginRequest:
+    properties:
+      password:
+        type: string
+      user_id:
+        type: integer
+    required:
+    - password
+    - user_id
     type: object
   enums.ReadingStatus:
     enum:
@@ -180,6 +200,40 @@ info:
   title: Open Monastery API
   version: "1.0"
 paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Login credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.LoginRequest'
+      produces:
+      - application/json
+      - application/problem+json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apimodels.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+      summary: Log in with a user ID and password
+      tags:
+      - auth
   /books:
     get:
       parameters:
@@ -486,8 +540,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Requires first_name, last_name, a positive monastery_id, and at
-        least one of email or phone_number.
+      description: Requires first_name, last_name, password, a positive monastery_id,
+        and at least one of email or phone_number.
       parameters:
       - description: Monk to create
         in: body
@@ -522,6 +576,7 @@ paths:
     post:
       consumes:
       - application/json
+      description: Creates a pending reading for the authenticated requester.
       parameters:
       - description: Reading to create
         in: body
@@ -541,10 +596,20 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/apimodels.ProblemDetails'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/apimodels.ProblemDetails'
+      security:
+      - BearerAuth: []
       summary: Create a reading
       tags:
       - readings
@@ -552,6 +617,7 @@ paths:
     get:
       consumes:
       - application/json
+      description: Returns a reading owned by the authenticated requester.
       parameters:
       - description: Reading ID
         in: path
@@ -570,10 +636,16 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/apimodels.ProblemDetails'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/apimodels.ProblemDetails'
+      security:
+      - BearerAuth: []
       summary: Get a reading
       tags:
       - readings
@@ -581,8 +653,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Requires first_name, last_name, and at least one of email or phone_number.
-        Creates a customer.
+      description: Requires first_name, last_name, password, and at least one of email
+        or phone_number. Creates a customer.
       parameters:
       - description: User to create
         in: body
@@ -613,37 +685,10 @@ paths:
       summary: Create a user
       tags:
       - users
-  /users/{id}:
-    get:
-      consumes:
-      - application/json
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      - application/problem+json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.User'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-      summary: Get a user
-      tags:
-      - users
+securityDefinitions:
+  BearerAuth:
+    description: Enter Bearer followed by a space and the JWT access token.
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

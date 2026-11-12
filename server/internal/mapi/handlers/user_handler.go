@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"net/http"
-	"strconv"
 
 	"example.com/open-monastery/internal/app/apperr"
 	"example.com/open-monastery/internal/app/services"
@@ -19,37 +18,8 @@ func NewUserHandler(service *services.UserService) *UserHandler {
 	return &UserHandler{service: service}
 }
 
-// @Summary Get a user
-// @Param id path int true "User ID"
-// @Tags users
-// @Accept json
-// @Produce json,application/problem+json
-// @Success 200 {object} models.User
-// @Failure 400 {object} apimodels.ProblemDetails
-// @Failure 404 {object} apimodels.ProblemDetails
-// @Failure 500 {object} apimodels.ProblemDetails
-// @Router /users/{id} [get]
-func (h *UserHandler) GetUser(c *gin.Context) error {
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err != nil || id <= 0 {
-		return apperr.NewBadRequestWithMsg(
-			"err",
-			"invalid user id",
-			err,
-		)
-	}
-
-	result, err := h.service.GetUser(c.Request.Context(), id)
-	if err != nil {
-		return err
-	}
-
-	c.JSON(http.StatusOK, result)
-	return nil
-}
-
 // @Summary Create a user
-// @Description Requires first_name, last_name, and at least one of email or phone_number. Creates a customer.
+// @Description Requires first_name, last_name, password, and at least one of email or phone_number. Creates a customer.
 // @Tags users
 // @Accept json
 // @Produce json,application/problem+json
@@ -66,7 +36,7 @@ func (h *UserHandler) RegisterUser(c *gin.Context) error {
 	}
 	result, err := h.service.CreateUser(
 		c.Request.Context(), req.FirstName, req.LastName,
-		req.Email, req.PhoneNumber,
+		req.Email, req.PhoneNumber, req.Password,
 	)
 	if err != nil {
 		return err
@@ -76,7 +46,7 @@ func (h *UserHandler) RegisterUser(c *gin.Context) error {
 }
 
 // @Summary Create a monk
-// @Description Requires first_name, last_name, a positive monastery_id, and at least one of email or phone_number.
+// @Description Requires first_name, last_name, password, a positive monastery_id, and at least one of email or phone_number.
 // @Tags monks
 // @Accept json
 // @Produce json,application/problem+json
@@ -93,7 +63,7 @@ func (h *UserHandler) RegisterMonk(c *gin.Context) error {
 	}
 	monk, err := h.service.CreateMonk(
 		c.Request.Context(), req.FirstName, req.LastName,
-		req.Email, req.PhoneNumber, req.MonasteryId,
+		req.Email, req.PhoneNumber, req.MonasteryId, req.Password,
 	)
 	if err != nil {
 		return err

@@ -15,6 +15,58 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/auth/login": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json",
+                    "application/problem+json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Log in with a user ID and password",
+                "parameters": [
+                    {
+                        "description": "Login credentials",
+                        "name": "credentials",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.LoginResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    }
+                }
+            }
+        },
         "/books": {
             "get": {
                 "produces": [
@@ -476,7 +528,7 @@ const docTemplate = `{
         },
         "/monks": {
             "post": {
-                "description": "Requires first_name, last_name, a positive monastery_id, and at least one of email or phone_number.",
+                "description": "Requires first_name, last_name, password, a positive monastery_id, and at least one of email or phone_number.",
                 "consumes": [
                     "application/json"
                 ],
@@ -529,6 +581,12 @@ const docTemplate = `{
         },
         "/readings": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a pending reading for the authenticated requester.",
                 "consumes": [
                     "application/json"
                 ],
@@ -564,6 +622,18 @@ const docTemplate = `{
                             "$ref": "#/definitions/apimodels.ProblemDetails"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -575,6 +645,12 @@ const docTemplate = `{
         },
         "/readings/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a reading owned by the authenticated requester.",
                 "consumes": [
                     "application/json"
                 ],
@@ -608,6 +684,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/apimodels.ProblemDetails"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -619,7 +701,7 @@ const docTemplate = `{
         },
         "/users": {
             "post": {
-                "description": "Requires first_name, last_name, and at least one of email or phone_number. Creates a customer.",
+                "description": "Requires first_name, last_name, password, and at least one of email or phone_number. Creates a customer.",
                 "consumes": [
                     "application/json"
                 ],
@@ -669,59 +751,21 @@ const docTemplate = `{
                     }
                 }
             }
-        },
-        "/users/{id}": {
-            "get": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json",
-                    "application/problem+json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "Get a user",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "User ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.User"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/apimodels.ProblemDetails"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/apimodels.ProblemDetails"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/apimodels.ProblemDetails"
-                        }
-                    }
-                }
-            }
         }
     },
     "definitions": {
+        "apimodels.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "token_type": {
+                    "type": "string",
+                    "example": "Bearer"
+                }
+            }
+        },
         "apimodels.ProblemDetails": {
             "type": "object",
             "properties": {
@@ -813,7 +857,8 @@ const docTemplate = `{
             "required": [
                 "first_name",
                 "last_name",
-                "monastery_id"
+                "monastery_id",
+                "password"
             ],
             "properties": {
                 "email": {
@@ -828,6 +873,9 @@ const docTemplate = `{
                 "monastery_id": {
                     "type": "integer"
                 },
+                "password": {
+                    "type": "string"
+                },
                 "phone_number": {
                     "type": "string"
                 }
@@ -838,12 +886,6 @@ const docTemplate = `{
             "properties": {
                 "book_id": {
                     "type": "integer"
-                },
-                "customer_id": {
-                    "type": "integer"
-                },
-                "monk_id": {
-                    "type": "integer"
                 }
             }
         },
@@ -851,7 +893,8 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "first_name",
-                "last_name"
+                "last_name",
+                "password"
             ],
             "properties": {
                 "email": {
@@ -863,8 +906,26 @@ const docTemplate = `{
                 "last_name": {
                     "type": "string"
                 },
+                "password": {
+                    "type": "string"
+                },
                 "phone_number": {
                     "type": "string"
+                }
+            }
+        },
+        "dtos.LoginRequest": {
+            "type": "object",
+            "required": [
+                "password",
+                "user_id"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
                 }
             }
         },
@@ -984,6 +1045,14 @@ const docTemplate = `{
                 "Monk",
                 "Customer"
             ]
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Enter Bearer followed by a space and the JWT access token.",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`

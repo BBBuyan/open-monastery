@@ -3,10 +3,11 @@ package apperr
 type AppErrType string
 
 const (
-	BadRequest AppErrType = "bad_request"
-	NotFound   AppErrType = "not_found"
-	Invalid    AppErrType = "invalid"
-	Conflict   AppErrType = "conflict"
+	BadRequest   AppErrType = "bad_request"
+	Unauthorized AppErrType = "unauthorized"
+	NotFound     AppErrType = "not_found"
+	Invalid      AppErrType = "invalid"
+	Conflict     AppErrType = "conflict"
 )
 
 type AppErr struct {
@@ -81,4 +82,12 @@ func NewBadRequestWithMsg(code string, msg string, err error) *AppErr {
 	appErr := NewBadRequest(code, err)
 	appErr.Message = &msg
 	return appErr
+}
+
+func NewUnauthorized(code string, err error) *AppErr {
+	return &AppErr{
+		Type: Unauthorized,
+		Code: code,
+		Err:  err,
+	}
 }

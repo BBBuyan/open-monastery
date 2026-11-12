@@ -56,6 +56,8 @@ func statusFor(errType apperr.AppErrType) int {
 	switch errType {
 	case apperr.BadRequest:
 		return http.StatusBadRequest
+	case apperr.Unauthorized:
+		return http.StatusUnauthorized
 	case apperr.NotFound:
 		return http.StatusNotFound
 	case apperr.Invalid:

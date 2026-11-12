@@ -5,10 +5,12 @@ import (
 
 	_ "example.com/open-monastery/docs"
 
+	"example.com/open-monastery/internal/app/abstractions"
 	"example.com/open-monastery/internal/app/services"
 	database "example.com/open-monastery/internal/infra/db"
 	"example.com/open-monastery/internal/infra/password"
 	"example.com/open-monastery/internal/mapi/handlers"
+	"example.com/open-monastery/internal/mapi/middlewares"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -72,21 +74,18 @@ func registerUser(
 	userHandler := handlers.NewUserHandler(userService)
 	api.POST("/monks", withProblemDetails(userHandler.RegisterMonk))
 
-	users := api.Group("/users")
-	{
-		users.GET("/:id", withProblemDetails(userHandler.GetUser))
-		users.POST("", withProblemDetails(userHandler.RegisterUser))
-	}
+	api.POST("/users", withProblemDetails(userHandler.RegisterUser))
 }
 
 func registerReadings(
 	db *sql.DB,
 	api *gin.RouterGroup,
+	auth gin.HandlerFunc,
 ) {
 	readingRepository := database.NewReadingRepository(db)
 	readingService := services.NewReadingService(readingRepository)
 	readingHandler := handlers.NewReadingHandler(readingService)
-	readings := api.Group("/readings")
+	readings := api.Group("/readings", auth)
 	{
 		readings.GET("/:id", withProblemDetails(readingHandler.GetReading))
 		readings.POST("", withProblemDetails(readingHandler.AddReading))
@@ -104,14 +103,18 @@ func registerSwagger(
 
 func RegisterAPI(
 	db *sql.DB,
+	tokenIssuer abstractions.TokeIssuer,
 ) *gin.Engine {
 	r := gin.Default()
 	api := r.Group("/api/v1")
+	loginService := services.NewLoginService(database.NewLoginRepository(db), password.NewArgonPasswordHasher(), tokenIssuer)
+	loginHandler := handlers.NewLoginHandler(loginService)
+	api.POST("/auth/login", withProblemDetails(loginHandler.Login))
 
 	registerBook(db, api)
 	registerCategory(db, api)
 	registerUser(db, api)
-	registerReadings(db, api)
+	registerReadings(db, api, middlewares.RequireAuth(tokenIssuer.ValidateToken))
 	registerMonastery(db, api)
 
 	registerSwagger(r)

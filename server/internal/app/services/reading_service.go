@@ -24,8 +24,9 @@ func NewReadingService(
 func (s *ReadingService) GetReading(
 	ctx context.Context,
 	id int64,
+	customerID int64,
 ) (*models.Reading, error) {
-	return s.repo.FindById(ctx, id)
+	return s.repo.FindByIdForCustomer(ctx, id, customerID)
 }
 
 func (s *ReadingService) GetUserReadings(
@@ -63,19 +64,19 @@ func (s *ReadingService) CreateReading(
 	bookId int64,
 	customerId int64,
 ) (*models.Reading, error) {
-	_, err := s.repo.UserExists(ctx, customerId)
+	userExists, err := s.repo.UserExists(ctx, customerId)
 	if err != nil {
-		return nil, apperr.NewNotFound(
-			"user not found",
-			err,
-		)
+		return nil, err
 	}
-	_, err = s.repo.BookExists(ctx, bookId)
+	if !userExists {
+		return nil, apperr.NewNotFound("user not found", nil)
+	}
+	bookExists, err := s.repo.BookExists(ctx, bookId)
 	if err != nil {
-		return nil, apperr.NewNotFound(
-			"book not found",
-			err,
-		)
+		return nil, err
+	}
+	if !bookExists {
+		return nil, apperr.NewNotFound("book not found", nil)
 	}
 
 	reading := models.NewReading(bookId, customerId)
