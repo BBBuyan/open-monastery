@@ -19,7 +19,7 @@ func NewLoginHandler(service *services.LoginService) *LoginHandler {
 	return &LoginHandler{service: service}
 }
 
-// @Summary Log in with a user ID and password
+// @Summary Log in with an email address and password
 // @Tags auth
 // @Accept json
 // @Produce json,application/problem+json
@@ -34,7 +34,7 @@ func (h *LoginHandler) Login(c *gin.Context) error {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		return apperr.NewBadRequest("invalid.body", err)
 	}
-	accessToken, err := h.service.Login(c.Request.Context(), req.UserID, req.Password)
+	accessToken, err := h.service.Login(c.Request.Context(), req.Email, req.Password)
 	if errors.Is(err, services.ErrInvalidCredentials) {
 		return apperr.NewUnauthorized("invalid.credentials", err)
 	}

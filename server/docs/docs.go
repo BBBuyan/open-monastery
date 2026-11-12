@@ -27,7 +27,7 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
-                "summary": "Log in with a user ID and password",
+                "summary": "Log in with an email address and password",
                 "parameters": [
                     {
                         "description": "Login credentials",
@@ -564,6 +564,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/apimodels.ProblemDetails"
                         }
                     },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
                     "422": {
                         "description": "Unprocessable Entity",
                         "schema": {
@@ -733,6 +739,12 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
                         "schema": {
                             "$ref": "#/definitions/apimodels.ProblemDetails"
                         }
@@ -917,15 +929,16 @@ const docTemplate = `{
         "dtos.LoginRequest": {
             "type": "object",
             "required": [
-                "password",
-                "user_id"
+                "email",
+                "password"
             ],
             "properties": {
+                "email": {
+                    "type": "string",
+                    "format": "email"
+                },
                 "password": {
                     "type": "string"
-                },
-                "user_id": {
-                    "type": "integer"
                 }
             }
         },

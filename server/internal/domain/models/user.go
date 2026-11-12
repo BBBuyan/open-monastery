@@ -56,7 +56,7 @@ func NewUser(
 		return nil, ErrContactRequired
 	}
 	if email != nil {
-		normalized, err := normalizeEmail(*email)
+		normalized, err := NormalizeEmail(*email)
 		if err != nil {
 			return nil, err
 		}
@@ -81,7 +81,7 @@ func NewUser(
 	return user, nil
 }
 
-func normalizeEmail(email string) (string, error) {
+func NormalizeEmail(email string) (string, error) {
 	email = strings.TrimSpace(email)
 	if len(email) > 254 {
 		return "", ErrEmailTooLong

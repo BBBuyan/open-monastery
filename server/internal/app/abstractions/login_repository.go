@@ -3,5 +3,5 @@ package abstractions
 import "context"
 
 type LoginRepository interface {
-	FindPasswordHash(ctx context.Context, userID int64) (string, error)
+	FindCredentialsByEmail(ctx context.Context, email string) (userID int64, passwordHash string, err error)
 }

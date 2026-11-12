@@ -107,13 +107,14 @@ definitions:
     type: object
   dtos.LoginRequest:
     properties:
+      email:
+        format: email
+        type: string
       password:
         type: string
-      user_id:
-        type: integer
     required:
+    - email
     - password
-    - user_id
     type: object
   enums.ReadingStatus:
     enum:
@@ -231,7 +232,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/apimodels.ProblemDetails'
-      summary: Log in with a user ID and password
+      summary: Log in with an email address and password
       tags:
       - auth
   /books:
@@ -561,6 +562,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/apimodels.ProblemDetails'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "422":
           description: Unprocessable Entity
           schema:
@@ -672,6 +677,10 @@ paths:
             $ref: '#/definitions/models.User'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "409":
+          description: Conflict
           schema:
             $ref: '#/definitions/apimodels.ProblemDetails'
         "422":

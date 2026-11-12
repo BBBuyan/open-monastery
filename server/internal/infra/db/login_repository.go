@@ -20,15 +20,16 @@ func NewLoginRepository(db *sql.DB) *LoginRepository {
 	return &LoginRepository{db: db}
 }
 
-func (r *LoginRepository) FindPasswordHash(ctx context.Context, userID int64) (string, error) {
-	const query = `SELECT password_hash FROM users WHERE id = ? AND password_hash IS NOT NULL`
+func (r *LoginRepository) FindCredentialsByEmail(ctx context.Context, email string) (int64, string, error) {
+	const query = `SELECT id, password_hash FROM users WHERE email = ? AND password_hash IS NOT NULL`
+	var userID int64
 	var hash string
-	err := r.db.QueryRowContext(ctx, query, userID).Scan(&hash)
+	err := r.db.QueryRowContext(ctx, query, email).Scan(&userID, &hash)
 	if errors.Is(err, sql.ErrNoRows) {
-		return "", apperr.NewNotFound("credentials not found", err)
+		return 0, "", apperr.NewNotFound("credentials not found", err)
 	}
 	if err != nil {
-		return "", fmt.Errorf("find password hash: %w", err)
+		return 0, "", fmt.Errorf("find credentials by email: %w", err)
 	}
-	return hash, nil
+	return userID, hash, nil
 }

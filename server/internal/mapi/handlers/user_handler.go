@@ -26,6 +26,7 @@ func NewUserHandler(service *services.UserService) *UserHandler {
 // @Param user body dtos.CreateUserRequest true "User to create"
 // @Success 201 {object} models.User
 // @Failure 400 {object} apimodels.ProblemDetails
+// @Failure 409 {object} apimodels.ProblemDetails
 // @Failure 422 {object} apimodels.ProblemDetails
 // @Failure 500 {object} apimodels.ProblemDetails
 // @Router /users [post]
@@ -53,6 +54,7 @@ func (h *UserHandler) RegisterUser(c *gin.Context) error {
 // @Param monk body dtos.CreateMonkRequest true "Monk to create"
 // @Success 201 {object} models.User
 // @Failure 400 {object} apimodels.ProblemDetails
+// @Failure 409 {object} apimodels.ProblemDetails
 // @Failure 422 {object} apimodels.ProblemDetails
 // @Failure 500 {object} apimodels.ProblemDetails
 // @Router /monks [post]
