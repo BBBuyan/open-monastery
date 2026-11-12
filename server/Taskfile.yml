@@ -15,3 +15,15 @@ tasks:
     desc: generate swagger
     cmds:
       - swag init -g main.go -d cmd/api,internal/app/appmodels,internal/domain/models,internal/mapi/handlers,internal/mapi/dtos,internal/mapi/apimodels,internal/domain/enums --parseInternal
+  mig-up:
+    desc: run migrations up
+    cmd: migrate  -path migrations  -database "mysql://root:Password123!@tcp(localhost:3306)/om" up
+  mig-down:
+    desc: run migrations down
+    cmd: migrate  -path migrations  -database "mysql://root:Password123!@tcp(localhost:3306)/om" down {{.CLI_ARGS}}
+  mig-force:
+    desc: run migrations force
+    cmd: migrate  -path migrations  -database "mysql://root:Password123!@tcp(localhost:3306)/om" force {{.CLI_ARGS}}
+  mig-create:
+    desc: create migrations
+    cmd: migrate create -ext sql -dir migrations -seq {{.CLI_ARGS}}
