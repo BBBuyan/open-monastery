@@ -21,17 +21,9 @@ func NewReadingService(
 	}
 }
 
-func (s *ReadingService) GetReading(
+func (s *ReadingService) GetReadings(
 	ctx context.Context,
-	id int64,
-	customerID int64,
-) (*models.Reading, error) {
-	return s.repo.FindByIdForCustomer(ctx, id, customerID)
-}
-
-func (s *ReadingService) GetUserReadings(
-	ctx context.Context,
-	id int64,
+	userID int64,
 	opts appmodels.ListOptions,
 ) (*appmodels.Paginated[*models.Reading], error) {
 	opts, err := opts.Normalize()
@@ -40,7 +32,7 @@ func (s *ReadingService) GetUserReadings(
 	}
 	readings, err := s.repo.GetReadingsByUserId(
 		ctx,
-		id,
+		userID,
 		opts,
 	)
 	if err != nil {

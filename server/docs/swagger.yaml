@@ -37,6 +37,15 @@ definitions:
       pagination:
         $ref: '#/definitions/appmodels.PageInfo'
     type: object
+  appmodels.Paginated-models_Reading:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/models.Reading'
+        type: array
+      pagination:
+        $ref: '#/definitions/appmodels.PageInfo'
+    type: object
   dtos.AddBookToCategoryRequest:
     properties:
       book_id:
@@ -578,6 +587,42 @@ paths:
       tags:
       - monks
   /readings:
+    get:
+      description: Returns readings owned by the authenticated requester.
+      parameters:
+      - description: Page size (default 20, capped at 100)
+        in: query
+        name: limit
+        type: integer
+      - description: Next cursor from the previous page
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      - application/problem+json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/appmodels.Paginated-models_Reading'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+      security:
+      - BearerAuth: []
+      summary: Get a page of readings
+      tags:
+      - readings
     post:
       consumes:
       - application/json
@@ -616,42 +661,6 @@ paths:
       security:
       - BearerAuth: []
       summary: Create a reading
-      tags:
-      - readings
-  /readings/{id}:
-    get:
-      consumes:
-      - application/json
-      description: Returns a reading owned by the authenticated requester.
-      parameters:
-      - description: Reading ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      - application/problem+json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Reading'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-      security:
-      - BearerAuth: []
-      summary: Get a reading
       tags:
       - readings
   /users:

@@ -3,12 +3,14 @@ package handlers
 import (
 	"errors"
 	"net/http"
-	"strconv"
 
 	"example.com/open-monastery/internal/app/apperr"
+	_ "example.com/open-monastery/internal/app/appmodels"
 	"example.com/open-monastery/internal/app/services"
+	_ "example.com/open-monastery/internal/domain/models"
 	_ "example.com/open-monastery/internal/mapi/apimodels"
 	"example.com/open-monastery/internal/mapi/dtos"
+	"example.com/open-monastery/internal/mapi/helpers"
 	"example.com/open-monastery/internal/mapi/middlewares"
 	"github.com/gin-gonic/gin"
 )
@@ -21,29 +23,29 @@ func NewReadingHandler(service *services.ReadingService) *ReadingHandler {
 	return &ReadingHandler{service: service}
 }
 
-// @Summary Get a reading
-// @Description Returns a reading owned by the authenticated requester.
+// @Summary Get a page of readings
+// @Description Returns readings owned by the authenticated requester.
 // @Security BearerAuth
-// @Param id path int true "Reading ID"
 // @Tags readings
-// @Accept json
 // @Produce json,application/problem+json
-// @Success 200 {object} models.Reading
+// @Param limit query int false "Page size (default 20, capped at 100)"
+// @Param cursor query string false "Next cursor from the previous page"
+// @Success 200 {object} appmodels.Paginated[models.Reading]
 // @Failure 400 {object} apimodels.ProblemDetails
 // @Failure 401 {object} apimodels.ProblemDetails
-// @Failure 404 {object} apimodels.ProblemDetails
-// @Router /readings/{id} [get]
-func (h *ReadingHandler) GetReading(c *gin.Context) error {
+// @Failure 500 {object} apimodels.ProblemDetails
+// @Router /readings [get]
+func (h *ReadingHandler) GetReadings(c *gin.Context) error {
 	userID, ok := middlewares.UserID(c)
 	if !ok {
 		return errors.New("missing authenticated user ID")
 	}
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err != nil || id <= 0 {
-		return apperr.NewBadRequest("invalid.id", err)
+	options, err := helpers.ToListOpts(c)
+	if err != nil {
+		return err
 	}
 
-	result, err := h.service.GetReading(c.Request.Context(), id, userID)
+	result, err := h.service.GetReadings(c.Request.Context(), userID, options)
 	if err != nil {
 		return err
 	}

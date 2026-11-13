@@ -87,7 +87,7 @@ func registerReadings(
 	readingHandler := handlers.NewReadingHandler(readingService)
 	readings := api.Group("/readings", auth)
 	{
-		readings.GET("/:id", withProblemDetails(readingHandler.GetReading))
+		readings.GET("", withProblemDetails(readingHandler.GetReadings))
 		readings.POST("", withProblemDetails(readingHandler.AddReading))
 	}
 }
