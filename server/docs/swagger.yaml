@@ -1,5 +1,26 @@
 basePath: /api/v1
 definitions:
+  apimodels.LoginResponse:
+    properties:
+      access_token:
+        type: string
+      token_type:
+        example: Bearer
+        type: string
+    type: object
+  apimodels.ProblemDetails:
+    properties:
+      detail:
+        type: string
+      instance:
+        type: string
+      status:
+        type: integer
+      title:
+        type: string
+      type:
+        type: string
+    type: object
   appmodels.PageInfo:
     properties:
       hasMore:
@@ -16,10 +37,21 @@ definitions:
       pagination:
         $ref: '#/definitions/appmodels.PageInfo'
     type: object
+  appmodels.Paginated-models_Reading:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/models.Reading'
+        type: array
+      pagination:
+        $ref: '#/definitions/appmodels.PageInfo'
+    type: object
   dtos.AddBookToCategoryRequest:
     properties:
       book_id:
         type: integer
+    required:
+    - book_id
     type: object
   dtos.CreateBookRequest:
     properties:
@@ -37,10 +69,13 @@ definitions:
     properties:
       name:
         type: string
+    required:
+    - name
     type: object
   dtos.CreateMonkRequest:
     properties:
       email:
+        format: email
         type: string
       first_name:
         type: string
@@ -48,35 +83,49 @@ definitions:
         type: string
       monastery_id:
         type: integer
+      password:
+        type: string
       phone_number:
         type: string
     required:
     - first_name
     - last_name
     - monastery_id
+    - password
     type: object
   dtos.CreateReadingRequest:
     properties:
       book_id:
         type: integer
-      customer_id:
-        type: integer
-      monk_id:
-        type: integer
     type: object
   dtos.CreateUserRequest:
     properties:
       email:
+        format: email
         type: string
       first_name:
         type: string
       last_name:
+        type: string
+      password:
         type: string
       phone_number:
         type: string
     required:
     - first_name
     - last_name
+    - password
+    type: object
+  dtos.LoginRequest:
+    properties:
+      email:
+        format: email
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
     type: object
   enums.ReadingStatus:
     enum:
@@ -118,10 +167,13 @@ definitions:
   models.Reading:
     properties:
       assigned_at:
+        description: AssignedAt is the UTC time when a monk claimed the reading, when
+          recorded.
         type: string
       book_id:
         type: integer
       created_at:
+        description: CreatedAt is the UTC creation time, when recorded.
         type: string
       customer_id:
         type: integer
@@ -153,16 +205,128 @@ definitions:
     enum:
     - monk
     - customer
+    - admin
     type: string
     x-enum-varnames:
     - Monk
     - Customer
+    - Admin
 info:
   contact: {}
   description: API for Open Monastery
   title: Open Monastery API
   version: "1.0"
 paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Login credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.LoginRequest'
+      produces:
+      - application/json
+      - application/problem+json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apimodels.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+      summary: Log in with an email address and password
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: User to create
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateUserRequest'
+      produces:
+      - application/json
+      - application/problem+json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+      summary: Create a user
+      tags:
+      - auth
+  /auth/register/monks:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Monk to create
+        in: body
+        name: monk
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateMonkRequest'
+      produces:
+      - application/json
+      - application/problem+json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+      summary: Create a monk
+      tags:
+      - auth
   /books:
     get:
       parameters:
@@ -180,6 +344,7 @@ paths:
         type: string
       produces:
       - application/json
+      - application/problem+json
       responses:
         "200":
           description: OK
@@ -188,15 +353,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
       summary: Get a page of books
       tags:
       - books
@@ -212,6 +373,7 @@ paths:
           $ref: '#/definitions/dtos.CreateBookRequest'
       produces:
       - application/json
+      - application/problem+json
       responses:
         "201":
           description: Created
@@ -220,15 +382,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
       summary: Create a book
       tags:
       - books
@@ -244,6 +402,7 @@ paths:
         type: integer
       produces:
       - application/json
+      - application/problem+json
       responses:
         "200":
           description: OK
@@ -252,15 +411,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "404":
           description: Not Found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
       summary: Get Book
       tags:
       - books
@@ -274,6 +429,7 @@ paths:
         type: integer
       produces:
       - application/json
+      - application/problem+json
       responses:
         "200":
           description: OK
@@ -284,15 +440,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
       summary: Get categories belonging to a book
       tags:
       - books
@@ -300,6 +452,7 @@ paths:
     get:
       produces:
       - application/json
+      - application/problem+json
       responses:
         "200":
           description: OK
@@ -310,9 +463,7 @@ paths:
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
       summary: Get categories
       tags:
       - categories
@@ -328,6 +479,7 @@ paths:
           $ref: '#/definitions/dtos.CreateCategoryRequest'
       produces:
       - application/json
+      - application/problem+json
       responses:
         "201":
           description: Created
@@ -336,15 +488,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
       summary: Create a category
       tags:
       - categories
@@ -370,6 +518,7 @@ paths:
         type: string
       produces:
       - application/json
+      - application/problem+json
       responses:
         "200":
           description: OK
@@ -378,15 +527,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
       summary: Get books belonging to a category
       tags:
       - categories
@@ -405,27 +550,23 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/dtos.AddBookToCategoryRequest'
+      produces:
+      - application/problem+json
       responses:
         "204":
           description: Book added
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "404":
           description: Not Found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
       summary: Add a book to a category
       tags:
       - categories
@@ -442,6 +583,7 @@ paths:
           $ref: '#/definitions/dtos.CreateMonasteryRequest'
       produces:
       - application/json
+      - application/problem+json
       responses:
         "201":
           description: Created
@@ -450,15 +592,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
       summary: Create a monastery
       tags:
       - monasteries
@@ -474,6 +612,7 @@ paths:
         type: integer
       produces:
       - application/json
+      - application/problem+json
       responses:
         "200":
           description: OK
@@ -482,63 +621,55 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "404":
           description: Not Found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
       summary: Get a monastery
       tags:
       - monasteries
-  /monks:
-    post:
-      consumes:
-      - application/json
-      description: Requires first_name, last_name, a positive monastery_id, and at
-        least one of email or phone_number.
+  /readings:
+    get:
+      description: Returns readings owned by the authenticated requester.
       parameters:
-      - description: Monk to create
-        in: body
-        name: monk
-        required: true
-        schema:
-          $ref: '#/definitions/dtos.CreateMonkRequest'
+      - description: Page size (default 20, capped at 100)
+        in: query
+        name: limit
+        type: integer
+      - description: Next cursor from the previous page
+        in: query
+        name: cursor
+        type: string
       produces:
       - application/json
+      - application/problem+json
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           schema:
-            $ref: '#/definitions/models.User'
+            $ref: '#/definitions/appmodels.Paginated-models_Reading'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
-        "422":
-          description: Unprocessable Entity
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "401":
+          description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Create a monk
+            $ref: '#/definitions/apimodels.ProblemDetails'
+      security:
+      - BearerAuth: []
+      summary: Get a page of readings
       tags:
-      - monks
-  /readings:
+      - readings
     post:
       consumes:
       - application/json
+      description: Creates a pending reading for the authenticated requester.
       parameters:
       - description: Reading to create
         in: body
@@ -548,6 +679,7 @@ paths:
           $ref: '#/definitions/dtos.CreateReadingRequest'
       produces:
       - application/json
+      - application/problem+json
       responses:
         "201":
           description: Created
@@ -556,22 +688,27 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
+      security:
+      - BearerAuth: []
       summary: Create a reading
       tags:
       - readings
-  /readings/{id}:
-    get:
-      consumes:
-      - application/json
+  /readings/{id}/claim:
+    post:
+      description: Assigns the reading to the authenticated monk.
       parameters:
       - description: Reading ID
         in: path
@@ -579,104 +716,42 @@ paths:
         required: true
         type: integer
       produces:
-      - application/json
+      - application/problem+json
       responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Reading'
+        "204":
+          description: No Content
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "404":
           description: Not Found
           schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Get a reading
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+      security:
+      - BearerAuth: []
+      summary: Claim an unassigned reading
       tags:
       - readings
-  /users:
-    post:
-      consumes:
-      - application/json
-      description: Requires first_name, last_name, and at least one of email or phone_number.
-        Creates a customer.
-      parameters:
-      - description: User to create
-        in: body
-        name: user
-        required: true
-        schema:
-          $ref: '#/definitions/dtos.CreateUserRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/models.User'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "422":
-          description: Unprocessable Entity
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Create a user
-      tags:
-      - users
-  /users/{id}:
-    get:
-      consumes:
-      - application/json
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.User'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Get a user
-      tags:
-      - users
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

@@ -21,16 +21,9 @@ func NewReadingService(
 	}
 }
 
-func (s *ReadingService) GetReading(
+func (s *ReadingService) GetReadings(
 	ctx context.Context,
-	id int64,
-) (*models.Reading, error) {
-	return s.repo.FindById(ctx, id)
-}
-
-func (s *ReadingService) GetUserReadings(
-	ctx context.Context,
-	id int64,
+	userID int64,
 	opts appmodels.ListOptions,
 ) (*appmodels.Paginated[*models.Reading], error) {
 	opts, err := opts.Normalize()
@@ -39,7 +32,7 @@ func (s *ReadingService) GetUserReadings(
 	}
 	readings, err := s.repo.GetReadingsByUserId(
 		ctx,
-		id,
+		userID,
 		opts,
 	)
 	if err != nil {
@@ -63,19 +56,19 @@ func (s *ReadingService) CreateReading(
 	bookId int64,
 	customerId int64,
 ) (*models.Reading, error) {
-	_, err := s.repo.UserExists(ctx, customerId)
+	userExists, err := s.repo.UserExists(ctx, customerId)
 	if err != nil {
-		return nil, apperr.NewNotFound(
-			"user not found",
-			err,
-		)
+		return nil, err
 	}
-	_, err = s.repo.BookExists(ctx, bookId)
+	if !userExists {
+		return nil, apperr.NewNotFound("user not found", nil)
+	}
+	bookExists, err := s.repo.BookExists(ctx, bookId)
 	if err != nil {
-		return nil, apperr.NewNotFound(
-			"book not found",
-			err,
-		)
+		return nil, err
+	}
+	if !bookExists {
+		return nil, apperr.NewNotFound("book not found", nil)
 	}
 
 	reading := models.NewReading(bookId, customerId)
@@ -84,4 +77,8 @@ func (s *ReadingService) CreateReading(
 	}
 
 	return reading, nil
+}
+
+func (s *ReadingService) ClaimReading(ctx context.Context, readingID, monkID int64) error {
+	return s.repo.Claim(ctx, readingID, monkID)
 }

@@ -12,18 +12,21 @@ type Reading struct {
 	MonkId     *int64              `json:"monk_id"`
 	CustomerId int64               `json:"customer_id"`
 	Status     enums.ReadingStatus `json:"status"`
-	CreatedAt  time.Time           `json:"created_at"`
-	AssignetAt time.Time           `json:"assigned_at"`
+	// CreatedAt is the UTC creation time, when recorded.
+	CreatedAt *time.Time `json:"created_at,omitempty"`
+	// AssignedAt is the UTC time when a monk claimed the reading, when recorded.
+	AssignedAt *time.Time `json:"assigned_at,omitempty"`
 }
 
 func NewReading(
 	bookId int64,
 	customerId int64,
 ) *Reading {
+	now := time.Now().UTC().Truncate(time.Microsecond)
 	return &Reading{
 		BookId:     bookId,
 		CustomerId: customerId,
-		CreatedAt:  time.Now(),
+		CreatedAt:  &now,
 		Status:     enums.Pending,
 	}
 }
@@ -31,7 +34,8 @@ func NewReading(
 func (r *Reading) AssignToMonk(
 	monkId int64,
 ) {
+	now := time.Now().UTC().Truncate(time.Microsecond)
 	r.MonkId = &monkId
-	r.AssignetAt = time.Now()
+	r.AssignedAt = &now
 	r.Status = enums.Scheduled
 }

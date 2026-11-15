@@ -9,6 +9,7 @@ import (
 	"example.com/open-monastery/internal/app/abstractions"
 	"example.com/open-monastery/internal/app/apperr"
 	"example.com/open-monastery/internal/app/appmodels"
+	"example.com/open-monastery/internal/domain/enums"
 	"example.com/open-monastery/internal/domain/models"
 )
 
@@ -24,44 +25,23 @@ func NewReadingRepository(db *sql.DB) *ReadingRepository {
 	}
 }
 
-func (r *ReadingRepository) FindById(
-	ctx context.Context,
-	id int64,
-) (*models.Reading, error) {
-	query := `SELECT id, book_id, monk_id, customer_id FROM reading WHERE id = ?`
-
-	var foundReading models.Reading
-
-	err := r.db.QueryRowContext(ctx, query, id).Scan(
-		&foundReading.Id,
-		&foundReading.BookId,
-		&foundReading.MonkId,
-		&foundReading.CustomerId,
-	)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, apperr.NewNotFound(
-			"reading not found",
-			err,
-		)
-	}
-	if err != nil {
-		return nil, fmt.Errorf("find reading: %w", err)
-	}
-
-	return &foundReading, nil
-}
-
 func (r *ReadingRepository) Add(
 	ctx context.Context,
 	reading *models.Reading,
 ) error {
-	query := `INSERT INTO reading (book_id, monk_id, customer_id) VALUES(?,?,?)`
+	query := `INSERT INTO reading
+		(book_id, monk_id, customer_id, status, created_at, assigned_at)
+		VALUES (?, ?, ?, ?, ?, ?)
+		`
 	result, err := r.db.ExecContext(
 		ctx,
 		query,
 		reading.BookId,
 		reading.MonkId,
 		reading.CustomerId,
+		reading.Status,
+		reading.CreatedAt,
+		reading.AssignedAt,
 	)
 
 	if err != nil {
@@ -77,12 +57,46 @@ func (r *ReadingRepository) Add(
 	return nil
 }
 
+func (r *ReadingRepository) Claim(ctx context.Context, readingID, monkID int64) error {
+	result, err := r.db.ExecContext(ctx,
+		`UPDATE reading
+		SET monk_id = ?, status = ?, assigned_at = UTC_TIMESTAMP(6)
+		WHERE id = ? AND monk_id IS NULL AND status = ?`,
+		monkID, enums.Scheduled, readingID, enums.Pending,
+	)
+	if err != nil {
+		return translateWriteError("ClaimReading", err)
+	}
+	updated, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("get number of claimed readings: %w", err)
+	}
+	if updated != 0 {
+		return nil
+	}
+
+	var assignee sql.NullInt64
+	err = r.db.QueryRowContext(ctx,
+		"SELECT monk_id FROM reading WHERE id = ?", readingID,
+	).Scan(&assignee)
+	if errors.Is(err, sql.ErrNoRows) {
+		return apperr.NewNotFound("reading.not_found", nil)
+	}
+	if err != nil {
+		return fmt.Errorf("get reading assignee: %w", err)
+	}
+	if assignee.Valid {
+		return apperr.NewConflict("reading.already_claimed", nil)
+	}
+	return apperr.NewConflict("reading.not_claimable", nil)
+}
+
 func (r *ReadingRepository) UserExists(
 	ctx context.Context,
 	id int64,
 ) (exists bool, err error) {
 	err = r.db.QueryRowContext(ctx,
-		"SELECT EXISTS(SELECT 1 FROM user WHERE id = ?)",
+		"SELECT EXISTS(SELECT 1 FROM users WHERE id = ?)",
 		id,
 	).Scan(&exists)
 
@@ -104,20 +118,20 @@ func (r *ReadingRepository) BookExists(
 // GetReadingsByUserId implements [abstractions.ReadingRepository].
 func (r *ReadingRepository) GetReadingsByUserId(
 	ctx context.Context,
-	id int64,
+	userID int64,
 	opts appmodels.ListOptions,
 ) ([]*models.Reading, error) {
 	query := `
-	SELECT id, book_id, monk_id, customer_id
-	FROM reading 
-	WHERE user_id = ? AND id > ?
+	SELECT id, book_id, monk_id, customer_id, status, created_at, assigned_at
+	FROM reading
+	WHERE customer_id = ? AND id > ?
 	ORDER BY id LIMIT ?
 	`
-	args := []any{id, opts.AfterId, opts.Limit + 1}
+	args := []any{userID, opts.AfterId, opts.Limit + 1}
 
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("get readings by user_id: %w", err)
+		return nil, fmt.Errorf("get readings by customer ID: %w", err)
 	}
 	defer rows.Close()
 	readings := make([]*models.Reading, 0)
@@ -128,13 +142,16 @@ func (r *ReadingRepository) GetReadingsByUserId(
 			&found.BookId,
 			&found.MonkId,
 			&found.CustomerId,
+			&found.Status,
+			&found.CreatedAt,
+			&found.AssignedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan reading: %w", err)
 		}
 		readings = append(readings, &found)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate readings by user id: %w", err)
+		return nil, fmt.Errorf("iterate readings by customer ID: %w", err)
 	}
 
 	return readings, nil

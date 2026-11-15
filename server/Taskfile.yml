@@ -1,0 +1,57 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: '3'
+
+vars:
+  GREETING: Hello, world!
+
+tasks:
+  default:
+    desc: Print a greeting message
+    cmds:
+      - echo "{{.GREETING}}"
+    silent: true
+  swag-gen:
+    desc: generate swagger
+    cmd: >-
+      swag init
+      -d cmd/api,internal/app/appmodels,internal/domain/models,internal/mapi/handlers,internal/mapi/dtos,internal/mapi/apimodels,internal/domain/enums
+      --parseInternal
+  swag-fmt:
+    desc: format swagger
+    cmd: >-
+      swag fmt
+      -d cmd/api,internal/mapi/handlers
+  mig-up:
+    desc: run migrations up
+    cmd: >-
+      migrate
+      -path migrations
+      -database "mysql://root:Password123!@tcp(localhost:3306)/om"
+      up
+  mig-down:
+    desc: run migrations down
+    cmd: >-
+      migrate
+      -path migrations
+      -database "mysql://root:Password123!@tcp(localhost:3306)/om"
+      down {{.CLI_ARGS}}
+  mig-force:
+    desc: run migrations force
+    cmd: >-
+      migrate
+      -path migrations
+      -database "mysql://root:Password123!@tcp(localhost:3306)/om"
+      force {{.CLI_ARGS}}
+  mig-create:
+    desc: create migrations
+    cmd: >-
+      migrate
+      create -ext sql -dir migrations {{.CLI_ARGS}}
+  mig-v:
+    desc: create migrations
+    cmd: >-
+      migrate
+      -path migrations
+      -database "mysql://root:Password123!@tcp(localhost:3306)/om"
+      version

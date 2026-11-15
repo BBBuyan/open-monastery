@@ -8,13 +8,13 @@ import (
 )
 
 type ReadingRepository interface {
-	FindById(ctx context.Context, id int64) (*models.Reading, error)
 	Add(ctx context.Context, monastery *models.Reading) error
+	Claim(ctx context.Context, readingID, monkID int64) error
 	UserExists(ctx context.Context, id int64) (bool, error)
 	BookExists(ctx context.Context, id int64) (bool, error)
 	GetReadingsByUserId(
 		ctx context.Context,
-		id int64,
+		userID int64,
 		opts appmodels.ListOptions,
 	) ([]*models.Reading, error)
 }

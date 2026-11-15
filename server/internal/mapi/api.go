@@ -2,17 +2,22 @@ package mapi
 
 import (
 	"database/sql"
+
 	_ "example.com/open-monastery/docs"
 
+	"example.com/open-monastery/internal/app/abstractions"
 	"example.com/open-monastery/internal/app/services"
+	"example.com/open-monastery/internal/domain/models"
 	database "example.com/open-monastery/internal/infra/db"
+	"example.com/open-monastery/internal/infra/password"
 	"example.com/open-monastery/internal/mapi/handlers"
+	"example.com/open-monastery/internal/mapi/middlewares"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-func registerBook(
+func addBook(
 	db *sql.DB,
 	api *gin.RouterGroup,
 ) {
@@ -22,13 +27,13 @@ func registerBook(
 
 	books := api.Group("/books")
 	{
-		books.GET("/:id", bookHandler.GetBook)
-		books.GET("", bookHandler.GetBooks)
-		books.POST("", bookHandler.AddBook)
-		books.GET("/:id/categories", bookHandler.GetBookCategories)
+		books.GET("/:id", withProblemDetails(bookHandler.GetBook))
+		books.GET("", withProblemDetails(bookHandler.GetBooks))
+		books.POST("", withProblemDetails(bookHandler.AddBook))
+		books.GET("/:id/categories", withProblemDetails(bookHandler.GetBookCategories))
 	}
 }
-func registerCategory(
+func addCategory(
 	db *sql.DB,
 	api *gin.RouterGroup,
 ) {
@@ -38,14 +43,14 @@ func registerCategory(
 
 	categories := api.Group("/categories")
 	{
-		categories.GET("", categoryHandler.GetCategories)
-		categories.POST("", categoryHandler.AddCategory)
-		categories.POST("/:id/books", categoryHandler.AddBook)
-		categories.GET("/:id/books", categoryHandler.GetBooksByCategoryId)
+		categories.GET("", withProblemDetails(categoryHandler.GetCategories))
+		categories.POST("", withProblemDetails(categoryHandler.AddCategory))
+		categories.POST("/:id/books", withProblemDetails(categoryHandler.AddBook))
+		categories.GET("/:id/books", withProblemDetails(categoryHandler.GetBooksByCategoryId))
 	}
 }
 
-func registerMonastery(
+func addMonastery(
 	db *sql.DB,
 	api *gin.RouterGroup,
 ) {
@@ -55,42 +60,27 @@ func registerMonastery(
 
 	monasteries := api.Group("/monasteries")
 	{
-		monasteries.GET("/:id", monasteryHandler.GetMonastery)
-		monasteries.POST("", monasteryHandler.AddMonastery)
+		monasteries.GET("/:id", withProblemDetails(monasteryHandler.GetMonastery))
+		monasteries.POST("", withProblemDetails(monasteryHandler.AddMonastery))
 	}
 }
 
-func registerUser(
-	db *sql.DB,
-	api *gin.RouterGroup,
-) {
-	userRepository := database.NewUserRepository(db)
-	userService := services.NewUserService(userRepository)
-	userHandler := handlers.NewUserHandler(userService)
-	api.POST("/monks", userHandler.RegisterMonk)
-
-	users := api.Group("/users")
-	{
-		users.GET("/:id", userHandler.GetUser)
-		users.POST("", userHandler.RegisterUser)
-	}
-}
-
-func registerReadings(
-	db *sql.DB,
-	api *gin.RouterGroup,
-) {
+func addReadings(db *sql.DB, authApi *gin.RouterGroup) {
 	readingRepository := database.NewReadingRepository(db)
 	readingService := services.NewReadingService(readingRepository)
 	readingHandler := handlers.NewReadingHandler(readingService)
-	readings := api.Group("/readings")
+	readings := authApi.Group("/readings")
 	{
-		readings.GET("/:id", readingHandler.GetReading)
-		readings.POST("", readingHandler.AddReading)
+		readings.GET("", withProblemDetails(readingHandler.GetReadings))
+		readings.POST("", withProblemDetails(readingHandler.AddReading))
+		readings.POST("/:id/claim",
+			withProblemDetails(middlewares.RequireRole(models.Monk)),
+			withProblemDetails(readingHandler.ClaimReading),
+		)
 	}
 }
 
-func registerSwagger(
+func addSwagger(
 	r *gin.Engine,
 ) {
 	r.GET(
@@ -98,21 +88,37 @@ func registerSwagger(
 		ginSwagger.WrapHandler(swaggerFiles.Handler),
 	)
 }
+func addAuth(
+	db *sql.DB,
+	api *gin.RouterGroup,
+	tokenIssuer abstractions.TokeIssuer,
+) {
+	authRepo := database.NewAuthRepository(db)
+	passHasher := password.NewArgonPasswordHasher()
+	authService := services.NewAuthService(authRepo, passHasher, tokenIssuer)
+	authHandler := handlers.NewAuthHandler(authService)
+	api.POST("/auth/login", withProblemDetails(authHandler.Login))
+	api.POST("/auth/register/monks", withProblemDetails(authHandler.RegisterMonk))
+	api.POST("/auth/register/users", withProblemDetails(authHandler.RegisterUser))
+}
 
 func RegisterAPI(
 	db *sql.DB,
+	tokenIssuer abstractions.TokeIssuer,
 ) *gin.Engine {
 	r := gin.Default()
-	r.Use(handlers.ErrorHandler())
+	authFunc := middlewares.RequireAuth(tokenIssuer.ValidateToken)
+
 	api := r.Group("/api/v1")
+	authApi := api.Group("", authFunc)
 
-	registerBook(db, api)
-	registerCategory(db, api)
-	registerUser(db, api)
-	registerReadings(db, api)
-	registerMonastery(db, api)
+	addAuth(db, api, tokenIssuer)
+	addBook(db, api)
+	addCategory(db, api)
+	addReadings(db, authApi)
+	addMonastery(db, api)
 
-	registerSwagger(r)
+	addSwagger(r)
 
 	return r
 }

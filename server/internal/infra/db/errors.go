@@ -13,12 +13,12 @@ func translateWriteError(operation string, err error) error {
 		switch mysqlErr.Number {
 		case 1062:
 			return apperr.NewConflict(
-				"resource already exists",
+				"already exists",
 				err,
 			)
 		case 1452:
 			return apperr.NewNotFound(
-				"resourse not found",
+				"not found",
 				err,
 			)
 		}
