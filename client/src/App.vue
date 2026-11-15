@@ -125,25 +125,23 @@ onUnmounted(() => window.removeEventListener('hashchange', sync))
           <a
             class="basket-link"
             href="#basket"
+            :aria-label="`Basket, ${basketCount} ${basketCount === 1 ? 'book' : 'books'}, ${formatPrice(basketTotal)}`"
             :aria-current="active === 'basket' ? 'page' : undefined"
           >
-            <span class="basket-link-heading">
-              <svg
-                viewBox="0 0 24 24"
-                width="20"
-                height="20"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.5"
-                aria-hidden="true"
-              >
-                <path d="M3 9h18l-2 11H5L3 9Zm4 0 5-6 5 6M9 12v5m6-5v5" />
-              </svg>
-              Basket <span class="basket-count">{{ basketCount }}</span>
-            </span>
-            <span class="basket-link-total">{{
-              formatPrice(basketTotal)
-            }}</span>
+            <span class="basket-link-total">{{ formatPrice(basketTotal) }}</span>
+            <svg
+              viewBox="0 0 24 24"
+              width="20"
+              height="20"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              aria-hidden="true"
+            >
+              <path d="M3 9h18l-2 11H5L3 9Zm4 0 5-6 5 6M9 12v5m6-5v5" />
+            </svg>
+            <span class="basket-link-label">Basket</span>
+            <span class="basket-count">{{ basketCount }}</span>
           </a>
           <ProfileMenu
             :theme="theme"
