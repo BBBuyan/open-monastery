@@ -1,23 +1,41 @@
 <script setup lang="ts">
-import { nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import Readings from './components/Readings.vue'
 import Basket from './components/Basket.vue'
 import UserProfile from './components/UserProfile.vue'
 import PrayerRequests from './components/PrayerRequests.vue'
 import ProfileMenu from './components/ProfileMenu.vue'
 import LoginPage from './components/LoginPage.vue'
-import { createDemoAuth, type LoginMethod } from './demo-auth'
+import { readSession, saveSession, type Session } from './session'
 import { basket } from './basket'
 import { formatPrice } from './money'
 import { useTheme } from './theme'
 const { theme, toggle: toggleTheme } = useTheme()
-const { loggedIn, enter, signOut } = createDemoAuth()
-function enterDemo(method: LoginMethod) {
-  if (enter(method)) location.hash = '#profile'
-}
-function endDemo() {
-  signOut()
+const session = ref(readSession())
+const registeredEmail = ref('')
+function finishRegistration(email: string) {
+  registeredEmail.value = email
   location.hash = '#login'
+}
+function signIn(value: Session) {
+  session.value = value
+  saveSession(value)
+  registeredEmail.value = ''
+  location.hash = '#profile'
+}
+function clearSession() {
+  session.value = null
+  saveSession(null)
+}
+function signOut() {
+  clearSession()
+  location.hash = '#login'
+}
+function expireSession() {
+  clearSession()
+  if (active.value === 'profile' || active.value === 'requests') {
+    location.hash = '#login'
+  }
 }
 
 const { count: basketCount, total: basketTotal, announcement } = basket
@@ -35,12 +53,23 @@ function pageFromHash() {
 }
 const active = ref(pageFromHash())
 const requestId = ref<number>()
+watch(
+  session,
+  (value, _, onCleanup) => {
+    if (!value) return
+    const duration = Math.max(0, value.expiresAt - Date.now())
+    const timer = window.setTimeout(expireSession, duration)
+    onCleanup(() => window.clearTimeout(timer))
+  },
+  { immediate: true },
+)
+
 async function sync() {
   if (location.hash === '#main-content') return
   const previous = active.value
   active.value = pageFromHash()
   if (
-    !loggedIn.value &&
+    !session.value &&
     (active.value === 'profile' || active.value === 'requests')
   ) {
     active.value = 'login'
@@ -52,7 +81,7 @@ async function sync() {
   document.title =
     active.value === 'home'
       ? 'Open Monastery'
-      : `${active.value === 'login' ? 'Log in' : active.value === 'signup' ? 'Sign up' : active.value === 'requests' ? (requestId.value ? `Prayer request #${requestId.value}` : 'Readings') : active.value === 'profile' ? 'Profile Settings' : active.value === 'basket' ? 'Basket' : 'Checkout'} · Open Monastery`
+      : `${active.value === 'login' ? 'Log in' : active.value === 'signup' ? 'Sign up' : active.value === 'requests' ? (requestId.value ? `Prayer request #${requestId.value}` : 'Readings') : active.value === 'profile' ? 'Profile' : active.value === 'basket' ? 'Basket' : 'Checkout'} · Open Monastery`
   await nextTick()
   if (location.hash === '#readings') {
     const catalog = document.getElementById('readings')
@@ -119,9 +148,9 @@ onUnmounted(() => window.removeEventListener('hashchange', sync))
           <ProfileMenu
             :theme="theme"
             :active="active"
-            :logged-in="loggedIn"
+            :logged-in="session !== null"
             @toggle-theme="toggleTheme"
-            @sign-out="endDemo"
+            @sign-out="signOut"
           />
         </div>
       </div>
@@ -165,18 +194,28 @@ onUnmounted(() => window.removeEventListener('hashchange', sync))
         class="catalog-view"
       >
         <LoginPage
+          :key="active"
           :signup="active === 'signup'"
-          @enter-demo="enterDemo"
+          :registered-email="active === 'login' ? registeredEmail : ''"
+          @registered="finishRegistration"
+          @signed-in="signIn"
         />
       </div>
-      <div v-else-if="active === 'profile' && loggedIn" class="catalog-view">
-        <UserProfile />
+      <div v-else-if="active === 'profile' && session" class="catalog-view">
+        <UserProfile :email="session.email" />
       </div>
-      <div v-else-if="active === 'requests' && loggedIn" class="catalog-view">
+      <div v-else-if="active === 'requests' && session" class="catalog-view">
         <a class="return-link" href="#readings">← Back to books</a>
-        <PrayerRequests :request-id="requestId" />
+        <PrayerRequests
+          :request-id="requestId"
+          :session="session"
+          @session-expired="expireSession"
+        />
       </div>
-      <div v-else class="catalog-view">
+      <div
+        v-else-if="active === 'basket' || active === 'checkout'"
+        class="catalog-view"
+      >
         <a class="return-link" href="#readings"
           ><span aria-hidden="true">←</span> Back to books</a
         >

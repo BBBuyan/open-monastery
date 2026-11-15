@@ -1,141 +1,133 @@
 <script setup lang="ts">
-import { nextTick, ref, watch } from 'vue'
-import type { LoginMethod } from '../demo-auth'
+import { onUnmounted, ref } from 'vue'
+import { ApiError, logIn, registerUser } from '../api'
+import { sessionFromToken, type Session } from '../session'
 
-const props = defineProps<{ signup: boolean }>()
-const emit = defineEmits<{ enterDemo: [method: LoginMethod] }>()
-const selected = ref<LoginMethod | null>(null)
-const preview = ref<HTMLElement>()
-const choices = ref<HTMLElement>()
-const labels = {
-  email: 'Email',
-  phone: 'Phone number',
-  google: 'Google',
-  facebook: 'Facebook',
+const props = defineProps<{ signup: boolean; registeredEmail: string }>()
+const emit = defineEmits<{
+  registered: [email: string]
+  signedIn: [session: Session]
+}>()
+const firstName = ref('')
+const lastName = ref('')
+const email = ref(props.registeredEmail)
+const password = ref('')
+const pending = ref(false)
+const error = ref('')
+let controller: AbortController | undefined
+
+async function submit() {
+  if (pending.value) return
+  pending.value = true
+  error.value = ''
+  controller = new AbortController()
+  const { signal } = controller
+  try {
+    if (props.signup) {
+      await registerUser(
+        {
+          first_name: firstName.value.trim(),
+          last_name: lastName.value.trim(),
+          email: email.value.trim(),
+          password: password.value,
+        },
+        signal,
+      )
+      if (!signal.aborted) emit('registered', email.value.trim())
+    } else {
+      const token = await logIn(email.value.trim(), password.value, signal)
+      if (!signal.aborted)
+        emit('signedIn', sessionFromToken(token, email.value.trim()))
+    }
+  } catch (failure) {
+    if (signal.aborted) return
+    const status = failure instanceof ApiError ? failure.status : undefined
+    if (status === 401 && !props.signup) {
+      error.value = 'The email or password is incorrect.'
+    } else if (status === 409 && props.signup) {
+      error.value = 'An account already uses this email address.'
+    } else if ((status === 400 || status === 422) && props.signup) {
+      error.value =
+        'Check your name, email address, and password, then try again.'
+    } else {
+      error.value = props.signup
+        ? 'Your account couldn’t be created. Please try again.'
+        : 'You couldn’t be signed in. Please try again.'
+    }
+  } finally {
+    pending.value = false
+  }
 }
-watch(
-  () => props.signup,
-  () => {
-    selected.value = null
-  },
-)
-async function choose(method: LoginMethod) {
-  selected.value = method
-  await nextTick()
-  preview.value?.focus()
-}
-async function back() {
-  const method = selected.value
-  selected.value = null
-  await nextTick()
-  choices.value
-    ?.querySelector<HTMLButtonElement>(`[data-method="${method}"]`)
-    ?.focus()
-}
+
+onUnmounted(() => controller?.abort())
 </script>
 
 <template>
   <section class="login-page" aria-labelledby="login-title">
     <a class="return-link" href="#readings">← Back to books</a>
-    <h1 id="login-title">
-      {{ signup ? 'Create an account' : 'Welcome back' }}
-    </h1>
-    <p class="login-intro">
-      {{
-        signup
-          ? 'Choose how you’d like to sign up.'
-          : 'Choose how you’d like to log in.'
-      }}
+    <h1 id="login-title">{{ signup ? 'Create an account' : 'Log in' }}</h1>
+    <p v-if="!signup && registeredEmail" class="login-notice" role="status">
+      Your account has been created. Log in with your email and password.
     </p>
-    <p class="login-demo" id="login-demo-notice">
-      <strong>Demo only.</strong> No account will be created, no verification
-      message will be sent, and no provider connection will be made.
-    </p>
-    <div
-      v-if="!selected"
-      ref="choices"
-      class="login-options"
-      aria-describedby="login-demo-notice"
-    >
-      <button
-        class="button secondary"
-        type="button"
-        data-method="email"
-        @click="choose('email')"
-      >
-        <span aria-hidden="true">✉</span> Continue with email
-      </button>
-      <button
-        class="button secondary"
-        type="button"
-        data-method="phone"
-        @click="choose('phone')"
-      >
-        <svg
-          viewBox="0 0 24 24"
-          width="20"
-          height="20"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.5"
-          aria-hidden="true"
-        >
-          <rect x="6" y="2" width="12" height="20" rx="2" />
-          <path d="M10 18h4" />
-        </svg>
-        Continue with phone number
-      </button>
-      <div class="login-divider"><span>or use a provider</span></div>
-      <button
-        class="provider-google"
-        type="button"
-        data-method="google"
-        aria-label="Sign in with Google"
-        @click="choose('google')"
-      >
-        <img src="/google_g_logo.svg" alt="" width="28" height="28" />
-        Continue with Google
-      </button>
-      <button
-        class="provider-facebook"
-        type="button"
-        data-method="facebook"
-        @click="choose('facebook')"
-      >
-        <img
-          src="/facebook_icon.svg"
-          alt=""
-          width="24"
-          height="24"
-        />
-        Continue with Facebook
-      </button>
-    </div>
-    <section
-      v-else
-      ref="preview"
-      class="login-preview"
-      tabindex="-1"
-      aria-labelledby="demo-method-title"
-    >
-      <h2 id="demo-method-title">
-        {{ labels[selected] }} {{ signup ? 'sign-up' : 'login' }} preview
-      </h2>
-      <p>
-        Authentication will be available later. You can explore Profile Settings
-        and sample prayer requests using a temporary demo session.
-      </p>
-      <button
-        class="button primary"
-        type="button"
-        @click="emit('enterDemo', selected)"
-      >
-        Enter demo session
-      </button>
-      <button class="button secondary" type="button" @click="back">
-        Choose another option
-      </button>
-    </section>
+    <form class="login-form" :aria-busy="pending" @submit.prevent="submit">
+      <fieldset :disabled="pending">
+        <div v-if="signup" class="login-name-fields">
+          <label>
+            First name
+            <input
+              v-model.trim="firstName"
+              name="first_name"
+              autocomplete="given-name"
+              maxlength="255"
+              required
+            />
+          </label>
+          <label>
+            Last name
+            <input
+              v-model.trim="lastName"
+              name="last_name"
+              autocomplete="family-name"
+              maxlength="255"
+              required
+            />
+          </label>
+        </div>
+        <label>
+          Email
+          <input
+            v-model.trim="email"
+            name="email"
+            type="email"
+            autocomplete="username"
+            maxlength="254"
+            required
+          />
+        </label>
+        <label>
+          Password
+          <input
+            v-model="password"
+            name="password"
+            type="password"
+            :autocomplete="signup ? 'new-password' : 'current-password'"
+            required
+          />
+        </label>
+        <p v-if="error" class="login-notice" role="alert">{{ error }}</p>
+        <button class="button primary" type="submit">
+          {{
+            signup
+              ? pending
+                ? 'Creating account…'
+                : 'Create account'
+              : pending
+                ? 'Logging in…'
+                : 'Log in'
+          }}
+        </button>
+      </fieldset>
+    </form>
     <p class="login-mode">
       {{ signup ? 'Already have an account?' : 'New to Open Monastery?' }}
       <a :href="signup ? '#login' : '#signup'">{{

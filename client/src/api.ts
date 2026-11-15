@@ -8,6 +8,40 @@ export type User = {
   monastery_id?: number | null
 }
 
+export type UserRegistration = {
+  first_name: string
+  last_name: string
+  email: string
+  password: string
+}
+
+export function registerUser(user: UserRegistration, signal?: AbortSignal) {
+  return request<User>('/auth/register/users', {
+    method: 'POST',
+    body: JSON.stringify(user),
+    signal,
+  })
+}
+
+export async function logIn(
+  email: string,
+  password: string,
+  signal?: AbortSignal,
+) {
+  const response = await request<{ access_token: string; token_type: string }>(
+    '/auth/login',
+    { method: 'POST', body: JSON.stringify({ email, password }), signal },
+  )
+  if (
+    typeof response?.access_token !== 'string' ||
+    !response.access_token ||
+    response.token_type !== 'Bearer'
+  ) {
+    throw new Error('The server returned an invalid login response.')
+  }
+  return response.access_token
+}
+
 // A catalog prayer or ritual; Book is the existing API name.
 export type Book = {
   id: number
@@ -34,17 +68,18 @@ export type Reading = {
   assigned_at?: string
 }
 
-// Proposed list route: confirm with the server contract before enabling live history.
 export async function getUserReadings(
   userId: number,
+  accessToken: string,
   options: { cursor?: string; signal?: AbortSignal } = {},
 ): Promise<Paginated<Reading>> {
   if (!Number.isSafeInteger(userId) || userId <= 0)
     throw new Error('Invalid user ID.')
-  const params = new URLSearchParams({ user_id: String(userId), limit: '20' })
+  const params = new URLSearchParams({ limit: '20' })
   if (options.cursor) params.set('cursor', options.cursor)
   const page = await request<Paginated<Reading>>(`/readings?${params}`, {
     signal: options.signal,
+    headers: { Authorization: `Bearer ${accessToken}` },
   })
   if (
     !Array.isArray(page?.data) ||
@@ -88,6 +123,15 @@ const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL || '/api/v1').replace(
   '',
 )
 
+export class ApiError extends Error {
+  readonly status: number
+
+  constructor(status: number, message: string) {
+    super(message)
+    this.status = status
+  }
+}
+
 function pickCollection(payload: unknown, key: string): unknown[] {
   if (Array.isArray(payload)) return payload
   const wrapped = payload as Record<string, unknown> | null
@@ -118,7 +162,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     } catch {
       // Keep the status-based fallback for non-JSON errors.
     }
-    throw new Error(message)
+    throw new ApiError(response.status, message)
   }
 
   return response.json() as Promise<T>

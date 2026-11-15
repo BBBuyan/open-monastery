@@ -1,27 +1,18 @@
 <script setup lang="ts">
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
-import { getUserReadings } from '../api'
+import { ApiError, getUserReadings } from '../api'
 import {
-  demoRequests,
   requestDate,
   requestStatus,
   type PrayerRequest,
 } from '../prayer-requests'
+import type { Session } from '../session'
 
 const props = defineProps<{
   requestId?: number
-  userId?: number
-  embedded?: boolean
-  demoAccount?: string
+  session: Session
 }>()
-const account = ref('history')
-watch(
-  () => props.demoAccount,
-  (value) => {
-    account.value = value ?? 'history'
-  },
-  { immediate: true },
-)
+const emit = defineEmits<{ sessionExpired: [] }>()
 const records = ref<PrayerRequest[]>([])
 const loading = ref(false)
 const error = ref(false)
@@ -42,70 +33,63 @@ async function load(append = false) {
   loading.value = true
   error.value = false
   try {
-    let next: PrayerRequest[]
-    let nextCursor: string | undefined
-    let more = false
-    if (props.userId !== undefined) {
-      const page = await getUserReadings(props.userId, {
-        cursor: append ? cursor : undefined,
-        signal,
-      })
-      // A missing catalog entry must never hide an existing prayer request.
-      const names = await Promise.all(
-        [...new Set(page.data.map((item) => item.book_id))].map(async (id) => {
-          try {
-            const base = (
-              import.meta.env.VITE_API_BASE_URL || '/api/v1'
-            ).replace(/\/$/, '')
-            const response = await fetch(`${base}/books/${id}`, {
-              signal,
-              headers: { Accept: 'application/json' },
-            })
-            if (!response.ok) return [id, `Book #${id}`] as const
-            const book = await response.json()
-            return [
-              id,
-              typeof book.name === 'string' && book.name
-                ? book.name
-                : `Book #${id}`,
-            ] as const
-          } catch {
-            return [id, `Book #${id}`] as const
-          }
-        }),
-      )
-      const lookup = new Map(names)
-      next = page.data.map((item) => ({
-        ...item,
-        book_name: lookup.get(item.book_id)!,
-      }))
-      more = page.pagination.hasMore
-      nextCursor = page.pagination.nextCursor ?? undefined
-    } else {
-      if (account.value === 'unavailable')
-        throw new Error('Demo unavailable state')
-      next =
-        account.value === 'empty'
-          ? []
-          : demoRequests.map((item) => ({ ...item }))
-    }
+    const { userId, accessToken } = props.session
+    const page = await getUserReadings(userId, accessToken, {
+      cursor: append ? cursor : undefined,
+      signal,
+    })
+    // A missing catalog entry must never hide an existing prayer request.
+    const names = await Promise.all(
+      [...new Set(page.data.map((item) => item.book_id))].map(async (id) => {
+        try {
+          const base = (import.meta.env.VITE_API_BASE_URL || '/api/v1').replace(
+            /\/$/,
+            '',
+          )
+          const response = await fetch(`${base}/books/${id}`, {
+            signal,
+            headers: { Accept: 'application/json' },
+          })
+          if (!response.ok) return [id, `Book #${id}`] as const
+          const book = await response.json()
+          return [
+            id,
+            typeof book.name === 'string' && book.name
+              ? book.name
+              : `Book #${id}`,
+          ] as const
+        } catch {
+          return [id, `Book #${id}`] as const
+        }
+      }),
+    )
+    const lookup = new Map(names)
+    const next = page.data.map((item) => ({
+      ...item,
+      book_name: lookup.get(item.book_id)!,
+    }))
     if (current !== generation || signal.aborted) return
     const existing = new Set(append ? records.value.map((item) => item.id) : [])
     records.value = [
       ...(append ? records.value : []),
       ...next.filter((item) => !existing.has(item.id)),
     ]
-    cursor = nextCursor
-    hasMore.value = more
+    cursor = page.pagination.nextCursor ?? undefined
+    hasMore.value = page.pagination.hasMore
     loaded.value = true
-  } catch {
-    if (current === generation && !signal.aborted) error.value = true
+  } catch (failure) {
+    if (current !== generation || signal.aborted) return
+    if (failure instanceof ApiError && failure.status === 401) {
+      emit('sessionExpired')
+    } else {
+      error.value = true
+    }
   } finally {
     if (current === generation) loading.value = false
   }
 }
 watch(
-  [account, () => props.userId],
+  () => props.session,
   () => {
     generation++
     controller?.abort()
@@ -134,28 +118,14 @@ onUnmounted(() => {
 
 <template>
   <section aria-labelledby="requests-title" class="requests-page">
-    <div v-if="userId === undefined && !embedded" class="request-demo">
-      <p>
-        <strong>Demo preview</strong> · Fictional requests. No account is signed
-        in.
-      </p>
-      <label for="demo-account">Demo account</label>
-      <select id="demo-account" v-model="account">
-        <option value="history">Sample account · Request history</option>
-        <option value="empty">Sample account · No requests</option>
-        <option value="unavailable">
-          Sample account · Service unavailable
-        </option>
-      </select>
-    </div>
     <a v-if="requestId" class="return-link" href="#requests"
       >← All prayer requests</a
     >
     <div class="requests-heading">
       <div>
-        <component :is="embedded ? 'h2' : 'h1'" id="requests-title">
+        <h1 id="requests-title">
           {{ requestId ? `Prayer request #${requestId}` : 'My Readings' }}
-        </component>
+        </h1>
         <p v-if="!requestId">Check the status of prayers you’ve requested.</p>
       </div>
       <button

@@ -12,7 +12,7 @@ test('request status does not imply a scheduled date or silently invent pending'
   assert.equal(requestDate(), null)
 })
 
-test('user request pages scope requests, preserve cursors, and reject other users', async (t) => {
+test('user request pages use bearer auth, preserve cursors, and reject other users', async (t) => {
   let reading = {
     id: 5,
     book_id: 158,
@@ -21,18 +21,21 @@ test('user request pages scope requests, preserve cursors, and reject other user
     status: '',
   }
   let url
-  t.mock.method(globalThis, 'fetch', async (value) => {
+  let authorization
+  t.mock.method(globalThis, 'fetch', async (value, options) => {
     url = new URL(value, 'http://localhost')
+    authorization = options.headers.Authorization
     return Response.json({
       data: [reading],
       pagination: { hasMore: false, nextCursor: null },
     })
   })
-  const result = await getUserReadings(7, { cursor: 'opaque/+=' })
-  assert.equal(url.searchParams.get('user_id'), '7')
+  const result = await getUserReadings(7, 'token', { cursor: 'opaque/+=' })
+  assert.equal(authorization, 'Bearer token')
+  assert.equal(url.searchParams.has('user_id'), false)
   assert.equal(url.searchParams.get('cursor'), 'opaque/+=')
   assert.equal(result.data[0].status, 'unknown')
   reading = { ...reading, customer_id: 8 }
-  await assert.rejects(getUserReadings(7), /invalid prayer request/)
-  await assert.rejects(getUserReadings(0), /Invalid user ID/)
+  await assert.rejects(getUserReadings(7, 'token'), /invalid prayer request/)
+  await assert.rejects(getUserReadings(0, 'token'), /Invalid user ID/)
 })

@@ -61,7 +61,7 @@ onUnmounted(() => document.removeEventListener('pointerdown', outside))
           href="#profile"
           :aria-current="active === 'profile' ? 'page' : undefined"
           @click="close"
-          >Profile Settings</a
+          >Profile</a
         >
         <a
           v-else
@@ -85,7 +85,7 @@ onUnmounted(() => document.removeEventListener('pointerdown', outside))
         type="button"
         @click="endSession"
       >
-        End demo session
+        Sign out
       </button>
       <button
         type="button"
