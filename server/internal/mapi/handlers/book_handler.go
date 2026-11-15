@@ -24,15 +24,15 @@ func NewBookHandler(service *services.BookService) *BookHandler {
 	}
 }
 
-// @Summary Get Book
-// @Param id path int true "Book ID"
-// @Tags books
-// @Accept json
-// @Produce json,application/problem+json
-// @Success 200 {object} models.Book
-// @Failure 400 {object} apimodels.ProblemDetails
-// @Failure 404 {object} apimodels.ProblemDetails
-// @Router /books/{id} [get]
+// @Summary	Get Book
+// @Param		id	path	int	true	"Book ID"
+// @Tags		books
+// @Accept		json
+// @Produce	json,application/problem+json
+// @Success	200	{object}	models.Book
+// @Failure	400	{object}	apimodels.ProblemDetails
+// @Failure	404	{object}	apimodels.ProblemDetails
+// @Router		/books/{id} [get]
 func (h *BookHandler) GetBook(
 	c *gin.Context,
 ) error {
@@ -53,16 +53,16 @@ func (h *BookHandler) GetBook(
 	return nil
 }
 
-// @Summary Get a page of books
-// @Tags books
-// @Produce json,application/problem+json
-// @Param limit query int false "Page size (default 20, capped at 100)"
-// @Param cursor query string false "Last book ID from the previous page"
-// @Param q query string false "Search name or description"
-// @Success 200 {object} appmodels.Paginated[models.Book]
-// @Failure 400 {object} apimodels.ProblemDetails
-// @Failure 500 {object} apimodels.ProblemDetails
-// @Router /books [get]
+// @Summary	Get a page of books
+// @Tags		books
+// @Produce	json,application/problem+json
+// @Param		limit	query		int		false	"Page size (default 20, capped at 100)"
+// @Param		cursor	query		string	false	"Last book ID from the previous page"
+// @Param		q		query		string	false	"Search name or description"
+// @Success	200		{object}	appmodels.Paginated[models.Book]
+// @Failure	400		{object}	apimodels.ProblemDetails
+// @Failure	500		{object}	apimodels.ProblemDetails
+// @Router		/books [get]
 func (h *BookHandler) GetBooks(
 	c *gin.Context,
 ) error {
@@ -79,15 +79,15 @@ func (h *BookHandler) GetBooks(
 	return nil
 }
 
-// @Summary Create a book
-// @Tags books
-// @Accept json
-// @Produce json,application/problem+json
-// @Param book body dtos.CreateBookRequest true "Book to create"
-// @Success 201 {object} models.Book
-// @Failure 400 {object} apimodels.ProblemDetails
-// @Failure 500 {object} apimodels.ProblemDetails
-// @Router /books [post]
+// @Summary	Create a book
+// @Tags		books
+// @Accept		json
+// @Produce	json,application/problem+json
+// @Param		book	body		dtos.CreateBookRequest	true	"Book to create"
+// @Success	201		{object}	models.Book
+// @Failure	400		{object}	apimodels.ProblemDetails
+// @Failure	500		{object}	apimodels.ProblemDetails
+// @Router		/books [post]
 func (h *BookHandler) AddBook(
 	c *gin.Context,
 ) error {
@@ -112,14 +112,14 @@ func (h *BookHandler) AddBook(
 	return nil
 }
 
-// @Summary Get categories belonging to a book
-// @Tags books
-// @Produce json,application/problem+json
-// @Param id path int true "Book ID"
-// @Success 200 {array} models.Category
-// @Failure 400 {object} apimodels.ProblemDetails
-// @Failure 500 {object} apimodels.ProblemDetails
-// @Router /books/{id}/categories [get]
+// @Summary	Get categories belonging to a book
+// @Tags		books
+// @Produce	json,application/problem+json
+// @Param		id	path		int	true	"Book ID"
+// @Success	200	{array}		models.Category
+// @Failure	400	{object}	apimodels.ProblemDetails
+// @Failure	500	{object}	apimodels.ProblemDetails
+// @Router		/books/{id}/categories [get]
 func (h *BookHandler) GetBookCategories(
 	c *gin.Context,
 ) error {

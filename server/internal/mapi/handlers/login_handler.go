@@ -19,16 +19,16 @@ func NewLoginHandler(service *services.LoginService) *LoginHandler {
 	return &LoginHandler{service: service}
 }
 
-// @Summary Log in with an email address and password
-// @Tags auth
-// @Accept json
-// @Produce json,application/problem+json
-// @Param credentials body dtos.LoginRequest true "Login credentials"
-// @Success 200 {object} apimodels.LoginResponse
-// @Failure 400 {object} apimodels.ProblemDetails
-// @Failure 401 {object} apimodels.ProblemDetails
-// @Failure 500 {object} apimodels.ProblemDetails
-// @Router /auth/login [post]
+// @Summary	Log in with an email address and password
+// @Tags		auth
+// @Accept		json
+// @Produce	json,application/problem+json
+// @Param		credentials	body		dtos.LoginRequest	true	"Login credentials"
+// @Success	200			{object}	apimodels.LoginResponse
+// @Failure	400			{object}	apimodels.ProblemDetails
+// @Failure	401			{object}	apimodels.ProblemDetails
+// @Failure	500			{object}	apimodels.ProblemDetails
+// @Router		/auth/login [post]
 func (h *LoginHandler) Login(c *gin.Context) error {
 	var req dtos.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

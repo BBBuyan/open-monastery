@@ -78,3 +78,7 @@ func (s *ReadingService) CreateReading(
 
 	return reading, nil
 }
+
+func (s *ReadingService) ClaimReading(ctx context.Context, readingID, monkID int64) error {
+	return s.repo.Claim(ctx, readingID, monkID)
+}

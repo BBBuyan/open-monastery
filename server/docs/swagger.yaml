@@ -165,10 +165,13 @@ definitions:
   models.Reading:
     properties:
       assigned_at:
+        description: AssignedAt is the UTC time when a monk claimed the reading, when
+          recorded.
         type: string
       book_id:
         type: integer
       created_at:
+        description: CreatedAt is the UTC creation time, when recorded.
         type: string
       customer_id:
         type: integer
@@ -200,10 +203,12 @@ definitions:
     enum:
     - monk
     - customer
+    - admin
     type: string
     x-enum-varnames:
     - Monk
     - Customer
+    - Admin
 info:
   contact: {}
   description: API for Open Monastery
@@ -663,6 +668,49 @@ paths:
       summary: Create a reading
       tags:
       - readings
+  /readings/{id}/claim:
+    post:
+      description: Assigns the reading to the authenticated monk.
+      parameters:
+      - description: Reading ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/problem+json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+      security:
+      - BearerAuth: []
+      summary: Claim an unassigned reading
+      tags:
+      - readings
   /users:
     post:
       consumes:
@@ -705,7 +753,6 @@ paths:
       - users
 securityDefinitions:
   BearerAuth:
-    description: Enter Bearer followed by a space and the JWT access token.
     in: header
     name: Authorization
     type: apiKey

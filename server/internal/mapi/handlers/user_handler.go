@@ -18,18 +18,18 @@ func NewUserHandler(service *services.UserService) *UserHandler {
 	return &UserHandler{service: service}
 }
 
-// @Summary Create a user
-// @Description Requires first_name, last_name, password, and at least one of email or phone_number. Creates a customer.
-// @Tags users
-// @Accept json
-// @Produce json,application/problem+json
-// @Param user body dtos.CreateUserRequest true "User to create"
-// @Success 201 {object} models.User
-// @Failure 400 {object} apimodels.ProblemDetails
-// @Failure 409 {object} apimodels.ProblemDetails
-// @Failure 422 {object} apimodels.ProblemDetails
-// @Failure 500 {object} apimodels.ProblemDetails
-// @Router /users [post]
+// @Summary		Create a user
+// @Description	Requires first_name, last_name, password, and at least one of email or phone_number. Creates a customer.
+// @Tags			users
+// @Accept			json
+// @Produce		json,application/problem+json
+// @Param			user	body		dtos.CreateUserRequest	true	"User to create"
+// @Success		201		{object}	models.User
+// @Failure		400		{object}	apimodels.ProblemDetails
+// @Failure		409		{object}	apimodels.ProblemDetails
+// @Failure		422		{object}	apimodels.ProblemDetails
+// @Failure		500		{object}	apimodels.ProblemDetails
+// @Router			/users [post]
 func (h *UserHandler) RegisterUser(c *gin.Context) error {
 	var req dtos.CreateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -46,18 +46,18 @@ func (h *UserHandler) RegisterUser(c *gin.Context) error {
 	return nil
 }
 
-// @Summary Create a monk
-// @Description Requires first_name, last_name, password, a positive monastery_id, and at least one of email or phone_number.
-// @Tags monks
-// @Accept json
-// @Produce json,application/problem+json
-// @Param monk body dtos.CreateMonkRequest true "Monk to create"
-// @Success 201 {object} models.User
-// @Failure 400 {object} apimodels.ProblemDetails
-// @Failure 409 {object} apimodels.ProblemDetails
-// @Failure 422 {object} apimodels.ProblemDetails
-// @Failure 500 {object} apimodels.ProblemDetails
-// @Router /monks [post]
+// @Summary		Create a monk
+// @Description	Requires first_name, last_name, password, a positive monastery_id, and at least one of email or phone_number.
+// @Tags			monks
+// @Accept			json
+// @Produce		json,application/problem+json
+// @Param			monk	body		dtos.CreateMonkRequest	true	"Monk to create"
+// @Success		201		{object}	models.User
+// @Failure		400		{object}	apimodels.ProblemDetails
+// @Failure		409		{object}	apimodels.ProblemDetails
+// @Failure		422		{object}	apimodels.ProblemDetails
+// @Failure		500		{object}	apimodels.ProblemDetails
+// @Router			/monks [post]
 func (h *UserHandler) RegisterMonk(c *gin.Context) error {
 	var req dtos.CreateMonkRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

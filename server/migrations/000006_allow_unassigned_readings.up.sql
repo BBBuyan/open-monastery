@@ -1,1 +1,0 @@
-ALTER TABLE reading MODIFY COLUMN monk_id BIGINT NULL;

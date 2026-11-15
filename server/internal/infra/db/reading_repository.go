@@ -3,10 +3,13 @@ package db
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"example.com/open-monastery/internal/app/abstractions"
+	"example.com/open-monastery/internal/app/apperr"
 	"example.com/open-monastery/internal/app/appmodels"
+	"example.com/open-monastery/internal/domain/enums"
 	"example.com/open-monastery/internal/domain/models"
 )
 
@@ -26,13 +29,19 @@ func (r *ReadingRepository) Add(
 	ctx context.Context,
 	reading *models.Reading,
 ) error {
-	query := `INSERT INTO reading (book_id, monk_id, customer_id) VALUES(?,?,?)`
+	query := `INSERT INTO reading
+		(book_id, monk_id, customer_id, status, created_at, assigned_at)
+		VALUES (?, ?, ?, ?, ?, ?)
+		`
 	result, err := r.db.ExecContext(
 		ctx,
 		query,
 		reading.BookId,
 		reading.MonkId,
 		reading.CustomerId,
+		reading.Status,
+		reading.CreatedAt,
+		reading.AssignedAt,
 	)
 
 	if err != nil {
@@ -46,6 +55,40 @@ func (r *ReadingRepository) Add(
 	reading.Id = id
 
 	return nil
+}
+
+func (r *ReadingRepository) Claim(ctx context.Context, readingID, monkID int64) error {
+	result, err := r.db.ExecContext(ctx,
+		`UPDATE reading
+		SET monk_id = ?, status = ?, assigned_at = UTC_TIMESTAMP(6)
+		WHERE id = ? AND monk_id IS NULL AND status = ?`,
+		monkID, enums.Scheduled, readingID, enums.Pending,
+	)
+	if err != nil {
+		return translateWriteError("ClaimReading", err)
+	}
+	updated, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("get number of claimed readings: %w", err)
+	}
+	if updated != 0 {
+		return nil
+	}
+
+	var assignee sql.NullInt64
+	err = r.db.QueryRowContext(ctx,
+		"SELECT monk_id FROM reading WHERE id = ?", readingID,
+	).Scan(&assignee)
+	if errors.Is(err, sql.ErrNoRows) {
+		return apperr.NewNotFound("reading.not_found", nil)
+	}
+	if err != nil {
+		return fmt.Errorf("get reading assignee: %w", err)
+	}
+	if assignee.Valid {
+		return apperr.NewConflict("reading.already_claimed", nil)
+	}
+	return apperr.NewConflict("reading.not_claimable", nil)
 }
 
 func (r *ReadingRepository) UserExists(
@@ -79,7 +122,7 @@ func (r *ReadingRepository) GetReadingsByUserId(
 	opts appmodels.ListOptions,
 ) ([]*models.Reading, error) {
 	query := `
-	SELECT id, book_id, monk_id, customer_id
+	SELECT id, book_id, monk_id, customer_id, status, created_at, assigned_at
 	FROM reading
 	WHERE customer_id = ? AND id > ?
 	ORDER BY id LIMIT ?
@@ -99,6 +142,9 @@ func (r *ReadingRepository) GetReadingsByUserId(
 			&found.BookId,
 			&found.MonkId,
 			&found.CustomerId,
+			&found.Status,
+			&found.CreatedAt,
+			&found.AssignedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan reading: %w", err)
 		}

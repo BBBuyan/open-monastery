@@ -21,15 +21,15 @@ func NewMonasteryHandler(service *services.MonasteryService) *MonasteryHandler {
 	}
 }
 
-// @Summary Get a monastery
-// @Param id path int true "Monastery ID"
-// @Tags monasteries
-// @Accept json
-// @Produce json,application/problem+json
-// @Success 200 {object} models.Monastery
-// @Failure 400 {object} apimodels.ProblemDetails
-// @Failure 404 {object} apimodels.ProblemDetails
-// @Router /monasteries/{id} [get]
+// @Summary	Get a monastery
+// @Param		id	path	int	true	"Monastery ID"
+// @Tags		monasteries
+// @Accept		json
+// @Produce	json,application/problem+json
+// @Success	200	{object}	models.Monastery
+// @Failure	400	{object}	apimodels.ProblemDetails
+// @Failure	404	{object}	apimodels.ProblemDetails
+// @Router		/monasteries/{id} [get]
 func (h *MonasteryHandler) GetMonastery(
 	c *gin.Context,
 ) error {
@@ -50,15 +50,15 @@ func (h *MonasteryHandler) GetMonastery(
 	return nil
 }
 
-// @Summary Create a monastery
-// @Tags monasteries
-// @Accept json
-// @Produce json,application/problem+json
-// @Param monastery body dtos.CreateMonasteryRequest true "Monastery to create"
-// @Success 201 {object} models.Monastery
-// @Failure 400 {object} apimodels.ProblemDetails
-// @Failure 500 {object} apimodels.ProblemDetails
-// @Router /monasteries [post]
+// @Summary	Create a monastery
+// @Tags		monasteries
+// @Accept		json
+// @Produce	json,application/problem+json
+// @Param		monastery	body		dtos.CreateMonasteryRequest	true	"Monastery to create"
+// @Success	201			{object}	models.Monastery
+// @Failure	400			{object}	apimodels.ProblemDetails
+// @Failure	500			{object}	apimodels.ProblemDetails
+// @Router		/monasteries [post]
 func (h *MonasteryHandler) AddMonastery(
 	c *gin.Context,
 ) error {

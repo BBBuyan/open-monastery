@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"example.com/open-monastery/internal/app/abstractions"
+	"example.com/open-monastery/internal/domain/models"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -15,6 +16,11 @@ type JwtIssuer struct {
 	SigningMethod jwt.SigningMethod
 	Issuer        string
 	ValidMinute   int
+}
+
+type accessClaims struct {
+	jwt.RegisteredClaims
+	Roles []models.UserType `json:"roles"`
 }
 
 var _ abstractions.TokeIssuer = (*JwtIssuer)(nil)
@@ -28,23 +34,24 @@ func NewJwtIssuer(signingKey []byte) *JwtIssuer {
 	}
 }
 
-func (j *JwtIssuer) IssueAccessToken(userId int64) (string, error) {
+func (j *JwtIssuer) IssueAccessToken(userID int64, userType models.UserType) (string, error) {
 	now := time.Now()
-	claims := jwt.RegisteredClaims{
-		Subject:  strconv.FormatInt(userId, 10),
-		Issuer:   j.Issuer,
-		Audience: jwt.ClaimStrings(j.Audiences),
-		IssuedAt: jwt.NewNumericDate(now),
-		ExpiresAt: jwt.NewNumericDate(
-			now.Add(time.Duration(j.ValidMinute) * time.Minute),
-		),
+	claims := accessClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   strconv.FormatInt(userID, 10),
+			Issuer:    j.Issuer,
+			Audience:  jwt.ClaimStrings(j.Audiences),
+			IssuedAt:  jwt.NewNumericDate(now),
+			ExpiresAt: jwt.NewNumericDate(now.Add(time.Duration(j.ValidMinute) * time.Minute)),
+		},
+		Roles: []models.UserType{userType},
 	}
 
 	return jwt.NewWithClaims(j.SigningMethod, claims).SignedString(j.signingKey)
 }
 
-func (j *JwtIssuer) ValidateToken(tokenStr string) (*string, error) {
-	claims := jwt.RegisteredClaims{}
+func (j *JwtIssuer) ValidateToken(tokenStr string) (abstractions.AccessIdentity, error) {
+	var claims accessClaims
 
 	token, err := jwt.ParseWithClaims(
 		tokenStr,
@@ -59,11 +66,12 @@ func (j *JwtIssuer) ValidateToken(tokenStr string) (*string, error) {
 		jwt.WithIssuedAt(),
 	)
 	if err != nil {
-		return nil, err
+		return abstractions.AccessIdentity{}, err
 	}
-	if !token.Valid || claims.Subject == "" {
-		return nil, errors.New("invalid token")
+	userID, err := strconv.ParseInt(claims.Subject, 10, 64)
+	if !token.Valid || err != nil || userID <= 0 {
+		return abstractions.AccessIdentity{}, errors.New("invalid token")
 	}
 
-	return &claims.Subject, nil
+	return abstractions.AccessIdentity{UserID: userID, Roles: claims.Roles}, nil
 }

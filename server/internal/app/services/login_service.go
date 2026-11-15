@@ -37,7 +37,7 @@ func (s *LoginService) Login(ctx context.Context, email string, password string)
 		return "", ErrInvalidCredentials
 	}
 
-	userID, hash, err := s.repo.FindCredentialsByEmail(ctx, email)
+	userID, hash, userType, err := s.repo.FindCredentialsByEmail(ctx, email)
 	if err != nil {
 		appErr, ok := errors.AsType[*apperr.AppErr](err)
 		if !ok || appErr.Type != apperr.NotFound {
@@ -51,5 +51,5 @@ func (s *LoginService) Login(ctx context.Context, email string, password string)
 	if !s.passwordHasher.VerifyPassword(password, hash) {
 		return "", ErrInvalidCredentials
 	}
-	return s.tokenIssuer.IssueAccessToken(userID)
+	return s.tokenIssuer.IssueAccessToken(userID, userType)
 }

@@ -24,6 +24,7 @@ type UserType string
 const (
 	Monk     UserType = "monk"
 	Customer UserType = "customer"
+	Admin    UserType = "admin"
 )
 
 type User struct {

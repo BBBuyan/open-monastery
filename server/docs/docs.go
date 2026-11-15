@@ -705,6 +705,73 @@ const docTemplate = `{
                 }
             }
         },
+        "/readings/{id}/claim": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Assigns the reading to the authenticated monk.",
+                "produces": [
+                    "application/problem+json"
+                ],
+                "tags": [
+                    "readings"
+                ],
+                "summary": "Claim an unassigned reading",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Reading ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    }
+                }
+            }
+        },
         "/users": {
             "post": {
                 "description": "Requires first_name, last_name, password, and at least one of email or phone_number. Creates a customer.",
@@ -1014,12 +1081,14 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "assigned_at": {
+                    "description": "AssignedAt is the UTC time when a monk claimed the reading, when recorded.",
                     "type": "string"
                 },
                 "book_id": {
                     "type": "integer"
                 },
                 "created_at": {
+                    "description": "CreatedAt is the UTC creation time, when recorded.",
                     "type": "string"
                 },
                 "customer_id": {
@@ -1066,17 +1135,18 @@ const docTemplate = `{
             "type": "string",
             "enum": [
                 "monk",
-                "customer"
+                "customer",
+                "admin"
             ],
             "x-enum-varnames": [
                 "Monk",
-                "Customer"
+                "Customer",
+                "Admin"
             ]
         }
     },
     "securityDefinitions": {
         "BearerAuth": {
-            "description": "Enter Bearer followed by a space and the JWT access token.",
             "type": "apiKey",
             "name": "Authorization",
             "in": "header"

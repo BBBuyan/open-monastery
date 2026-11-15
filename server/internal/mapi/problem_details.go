@@ -2,6 +2,7 @@ package mapi
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 
 	"example.com/open-monastery/internal/app/apperr"
@@ -47,6 +48,8 @@ func problemFromError(err error, path string) (int, any) {
 		return problem.Status, problem
 	}
 
+	slog.Error("Internal Error","error",err)
+
 	problem.Status = http.StatusInternalServerError
 	problem.Title = new(internalServerErrorTitle)
 	return problem.Status, problem
@@ -58,6 +61,8 @@ func statusFor(errType apperr.AppErrType) int {
 		return http.StatusBadRequest
 	case apperr.Unauthorized:
 		return http.StatusUnauthorized
+	case apperr.Forbidden:
+		return http.StatusForbidden
 	case apperr.NotFound:
 		return http.StatusNotFound
 	case apperr.Invalid:

@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"example.com/open-monastery/internal/app/apperr"
 	_ "example.com/open-monastery/internal/app/appmodels"
@@ -23,18 +24,18 @@ func NewReadingHandler(service *services.ReadingService) *ReadingHandler {
 	return &ReadingHandler{service: service}
 }
 
-// @Summary Get a page of readings
-// @Description Returns readings owned by the authenticated requester.
-// @Security BearerAuth
-// @Tags readings
-// @Produce json,application/problem+json
-// @Param limit query int false "Page size (default 20, capped at 100)"
-// @Param cursor query string false "Next cursor from the previous page"
-// @Success 200 {object} appmodels.Paginated[models.Reading]
-// @Failure 400 {object} apimodels.ProblemDetails
-// @Failure 401 {object} apimodels.ProblemDetails
-// @Failure 500 {object} apimodels.ProblemDetails
-// @Router /readings [get]
+// @Summary		Get a page of readings
+// @Description	Returns readings owned by the authenticated requester.
+// @Security		BearerAuth
+// @Tags			readings
+// @Produce		json,application/problem+json
+// @Param			limit	query		int		false	"Page size (default 20, capped at 100)"
+// @Param			cursor	query		string	false	"Next cursor from the previous page"
+// @Success		200		{object}	appmodels.Paginated[models.Reading]
+// @Failure		400		{object}	apimodels.ProblemDetails
+// @Failure		401		{object}	apimodels.ProblemDetails
+// @Failure		500		{object}	apimodels.ProblemDetails
+// @Router			/readings [get]
 func (h *ReadingHandler) GetReadings(c *gin.Context) error {
 	userID, ok := middlewares.UserID(c)
 	if !ok {
@@ -54,19 +55,19 @@ func (h *ReadingHandler) GetReadings(c *gin.Context) error {
 	return nil
 }
 
-// @Summary Create a reading
-// @Description Creates a pending reading for the authenticated requester.
-// @Security BearerAuth
-// @Tags readings
-// @Accept json
-// @Produce json,application/problem+json
-// @Param reading body dtos.CreateReadingRequest true "Reading to create"
-// @Success 201 {object} models.Reading
-// @Failure 400 {object} apimodels.ProblemDetails
-// @Failure 401 {object} apimodels.ProblemDetails
-// @Failure 404 {object} apimodels.ProblemDetails
-// @Failure 500 {object} apimodels.ProblemDetails
-// @Router /readings [post]
+// @Summary		Create a reading
+// @Description	Creates a pending reading for the authenticated requester.
+// @Security		BearerAuth
+// @Tags			readings
+// @Accept			json
+// @Produce		json,application/problem+json
+// @Param			reading	body		dtos.CreateReadingRequest	true	"Reading to create"
+// @Success		201		{object}	models.Reading
+// @Failure		400		{object}	apimodels.ProblemDetails
+// @Failure		401		{object}	apimodels.ProblemDetails
+// @Failure		404		{object}	apimodels.ProblemDetails
+// @Failure		500		{object}	apimodels.ProblemDetails
+// @Router			/readings [post]
 func (h *ReadingHandler) AddReading(c *gin.Context) error {
 	userID, ok := middlewares.UserID(c)
 	if !ok {
@@ -86,5 +87,35 @@ func (h *ReadingHandler) AddReading(c *gin.Context) error {
 		return err
 	}
 	c.JSON(http.StatusCreated, result)
+	return nil
+}
+
+// @Summary		Claim an unassigned reading
+// @Description	Assigns the reading to the authenticated monk.
+// @Security		BearerAuth
+// @Tags			readings
+// @Produce		application/problem+json
+// @Param			id	path	int	true	"Reading ID"
+// @Success		204
+// @Failure		400	{object}	apimodels.ProblemDetails
+// @Failure		401	{object}	apimodels.ProblemDetails
+// @Failure		403	{object}	apimodels.ProblemDetails
+// @Failure		404	{object}	apimodels.ProblemDetails
+// @Failure		409	{object}	apimodels.ProblemDetails
+// @Failure		500	{object}	apimodels.ProblemDetails
+// @Router			/readings/{id}/claim [post]
+func (h *ReadingHandler) ClaimReading(c *gin.Context) error {
+	monkID, ok := middlewares.UserID(c)
+	if !ok {
+		return errors.New("missing authenticated user ID")
+	}
+	readingID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || readingID <= 0 {
+		return apperr.NewBadRequest("invalid.id", err)
+	}
+	if err := h.service.ClaimReading(c.Request.Context(), readingID, monkID); err != nil {
+		return err
+	}
+	c.Status(http.StatusNoContent)
 	return nil
 }

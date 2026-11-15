@@ -5,6 +5,7 @@ type AppErrType string
 const (
 	BadRequest   AppErrType = "bad_request"
 	Unauthorized AppErrType = "unauthorized"
+	Forbidden    AppErrType = "forbidden"
 	NotFound     AppErrType = "not_found"
 	Invalid      AppErrType = "invalid"
 	Conflict     AppErrType = "conflict"
@@ -90,4 +91,8 @@ func NewUnauthorized(code string, err error) *AppErr {
 		Code: code,
 		Err:  err,
 	}
+}
+
+func NewForbidden(code string) *AppErr {
+	return &AppErr{Type: Forbidden, Code: code}
 }

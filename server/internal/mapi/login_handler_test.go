@@ -6,11 +6,13 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"testing"
 
 	"example.com/open-monastery/internal/app/apperr"
 	"example.com/open-monastery/internal/app/services"
+	"example.com/open-monastery/internal/domain/models"
 	"example.com/open-monastery/internal/infra/password"
 	"example.com/open-monastery/internal/infra/token"
 	"example.com/open-monastery/internal/mapi/apimodels"
@@ -20,11 +22,11 @@ import (
 
 type loginTestRepository struct{ hash string }
 
-func (r loginTestRepository) FindCredentialsByEmail(_ context.Context, email string) (int64, string, error) {
+func (r loginTestRepository) FindCredentialsByEmail(_ context.Context, email string) (int64, string, models.UserType, error) {
 	if email == "user@example.com" {
-		return 42, r.hash, nil
+		return 42, r.hash, models.Monk, nil
 	}
-	return 0, "", apperr.NewNotFound("credentials not found", nil)
+	return 0, "", "", apperr.NewNotFound("credentials not found", nil)
 }
 
 func TestLoginByEmail(t *testing.T) {
@@ -61,9 +63,9 @@ func TestLoginByEmail(t *testing.T) {
 			if err := json.Unmarshal(response.Body.Bytes(), &result); err != nil {
 				t.Fatal(err)
 			}
-			subject, err := issuer.ValidateToken(result.AccessToken)
-			if err != nil || subject == nil || *subject != "42" {
-				t.Fatalf("expected a valid JWT with subject 42, got %v", err)
+			identity, err := issuer.ValidateToken(result.AccessToken)
+			if err != nil || identity.UserID != 42 || !slices.Equal(identity.Roles, []models.UserType{models.Monk}) {
+				t.Fatalf("expected a valid JWT for monk 42, got %+v, err %v", identity, err)
 			}
 		})
 	}

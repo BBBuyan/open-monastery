@@ -7,6 +7,7 @@ import (
 
 	"example.com/open-monastery/internal/app/abstractions"
 	"example.com/open-monastery/internal/app/services"
+	"example.com/open-monastery/internal/domain/models"
 	database "example.com/open-monastery/internal/infra/db"
 	"example.com/open-monastery/internal/infra/password"
 	"example.com/open-monastery/internal/mapi/handlers"
@@ -78,17 +79,20 @@ func registerUser(
 }
 
 func registerReadings(
-	db *sql.DB,
 	api *gin.RouterGroup,
+	readingRepository abstractions.ReadingRepository,
 	auth gin.HandlerFunc,
 ) {
-	readingRepository := database.NewReadingRepository(db)
 	readingService := services.NewReadingService(readingRepository)
 	readingHandler := handlers.NewReadingHandler(readingService)
 	readings := api.Group("/readings", auth)
 	{
 		readings.GET("", withProblemDetails(readingHandler.GetReadings))
 		readings.POST("", withProblemDetails(readingHandler.AddReading))
+		readings.POST("/:id/claim",
+			withProblemDetails(middlewares.RequireRole(models.Monk)),
+			withProblemDetails(readingHandler.ClaimReading),
+		)
 	}
 }
 
@@ -114,7 +118,10 @@ func RegisterAPI(
 	registerBook(db, api)
 	registerCategory(db, api)
 	registerUser(db, api)
-	registerReadings(db, api, middlewares.RequireAuth(tokenIssuer.ValidateToken))
+	registerReadings(api,
+		database.NewReadingRepository(db),
+		middlewares.RequireAuth(tokenIssuer.ValidateToken),
+	)
 	registerMonastery(db, api)
 
 	registerSwagger(r)

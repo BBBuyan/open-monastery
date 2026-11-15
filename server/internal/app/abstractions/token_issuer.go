@@ -1,6 +1,13 @@
 package abstractions
 
+import "example.com/open-monastery/internal/domain/models"
+
+type AccessIdentity struct {
+	UserID int64
+	Roles  []models.UserType
+}
+
 type TokeIssuer interface {
-	IssueAccessToken(userId int64) (string, error)
-	ValidateToken(tokenStr string) (*string, error)
+	IssueAccessToken(userID int64, userType models.UserType) (string, error)
+	ValidateToken(tokenStr string) (AccessIdentity, error)
 }
