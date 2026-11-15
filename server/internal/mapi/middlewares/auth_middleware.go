@@ -14,7 +14,9 @@ import (
 
 const identityKey = "authenticatedIdentity"
 
-func RequireAuth(validateToken func(string) (abstractions.AccessIdentity, error)) gin.HandlerFunc {
+func RequireAuth(
+	validateToken func(string) (abstractions.AccessIdentity, error),
+) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		header := strings.Fields(c.GetHeader("Authorization"))
 		if len(header) != 2 || !strings.EqualFold(header[0], "Bearer") {
