@@ -9,27 +9,51 @@ import (
 	"example.com/open-monastery/internal/domain/models"
 )
 
-type UserService struct {
-	repo           abstractions.UserRepository
+var ErrInvalidCredentials = errors.New("invalid credentials")
+
+type AuthService struct {
+	repo           abstractions.AuthRepository
 	passwordHasher abstractions.PasswordHasher
+	tokenIssuer    abstractions.TokeIssuer
+	dummyHash      string
 }
 
-func NewUserService(
-	repo abstractions.UserRepository,
+func NewAuthService(
+	repo abstractions.AuthRepository,
 	passwordHasher abstractions.PasswordHasher,
-) *UserService {
-	return &UserService{
+	tokenIssuer abstractions.TokeIssuer,
+) *AuthService {
+	return &AuthService{
 		repo:           repo,
 		passwordHasher: passwordHasher,
+		tokenIssuer:    tokenIssuer,
+		dummyHash:      passwordHasher.HashPassword(""),
 	}
 }
 
-func (s *UserService) GetUser(
-	ctx context.Context,
-	id int64,
-) (*models.User, error) {
-	return s.repo.FindById(ctx, id)
+func (s *AuthService) Login(ctx context.Context, email string, password string) (string, error) {
+	email, err := models.NormalizeEmail(email)
+	if err != nil || password == "" {
+		return "", ErrInvalidCredentials
+	}
+
+	userID, hash, userType, err := s.repo.FindCredentialsByEmail(ctx, email)
+	if err != nil {
+		appErr, ok := errors.AsType[*apperr.AppErr](err)
+		if !ok || appErr.Type != apperr.NotFound {
+			return "", err
+		}
+		// Match the password verification cost for an account without credentials.
+		s.passwordHasher.VerifyPassword(password, s.dummyHash)
+		return "", ErrInvalidCredentials
+	}
+
+	if !s.passwordHasher.VerifyPassword(password, hash) {
+		return "", ErrInvalidCredentials
+	}
+	return s.tokenIssuer.IssueAccessToken(userID, userType)
 }
+
 func createBaseUser(
 	firstName string,
 	lastName string,
@@ -61,7 +85,7 @@ func createBaseUser(
 	}
 }
 
-func (s *UserService) CreateUser(
+func (s *AuthService) CreateUser(
 	ctx context.Context,
 	firstName string,
 	lastName string,
@@ -82,7 +106,7 @@ func (s *UserService) CreateUser(
 	return user, nil
 }
 
-func (s *UserService) CreateMonk(
+func (s *AuthService) CreateMonk(
 	ctx context.Context,
 	firstName string,
 	lastName string,
@@ -108,9 +132,9 @@ func (s *UserService) CreateMonk(
 	return monk, nil
 }
 
-func (s *UserService) addUser(ctx context.Context, user *models.User, password string) error {
+func (s *AuthService) addUser(ctx context.Context, user *models.User, password string) error {
 	if password == "" {
 		return apperr.NewBadRequest("password.required", nil)
 	}
-	return s.repo.Add(ctx, user, s.passwordHasher.HashPassword(password))
+	return s.repo.AddUser(ctx, user, s.passwordHasher.HashPassword(password))
 }

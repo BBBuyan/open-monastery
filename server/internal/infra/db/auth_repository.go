@@ -6,52 +6,40 @@ import (
 	"errors"
 	"fmt"
 
+	"example.com/open-monastery/internal/app/abstractions"
 	"example.com/open-monastery/internal/app/apperr"
 	"example.com/open-monastery/internal/domain/models"
 )
 
-type UserRepository struct {
+type AuthRepository struct {
 	db *sql.DB
 }
 
-func NewUserRepository(db *sql.DB) *UserRepository {
-	return &UserRepository{
-		db: db,
-	}
+var _ abstractions.AuthRepository = (*AuthRepository)(nil)
+
+func NewAuthRepository(db *sql.DB) *AuthRepository {
+	return &AuthRepository{db: db}
 }
 
-func (r *UserRepository) FindById(
+func (r *AuthRepository) FindCredentialsByEmail(
 	ctx context.Context,
-	id int64,
-) (*models.User, error) {
-	query := `SELECT id, first_name, last_name, user_type, monastery_id, email, phone_number
-	FROM users WHERE id = ?`
-	var foundUser models.User
-
-	err := r.db.QueryRowContext(ctx, query, id).Scan(
-		&foundUser.Id,
-		&foundUser.FirstName,
-		&foundUser.LastName,
-		&foundUser.UserType,
-		&foundUser.MonasteryId,
-		&foundUser.Email,
-		&foundUser.PhoneNumber,
-	)
+	email string,
+) (int64, string, models.UserType, error) {
+	const query = `SELECT id, password_hash, user_type FROM users WHERE email = ? AND password_hash IS NOT NULL`
+	var userID int64
+	var hash string
+	var userType models.UserType
+	err := r.db.QueryRowContext(ctx, query, email).Scan(&userID, &hash, &userType)
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, apperr.NewNotFound(
-			"user not found",
-			err,
-		)
+		return 0, "", "", apperr.NewNotFound("credentials not found", err)
 	}
-
 	if err != nil {
-		return nil, fmt.Errorf("find user: %w", err)
+		return 0, "", "", fmt.Errorf("find credentials by email: %w", err)
 	}
-
-	return &foundUser, nil
+	return userID, hash, userType, nil
 }
 
-func (r *UserRepository) Add(
+func (r *AuthRepository) AddUser(
 	ctx context.Context,
 	user *models.User,
 	passwordHash string,

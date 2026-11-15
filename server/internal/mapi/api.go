@@ -65,19 +65,6 @@ func registerMonastery(
 	}
 }
 
-func registerUser(
-	db *sql.DB,
-	api *gin.RouterGroup,
-) {
-	userRepository := database.NewUserRepository(db)
-	passwordHasher := password.NewArgonPasswordHasher()
-	userService := services.NewUserService(userRepository, passwordHasher)
-	userHandler := handlers.NewUserHandler(userService)
-	api.POST("/monks", withProblemDetails(userHandler.RegisterMonk))
-
-	api.POST("/users", withProblemDetails(userHandler.RegisterUser))
-}
-
 func registerReadings(
 	api *gin.RouterGroup,
 	readingRepository abstractions.ReadingRepository,
@@ -104,6 +91,19 @@ func registerSwagger(
 		ginSwagger.WrapHandler(swaggerFiles.Handler),
 	)
 }
+func addAuth(
+	db *sql.DB,
+	api *gin.RouterGroup,
+	tokenIssuer abstractions.TokeIssuer,
+){
+	authRepo := database.NewAuthRepository(db)
+	passHasher := password.NewArgonPasswordHasher()
+	authService := services.NewAuthService(authRepo,passHasher,tokenIssuer)
+	authHandler := handlers.NewAuthHandler(authService)
+	api.POST("/auth/login", withProblemDetails(authHandler.Login))
+	api.POST("/register/monks", withProblemDetails(authHandler.RegisterMonk))
+	api.POST("/register/users", withProblemDetails(authHandler.RegisterUser))
+}
 
 func RegisterAPI(
 	db *sql.DB,
@@ -111,13 +111,10 @@ func RegisterAPI(
 ) *gin.Engine {
 	r := gin.Default()
 	api := r.Group("/api/v1")
-	loginService := services.NewLoginService(database.NewLoginRepository(db), password.NewArgonPasswordHasher(), tokenIssuer)
-	loginHandler := handlers.NewLoginHandler(loginService)
-	api.POST("/auth/login", withProblemDetails(loginHandler.Login))
 
+	addAuth(db,api,tokenIssuer)
 	registerBook(db, api)
 	registerCategory(db, api)
-	registerUser(db, api)
 	registerReadings(api,
 		database.NewReadingRepository(db),
 		middlewares.RequireAuth(tokenIssuer.ValidateToken),

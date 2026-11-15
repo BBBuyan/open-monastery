@@ -249,6 +249,82 @@ paths:
       summary: Log in with an email address and password
       tags:
       - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: User to create
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateUserRequest'
+      produces:
+      - application/json
+      - application/problem+json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+      summary: Create a user
+      tags:
+      - auth
+  /auth/register/monk:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Monk to create
+        in: body
+        name: monk
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateMonkRequest'
+      produces:
+      - application/json
+      - application/problem+json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+      summary: Create a monk
+      tags:
+      - auth
   /books:
     get:
       parameters:
@@ -551,46 +627,6 @@ paths:
       summary: Get a monastery
       tags:
       - monasteries
-  /monks:
-    post:
-      consumes:
-      - application/json
-      description: Requires first_name, last_name, password, a positive monastery_id,
-        and at least one of email or phone_number.
-      parameters:
-      - description: Monk to create
-        in: body
-        name: monk
-        required: true
-        schema:
-          $ref: '#/definitions/dtos.CreateMonkRequest'
-      produces:
-      - application/json
-      - application/problem+json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/models.User'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-        "422":
-          description: Unprocessable Entity
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-      summary: Create a monk
-      tags:
-      - monks
   /readings:
     get:
       description: Returns readings owned by the authenticated requester.
@@ -711,46 +747,6 @@ paths:
       summary: Claim an unassigned reading
       tags:
       - readings
-  /users:
-    post:
-      consumes:
-      - application/json
-      description: Requires first_name, last_name, password, and at least one of email
-        or phone_number. Creates a customer.
-      parameters:
-      - description: User to create
-        in: body
-        name: user
-        required: true
-        schema:
-          $ref: '#/definitions/dtos.CreateUserRequest'
-      produces:
-      - application/json
-      - application/problem+json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/models.User'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-        "422":
-          description: Unprocessable Entity
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-      summary: Create a user
-      tags:
-      - users
 securityDefinitions:
   BearerAuth:
     in: header
