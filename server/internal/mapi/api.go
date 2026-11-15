@@ -17,7 +17,7 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-func registerBook(
+func addBook(
 	db *sql.DB,
 	api *gin.RouterGroup,
 ) {
@@ -33,7 +33,7 @@ func registerBook(
 		books.GET("/:id/categories", withProblemDetails(bookHandler.GetBookCategories))
 	}
 }
-func registerCategory(
+func addCategory(
 	db *sql.DB,
 	api *gin.RouterGroup,
 ) {
@@ -50,7 +50,7 @@ func registerCategory(
 	}
 }
 
-func registerMonastery(
+func addMonastery(
 	db *sql.DB,
 	api *gin.RouterGroup,
 ) {
@@ -65,14 +65,11 @@ func registerMonastery(
 	}
 }
 
-func registerReadings(
-	api *gin.RouterGroup,
-	readingRepository abstractions.ReadingRepository,
-	auth gin.HandlerFunc,
-) {
+func addReadings(db *sql.DB, authApi *gin.RouterGroup) {
+	readingRepository := database.NewReadingRepository(db)
 	readingService := services.NewReadingService(readingRepository)
 	readingHandler := handlers.NewReadingHandler(readingService)
-	readings := api.Group("/readings", auth)
+	readings := authApi.Group("/readings")
 	{
 		readings.GET("", withProblemDetails(readingHandler.GetReadings))
 		readings.POST("", withProblemDetails(readingHandler.AddReading))
@@ -83,7 +80,7 @@ func registerReadings(
 	}
 }
 
-func registerSwagger(
+func addSwagger(
 	r *gin.Engine,
 ) {
 	r.GET(
@@ -95,14 +92,14 @@ func addAuth(
 	db *sql.DB,
 	api *gin.RouterGroup,
 	tokenIssuer abstractions.TokeIssuer,
-){
+) {
 	authRepo := database.NewAuthRepository(db)
 	passHasher := password.NewArgonPasswordHasher()
-	authService := services.NewAuthService(authRepo,passHasher,tokenIssuer)
+	authService := services.NewAuthService(authRepo, passHasher, tokenIssuer)
 	authHandler := handlers.NewAuthHandler(authService)
 	api.POST("/auth/login", withProblemDetails(authHandler.Login))
-	api.POST("/register/monks", withProblemDetails(authHandler.RegisterMonk))
-	api.POST("/register/users", withProblemDetails(authHandler.RegisterUser))
+	api.POST("/auth/register/monks", withProblemDetails(authHandler.RegisterMonk))
+	api.POST("/auth/register/users", withProblemDetails(authHandler.RegisterUser))
 }
 
 func RegisterAPI(
@@ -110,18 +107,18 @@ func RegisterAPI(
 	tokenIssuer abstractions.TokeIssuer,
 ) *gin.Engine {
 	r := gin.Default()
+	authFunc := middlewares.RequireAuth(tokenIssuer.ValidateToken)
+
 	api := r.Group("/api/v1")
+	authApi := api.Group("", authFunc)
 
-	addAuth(db,api,tokenIssuer)
-	registerBook(db, api)
-	registerCategory(db, api)
-	registerReadings(api,
-		database.NewReadingRepository(db),
-		middlewares.RequireAuth(tokenIssuer.ValidateToken),
-	)
-	registerMonastery(db, api)
+	addAuth(db, api, tokenIssuer)
+	addBook(db, api)
+	addCategory(db, api)
+	addReadings(db, authApi)
+	addMonastery(db, api)
 
-	registerSwagger(r)
+	addSwagger(r)
 
 	return r
 }

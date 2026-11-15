@@ -125,7 +125,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/register/monk": {
+        "/auth/register/monks": {
             "post": {
                 "consumes": [
                     "application/json"
@@ -953,7 +953,8 @@ const docTemplate = `{
             ],
             "properties": {
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "format": "email"
                 },
                 "first_name": {
                     "type": "string"
@@ -989,7 +990,8 @@ const docTemplate = `{
             ],
             "properties": {
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "format": "email"
                 },
                 "first_name": {
                     "type": "string"

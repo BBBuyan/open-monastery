@@ -83,7 +83,7 @@ func (h *AuthHandler) RegisterUser(c *gin.Context) error {
 // @Failure	409		{object}	apimodels.ProblemDetails
 // @Failure	422		{object}	apimodels.ProblemDetails
 // @Failure	500		{object}	apimodels.ProblemDetails
-// @Router		/auth/register/monk [post]
+// @Router		/auth/register/monks [post]
 func (h *AuthHandler) RegisterMonk(c *gin.Context) error {
 	var req dtos.CreateMonkRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

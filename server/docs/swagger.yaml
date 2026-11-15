@@ -75,6 +75,7 @@ definitions:
   dtos.CreateMonkRequest:
     properties:
       email:
+        format: email
         type: string
       first_name:
         type: string
@@ -100,6 +101,7 @@ definitions:
   dtos.CreateUserRequest:
     properties:
       email:
+        format: email
         type: string
       first_name:
         type: string
@@ -287,7 +289,7 @@ paths:
       summary: Create a user
       tags:
       - auth
-  /auth/register/monk:
+  /auth/register/monks:
     post:
       consumes:
       - application/json
