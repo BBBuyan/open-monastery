@@ -24,19 +24,20 @@ func NewCategoryRepo(db *sql.DB) *CategoryRepository {
 
 func (r *CategoryRepository) GetBooksByCategoryId(
 	ctx context.Context,
-	categoryId int64,
+	monasteryID, categoryId int64,
 	opts appmodels.ListOptions,
 ) ([]*models.Book, error) {
 	query := `
-	SELECT b.id, b.name, b.description, b.price 
+	SELECT b.id, b.name, b.description, b.price, b.monastery_id
 	FROM book b
-		WHERE b.id > ? AND EXISTS (
-			SELECT 1 FROM category_book cb 
+		WHERE b.monastery_id = ? AND b.id > ? AND EXISTS (
+			SELECT 1 FROM category_book cb
+			JOIN category c ON c.id = cb.category_id AND c.monastery_id = b.monastery_id
 			WHERE cb.book_id = b.id AND cb.category_id = ?
 		)
 	`
 
-	args := []any{opts.AfterId, categoryId}
+	args := []any{monasteryID, opts.AfterId, categoryId}
 	if opts.Search != "" {
 		query += ` AND (LOCATE(?, b.name) > 0 OR LOCATE(?, b.description) > 0)`
 		args = append(args, opts.Search, opts.Search)
@@ -57,6 +58,7 @@ func (r *CategoryRepository) GetBooksByCategoryId(
 			&found.Name,
 			&found.Description,
 			&found.Price,
+			&found.MonasteryId,
 		); err != nil {
 			return nil, fmt.Errorf("scan category book: %w", err)
 		}
@@ -70,10 +72,15 @@ func (r *CategoryRepository) GetBooksByCategoryId(
 
 func (r *CategoryRepository) GetCategoryBooks(
 	ctx context.Context,
+	monasteryID int64,
 ) ([]*models.CategoryBook, error) {
 	rows, err := r.db.QueryContext(
 		ctx,
-		`SELECT id, category_id, book_id FROM category_book ORDER BY id`,
+		`SELECT cb.id, cb.category_id, cb.book_id FROM category_book cb
+		JOIN category c ON c.id = cb.category_id
+		JOIN book b ON b.id = cb.book_id AND b.monastery_id = c.monastery_id
+		WHERE c.monastery_id = ? ORDER BY cb.id`,
+		monasteryID,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("get category books: %w", err)
@@ -100,31 +107,44 @@ func (r *CategoryRepository) GetCategoryBooks(
 
 func (r *CategoryRepository) AddBook(
 	ctx context.Context,
-	categoryId,
-	bookId int64,
+	monasteryID, categoryId, bookId int64,
 ) error {
-	_, err := r.db.ExecContext(
+	result, err := r.db.ExecContext(
 		ctx,
-		`INSERT INTO category_book (category_id, book_id) VALUES (?, ?)`,
-		categoryId,
+		`INSERT INTO category_book (category_id, book_id)
+		SELECT c.id, b.id FROM category c
+		JOIN book b ON b.id = ? AND b.monastery_id = c.monastery_id
+		WHERE c.id = ? AND c.monastery_id = ?`,
 		bookId,
+		categoryId,
+		monasteryID,
 	)
 	if err != nil {
 		return translateWriteError("AddBook", err)
+	}
+	added, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("get number of books added to category: %w", err)
+	}
+	if added == 0 {
+		return apperr.NewNotFound("category or book not found", nil)
 	}
 	return nil
 }
 
 func (r *CategoryRepository) RemoveBook(
 	ctx context.Context,
-	categoryId int64,
-	bookId int64,
+	monasteryID, categoryId, bookId int64,
 ) error {
 	_, err := r.db.ExecContext(
 		ctx,
-		`DELETE FROM category_book WHERE category_id = ? AND book_id = ?`,
+		`DELETE cb FROM category_book cb
+		JOIN category c ON c.id = cb.category_id
+		JOIN book b ON b.id = cb.book_id AND b.monastery_id = c.monastery_id
+		WHERE cb.category_id = ? AND cb.book_id = ? AND c.monastery_id = ?`,
 		categoryId,
 		bookId,
+		monasteryID,
 	)
 	if err != nil {
 		return translateWriteError("RemoveBook", err)
@@ -134,14 +154,15 @@ func (r *CategoryRepository) RemoveBook(
 
 func (r *CategoryRepository) FindById(
 	ctx context.Context,
-	id int64,
+	monasteryID, id int64,
 ) (*models.Category, error) {
 	var found models.Category
 	err := r.db.QueryRowContext(
 		ctx,
-		`SELECT id, name FROM category WHERE id = ?`,
+		`SELECT id, name, monastery_id FROM category WHERE monastery_id = ? AND id = ?`,
+		monasteryID,
 		id,
-	).Scan(&found.Id, &found.Name)
+	).Scan(&found.Id, &found.Name, &found.MonasteryId)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, apperr.NewNotFound(
 			"category not found",
@@ -156,10 +177,12 @@ func (r *CategoryRepository) FindById(
 
 func (r *CategoryRepository) GetAll(
 	ctx context.Context,
+	monasteryID int64,
 ) ([]*models.Category, error) {
 	rows, err := r.db.QueryContext(
 		ctx,
-		`SELECT id, name FROM category ORDER BY id`,
+		`SELECT id, name, monastery_id FROM category WHERE monastery_id = ? ORDER BY id`,
+		monasteryID,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("get categories: %w", err)
@@ -169,7 +192,7 @@ func (r *CategoryRepository) GetAll(
 	categories := make([]*models.Category, 0)
 	for rows.Next() {
 		var found models.Category
-		if err := rows.Scan(&found.Id, &found.Name); err != nil {
+		if err := rows.Scan(&found.Id, &found.Name, &found.MonasteryId); err != nil {
 			return nil, fmt.Errorf("scan category: %w", err)
 		}
 		categories = append(categories, &found)
@@ -186,8 +209,9 @@ func (r *CategoryRepository) Add(
 ) error {
 	result, err := r.db.ExecContext(
 		ctx,
-		`INSERT INTO category (name) VALUES (?)`,
+		`INSERT INTO category (name, monastery_id) VALUES (?, ?)`,
 		category.Name,
+		category.MonasteryId,
 	)
 	if err != nil {
 		return translateWriteError("AddCategory", err)

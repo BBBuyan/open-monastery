@@ -22,20 +22,21 @@ func NewBookService(
 
 func (s *BookService) GetBook(
 	ctx context.Context,
-	id int64,
+	monasteryID, id int64,
 ) (*models.Book, error) {
-	return s.repo.FindById(ctx, id)
+	return s.repo.FindById(ctx, monasteryID, id)
 }
 
 func (s *BookService) GetBooks(
 	ctx context.Context,
+	monasteryID int64,
 	opts appmodels.ListOptions,
 ) (*appmodels.Paginated[*models.Book], error) {
 	opts, err := opts.Normalize()
 	if err != nil {
 		return nil, err
 	}
-	books, err := s.repo.GetBooks(ctx, opts)
+	books, err := s.repo.GetBooks(ctx, monasteryID, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -54,12 +55,14 @@ func (s *BookService) GetBooks(
 
 func (s *BookService) CreateBook(
 	ctx context.Context,
+	monasteryID int64,
 	name string,
 	desc string,
 ) (*models.Book, error) {
 	book := &models.Book{
 		Name:        name,
 		Description: desc,
+		MonasteryId: monasteryID,
 	}
 	err := s.repo.Add(ctx, book)
 	if err != nil {
@@ -70,9 +73,9 @@ func (s *BookService) CreateBook(
 
 func (s *BookService) GetBookCategories(
 	ctx context.Context,
-	bookId int64,
+	monasteryID, bookId int64,
 ) ([]*models.Category, error) {
-	categories, err := s.repo.GetCategories(ctx, bookId)
+	categories, err := s.repo.GetCategories(ctx, monasteryID, bookId)
 	if err != nil {
 		return nil, err
 	}

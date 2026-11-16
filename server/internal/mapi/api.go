@@ -25,12 +25,12 @@ func addBook(
 	bookService := services.NewBookService(bookRepository)
 	bookHandler := handlers.NewBookHandler(bookService)
 
-	books := api.Group("/books")
+	books := api.Group("/monasteries/:id/books")
 	{
-		books.GET("/:id", withProblemDetails(bookHandler.GetBook))
+		books.GET("/:bookId", withProblemDetails(bookHandler.GetBook))
 		books.GET("", withProblemDetails(bookHandler.GetBooks))
 		books.POST("", withProblemDetails(bookHandler.AddBook))
-		books.GET("/:id/categories", withProblemDetails(bookHandler.GetBookCategories))
+		books.GET("/:bookId/categories", withProblemDetails(bookHandler.GetBookCategories))
 	}
 }
 func addCategory(
@@ -41,12 +41,12 @@ func addCategory(
 	categoryService := services.NewCategoryService(categoryRepository)
 	categoryHandler := handlers.NewCategoryHandler(categoryService)
 
-	categories := api.Group("/categories")
+	categories := api.Group("/monasteries/:id/categories")
 	{
 		categories.GET("", withProblemDetails(categoryHandler.GetCategories))
 		categories.POST("", withProblemDetails(categoryHandler.AddCategory))
-		categories.POST("/:id/books", withProblemDetails(categoryHandler.AddBook))
-		categories.GET("/:id/books", withProblemDetails(categoryHandler.GetBooksByCategoryId))
+		categories.POST("/:categoryId/books", withProblemDetails(categoryHandler.AddBook))
+		categories.GET("/:categoryId/books", withProblemDetails(categoryHandler.GetBooksByCategoryId))
 	}
 }
 
@@ -73,11 +73,11 @@ func addReadings(db *sql.DB, authApi *gin.RouterGroup) {
 	readingRepository := database.NewReadingRepository(db)
 	readingService := services.NewReadingService(readingRepository)
 	readingHandler := handlers.NewReadingHandler(readingService)
-	readings := authApi.Group("/readings")
+	readings := authApi.Group("/monasteries/:id/readings")
 	{
 		readings.GET("", withProblemDetails(readingHandler.GetReadings))
 		readings.POST("", withProblemDetails(readingHandler.AddReading))
-		readings.POST("/:id/claim",
+		readings.POST("/:readingId/claim",
 			withProblemDetails(middlewares.RequireRole(models.Monk)),
 			withProblemDetails(readingHandler.ClaimReading),
 		)

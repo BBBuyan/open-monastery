@@ -37,6 +37,15 @@ definitions:
       pagination:
         $ref: '#/definitions/appmodels.PageInfo'
     type: object
+  appmodels.Paginated-models_Monastery:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/models.Monastery'
+        type: array
+      pagination:
+        $ref: '#/definitions/appmodels.PageInfo'
+    type: object
   appmodels.Paginated-models_Reading:
     properties:
       data:
@@ -145,6 +154,8 @@ definitions:
         type: string
       id:
         type: integer
+      monastery_id:
+        type: integer
       name:
         type: string
       price:
@@ -153,6 +164,8 @@ definitions:
   models.Category:
     properties:
       id:
+        type: integer
+      monastery_id:
         type: integer
       name:
         type: string
@@ -178,6 +191,8 @@ definitions:
       customer_id:
         type: integer
       id:
+        type: integer
+      monastery_id:
         type: integer
       monk_id:
         type: integer
@@ -327,250 +342,40 @@ paths:
       summary: Create a monk
       tags:
       - auth
-  /books:
-    get:
-      parameters:
-      - description: Page size (default 20, capped at 100)
-        in: query
-        name: limit
-        type: integer
-      - description: Last book ID from the previous page
-        in: query
-        name: cursor
-        type: string
-      - description: Search name or description
-        in: query
-        name: q
-        type: string
-      produces:
-      - application/json
-      - application/problem+json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/appmodels.Paginated-models_Book'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-      summary: Get a page of books
-      tags:
-      - books
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: Book to create
-        in: body
-        name: book
-        required: true
-        schema:
-          $ref: '#/definitions/dtos.CreateBookRequest'
-      produces:
-      - application/json
-      - application/problem+json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/models.Book'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-      summary: Create a book
-      tags:
-      - books
-  /books/{id}:
-    get:
-      consumes:
-      - application/json
-      parameters:
-      - description: Book ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      - application/problem+json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Book'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-      summary: Get Book
-      tags:
-      - books
-  /books/{id}/categories:
-    get:
-      parameters:
-      - description: Book ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      - application/problem+json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/models.Category'
-            type: array
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-      summary: Get categories belonging to a book
-      tags:
-      - books
-  /categories:
-    get:
-      produces:
-      - application/json
-      - application/problem+json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/models.Category'
-            type: array
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-      summary: Get categories
-      tags:
-      - categories
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: Category to create
-        in: body
-        name: category
-        required: true
-        schema:
-          $ref: '#/definitions/dtos.CreateCategoryRequest'
-      produces:
-      - application/json
-      - application/problem+json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/models.Category'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-      summary: Create a category
-      tags:
-      - categories
-  /categories/{id}/books:
-    get:
-      parameters:
-      - description: Category ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Page size (default 20, capped at 100)
-        in: query
-        name: limit
-        type: integer
-      - description: Last book ID from the previous page
-        in: query
-        name: cursor
-        type: string
-      - description: Search name or description
-        in: query
-        name: q
-        type: string
-      produces:
-      - application/json
-      - application/problem+json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/appmodels.Paginated-models_Book'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-      summary: Get books belonging to a category
-      tags:
-      - categories
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: Category ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Book to add
-        in: body
-        name: book
-        required: true
-        schema:
-          $ref: '#/definitions/dtos.AddBookToCategoryRequest'
-      produces:
-      - application/problem+json
-      responses:
-        "204":
-          description: Book added
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-      summary: Add a book to a category
-      tags:
-      - categories
   /monasteries:
+    get:
+      parameters:
+      - description: Page size (default 20, capped at 100)
+        in: query
+        name: limit
+        type: integer
+      - description: Next cursor from the previous page
+        in: query
+        name: cursor
+        type: string
+      - description: Search by monastery name
+        in: query
+        name: q
+        type: string
+      produces:
+      - application/json
+      - application/problem+json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/appmodels.Paginated-models_Monastery'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+      summary: Get a page of monasteries
+      tags:
+      - monasteries
     post:
       consumes:
       - application/json
@@ -629,9 +434,305 @@ paths:
       summary: Get a monastery
       tags:
       - monasteries
-  /readings:
+  /monasteries/{id}/books:
     get:
-      description: Returns readings owned by the authenticated requester.
+      parameters:
+      - description: Page size (default 20, capped at 100)
+        in: query
+        name: limit
+        type: integer
+      - description: Last book ID from the previous page
+        in: query
+        name: cursor
+        type: string
+      - description: Search name or description
+        in: query
+        name: q
+        type: string
+      - description: Monastery ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      - application/problem+json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/appmodels.Paginated-models_Book'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+      summary: Get a page of books
+      tags:
+      - books
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Book to create
+        in: body
+        name: book
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateBookRequest'
+      - description: Monastery ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      - application/problem+json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Book'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+      summary: Create a book
+      tags:
+      - books
+  /monasteries/{id}/books/{bookId}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Book ID
+        in: path
+        name: bookId
+        required: true
+        type: integer
+      - description: Monastery ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      - application/problem+json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Book'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+      summary: Get Book
+      tags:
+      - books
+  /monasteries/{id}/books/{bookId}/categories:
+    get:
+      parameters:
+      - description: Book ID
+        in: path
+        name: bookId
+        required: true
+        type: integer
+      - description: Monastery ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      - application/problem+json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Category'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+      summary: Get categories belonging to a book
+      tags:
+      - books
+  /monasteries/{id}/categories:
+    get:
+      parameters:
+      - description: Monastery ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      - application/problem+json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Category'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+      summary: Get categories
+      tags:
+      - categories
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Category to create
+        in: body
+        name: category
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateCategoryRequest'
+      - description: Monastery ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      - application/problem+json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Category'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+      summary: Create a category
+      tags:
+      - categories
+  /monasteries/{id}/categories/{categoryId}/books:
+    get:
+      parameters:
+      - description: Category ID
+        in: path
+        name: categoryId
+        required: true
+        type: integer
+      - description: Page size (default 20, capped at 100)
+        in: query
+        name: limit
+        type: integer
+      - description: Last book ID from the previous page
+        in: query
+        name: cursor
+        type: string
+      - description: Search name or description
+        in: query
+        name: q
+        type: string
+      - description: Monastery ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      - application/problem+json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/appmodels.Paginated-models_Book'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+      summary: Get books belonging to a category
+      tags:
+      - categories
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Category ID
+        in: path
+        name: categoryId
+        required: true
+        type: integer
+      - description: Book to add
+        in: body
+        name: book
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.AddBookToCategoryRequest'
+      - description: Monastery ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/problem+json
+      responses:
+        "204":
+          description: Book added
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+      summary: Add a book to a category
+      tags:
+      - categories
+  /monasteries/{id}/readings:
+    get:
+      description: Returns readings owned by the authenticated requester at the monastery.
       parameters:
       - description: Page size (default 20, capped at 100)
         in: query
@@ -641,6 +742,11 @@ paths:
         in: query
         name: cursor
         type: string
+      - description: Monastery ID
+        in: path
+        name: id
+        required: true
+        type: integer
       produces:
       - application/json
       - application/problem+json
@@ -669,7 +775,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Creates a pending reading for the authenticated requester.
+      description: Creates a pending reading for the authenticated requester using
+        a book from the monastery.
       parameters:
       - description: Reading to create
         in: body
@@ -677,6 +784,11 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/dtos.CreateReadingRequest'
+      - description: Monastery ID
+        in: path
+        name: id
+        required: true
+        type: integer
       produces:
       - application/json
       - application/problem+json
@@ -706,11 +818,17 @@ paths:
       summary: Create a reading
       tags:
       - readings
-  /readings/{id}/claim:
+  /monasteries/{id}/readings/{readingId}/claim:
     post:
-      description: Assigns the reading to the authenticated monk.
+      description: Assigns the reading to the authenticated monk if the monk belongs
+        to the monastery.
       parameters:
       - description: Reading ID
+        in: path
+        name: readingId
+        required: true
+        type: integer
+      - description: Monastery ID
         in: path
         name: id
         required: true

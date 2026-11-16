@@ -23,7 +23,7 @@ func NewReadingService(
 
 func (s *ReadingService) GetReadings(
 	ctx context.Context,
-	userID int64,
+	monasteryID, userID int64,
 	opts appmodels.ListOptions,
 ) (*appmodels.Paginated[*models.Reading], error) {
 	opts, err := opts.Normalize()
@@ -32,6 +32,7 @@ func (s *ReadingService) GetReadings(
 	}
 	readings, err := s.repo.GetReadingsByUserId(
 		ctx,
+		monasteryID,
 		userID,
 		opts,
 	)
@@ -64,21 +65,12 @@ func (s *ReadingService) CreateReading(
 	if !userExists {
 		return nil, apperr.NewNotFound("user not found", nil)
 	}
-	bookExists, err := s.repo.BookExists(ctx, bookId)
-	if err != nil {
-		return nil, err
-	}
-	if !bookExists {
-		return nil, apperr.NewNotFound("book not found", nil)
-	}
-
 	monasteryExists, err := s.repo.MonasteryExists(ctx, monasteryId)
 	if err != nil {
 		return nil, err
 	}
 	if !monasteryExists {
 		return nil, apperr.NewNotFound("monastery not found", nil)
-
 	}
 	reading := models.NewReading(bookId, customerId, monasteryId)
 	if err := s.repo.Add(ctx, reading); err != nil {
@@ -88,6 +80,6 @@ func (s *ReadingService) CreateReading(
 	return reading, nil
 }
 
-func (s *ReadingService) ClaimReading(ctx context.Context, readingID, monkID int64) error {
-	return s.repo.Claim(ctx, readingID, monkID)
+func (s *ReadingService) ClaimReading(ctx context.Context, monasteryID, readingID, monkID int64) error {
+	return s.repo.Claim(ctx, monasteryID, readingID, monkID)
 }

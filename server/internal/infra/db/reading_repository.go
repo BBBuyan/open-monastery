@@ -30,22 +30,31 @@ func (r *ReadingRepository) Add(
 	reading *models.Reading,
 ) error {
 	query := `INSERT INTO reading
-		(book_id, monk_id, customer_id, status, created_at, assigned_at)
-		VALUES (?, ?, ?, ?, ?, ?)
+		(book_id, monk_id, customer_id, status, created_at, assigned_at, monastery_id)
+		SELECT b.id, ?, ?, ?, ?, ?, b.monastery_id
+		FROM book b WHERE b.id = ? AND b.monastery_id = ?
 		`
 	result, err := r.db.ExecContext(
 		ctx,
 		query,
-		reading.BookId,
 		reading.MonkId,
 		reading.CustomerId,
 		reading.Status,
 		reading.CreatedAt,
 		reading.AssignedAt,
+		reading.BookId,
+		reading.MonasteryId,
 	)
 
 	if err != nil {
 		return translateWriteError("AddReading", err)
+	}
+	added, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("get number of readings added: %w", err)
+	}
+	if added == 0 {
+		return apperr.NewNotFound("book not found", nil)
 	}
 
 	id, err := result.LastInsertId()
@@ -57,12 +66,13 @@ func (r *ReadingRepository) Add(
 	return nil
 }
 
-func (r *ReadingRepository) Claim(ctx context.Context, readingID, monkID int64) error {
+func (r *ReadingRepository) Claim(ctx context.Context, monasteryID, readingID, monkID int64) error {
 	result, err := r.db.ExecContext(ctx,
-		`UPDATE reading
-		SET monk_id = ?, status = ?, assigned_at = UTC_TIMESTAMP(6)
-		WHERE id = ? AND monk_id IS NULL AND status = ?`,
-		monkID, enums.Scheduled, readingID, enums.Pending,
+		`UPDATE reading r
+		JOIN users u ON u.id = ? AND u.monastery_id = r.monastery_id
+		SET r.monk_id = u.id, r.status = ?, r.assigned_at = UTC_TIMESTAMP(6)
+		WHERE r.id = ? AND r.monastery_id = ? AND r.monk_id IS NULL AND r.status = ?`,
+		monkID, enums.Scheduled, readingID, monasteryID, enums.Pending,
 	)
 	if err != nil {
 		return translateWriteError("ClaimReading", err)
@@ -75,9 +85,21 @@ func (r *ReadingRepository) Claim(ctx context.Context, readingID, monkID int64) 
 		return nil
 	}
 
+	var member bool
+	err = r.db.QueryRowContext(ctx,
+		`SELECT EXISTS(SELECT 1 FROM users WHERE id = ? AND monastery_id = ?)`,
+		monkID, monasteryID,
+	).Scan(&member)
+	if err != nil {
+		return fmt.Errorf("check monk monastery: %w", err)
+	}
+	if !member {
+		return apperr.NewForbidden("monastery.forbidden")
+	}
+
 	var assignee sql.NullInt64
 	err = r.db.QueryRowContext(ctx,
-		"SELECT monk_id FROM reading WHERE id = ?", readingID,
+		"SELECT monk_id FROM reading WHERE id = ? AND monastery_id = ?", readingID, monasteryID,
 	).Scan(&assignee)
 	if errors.Is(err, sql.ErrNoRows) {
 		return apperr.NewNotFound("reading.not_found", nil)
@@ -103,18 +125,6 @@ func (r *ReadingRepository) UserExists(
 	return
 }
 
-func (r *ReadingRepository) BookExists(
-	ctx context.Context,
-	id int64,
-) (exists bool, err error) {
-	err = r.db.QueryRowContext(ctx,
-		"SELECT EXISTS(SELECT 1 FROM book WHERE id = ?)",
-		id,
-	).Scan(&exists)
-
-	return
-}
-
 func (r *ReadingRepository) MonasteryExists(
 	ctx context.Context,
 	id int64,
@@ -130,16 +140,16 @@ func (r *ReadingRepository) MonasteryExists(
 // GetReadingsByUserId implements [abstractions.ReadingRepository].
 func (r *ReadingRepository) GetReadingsByUserId(
 	ctx context.Context,
-	userID int64,
+	monasteryID, userID int64,
 	opts appmodels.ListOptions,
 ) ([]*models.Reading, error) {
 	query := `
-	SELECT id, book_id, monk_id, customer_id, status, created_at, assigned_at
+	SELECT id, book_id, monk_id, customer_id, status, created_at, assigned_at, monastery_id
 	FROM reading
-	WHERE customer_id = ? AND id > ?
+	WHERE monastery_id = ? AND customer_id = ? AND id > ?
 	ORDER BY id LIMIT ?
 	`
-	args := []any{userID, opts.AfterId, opts.Limit + 1}
+	args := []any{monasteryID, userID, opts.AfterId, opts.Limit + 1}
 
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -157,6 +167,7 @@ func (r *ReadingRepository) GetReadingsByUserId(
 			&found.Status,
 			&found.CreatedAt,
 			&found.AssignedAt,
+			&found.MonasteryId,
 		); err != nil {
 			return nil, fmt.Errorf("scan reading: %w", err)
 		}

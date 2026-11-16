@@ -18,27 +18,28 @@ func NewCategoryService(repo abstractions.CategoryRepository) *CategoryService {
 
 func (s *CategoryService) GetCategory(
 	ctx context.Context,
-	id int64,
+	monasteryID, id int64,
 ) (*models.Category, error) {
-	return s.repo.FindById(ctx, id)
+	return s.repo.FindById(ctx, monasteryID, id)
 }
 
 func (s *CategoryService) GetCategories(
 	ctx context.Context,
+	monasteryID int64,
 ) ([]*models.Category, error) {
-	return s.repo.GetAll(ctx)
+	return s.repo.GetAll(ctx, monasteryID)
 }
 
 func (s *CategoryService) GetBooksByCategoryId(
 	ctx context.Context,
-	categoryId int64,
+	monasteryID, categoryId int64,
 	opts appmodels.ListOptions,
 ) (*appmodels.Paginated[*models.Book], error) {
 	opts, err := opts.Normalize()
 	if err != nil {
 		return nil, err
 	}
-	books, err := s.repo.GetBooksByCategoryId(ctx, categoryId, opts)
+	books, err := s.repo.GetBooksByCategoryId(ctx, monasteryID, categoryId, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -58,25 +59,24 @@ func (s *CategoryService) GetBooksByCategoryId(
 
 func (s *CategoryService) AddBook(
 	ctx context.Context,
-	categoryId,
-	bookId int64,
+	monasteryID, categoryId, bookId int64,
 ) error {
-	return s.repo.AddBook(ctx, categoryId, bookId)
+	return s.repo.AddBook(ctx, monasteryID, categoryId, bookId)
 }
 
 func (s *CategoryService) RemoveBook(
 	ctx context.Context,
-	categoryId,
-	bookId int64,
+	monasteryID, categoryId, bookId int64,
 ) error {
-	return s.repo.RemoveBook(ctx, categoryId, bookId)
+	return s.repo.RemoveBook(ctx, monasteryID, categoryId, bookId)
 }
 
 func (s *CategoryService) CreateCategory(
 	ctx context.Context,
+	monasteryID int64,
 	name string,
 ) (*models.Category, error) {
-	category := &models.Category{Name: name}
+	category := &models.Category{Name: name, MonasteryId: monasteryID}
 	if err := s.repo.Add(ctx, category); err != nil {
 		return nil, err
 	}

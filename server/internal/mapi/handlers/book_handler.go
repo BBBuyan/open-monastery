@@ -25,18 +25,23 @@ func NewBookHandler(service *services.BookService) *BookHandler {
 }
 
 // @Summary	Get Book
-// @Param		id	path	int	true	"Book ID"
+// @Param		bookId	path	int	true	"Book ID"
 // @Tags		books
 // @Accept		json
 // @Produce	json,application/problem+json
+// @Param		id	path		int	true	"Monastery ID"
 // @Success	200	{object}	models.Book
 // @Failure	400	{object}	apimodels.ProblemDetails
 // @Failure	404	{object}	apimodels.ProblemDetails
-// @Router		/books/{id} [get]
+// @Router		/monasteries/{id}/books/{bookId} [get]
 func (h *BookHandler) GetBook(
 	c *gin.Context,
 ) error {
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	monasteryID, err := helpers.MonasteryID(c)
+	if err != nil {
+		return err
+	}
+	id, err := strconv.ParseInt(c.Param("bookId"), 10, 64)
 	if err != nil || id <= 0 {
 		return apperr.NewBadRequest(
 			"invalid book id",
@@ -44,7 +49,7 @@ func (h *BookHandler) GetBook(
 		)
 	}
 
-	result, err := h.service.GetBook(c.Request.Context(), id)
+	result, err := h.service.GetBook(c.Request.Context(), monasteryID, id)
 	if err != nil {
 		return err
 	}
@@ -59,18 +64,23 @@ func (h *BookHandler) GetBook(
 // @Param		limit	query		int		false	"Page size (default 20, capped at 100)"
 // @Param		cursor	query		string	false	"Last book ID from the previous page"
 // @Param		q		query		string	false	"Search name or description"
+// @Param		id		path		int		true	"Monastery ID"
 // @Success	200		{object}	appmodels.Paginated[models.Book]
 // @Failure	400		{object}	apimodels.ProblemDetails
 // @Failure	500		{object}	apimodels.ProblemDetails
-// @Router		/books [get]
+// @Router		/monasteries/{id}/books [get]
 func (h *BookHandler) GetBooks(
 	c *gin.Context,
 ) error {
+	monasteryID, err := helpers.MonasteryID(c)
+	if err != nil {
+		return err
+	}
 	options, err := helpers.ToListOpts(c)
 	if err != nil {
 		return err
 	}
-	books, err := h.service.GetBooks(c.Request.Context(), options)
+	books, err := h.service.GetBooks(c.Request.Context(), monasteryID, options)
 	if err != nil {
 		return err
 	}
@@ -84,13 +94,19 @@ func (h *BookHandler) GetBooks(
 // @Accept		json
 // @Produce	json,application/problem+json
 // @Param		book	body		dtos.CreateBookRequest	true	"Book to create"
+// @Param		id		path		int						true	"Monastery ID"
 // @Success	201		{object}	models.Book
 // @Failure	400		{object}	apimodels.ProblemDetails
+// @Failure	404		{object}	apimodels.ProblemDetails
 // @Failure	500		{object}	apimodels.ProblemDetails
-// @Router		/books [post]
+// @Router		/monasteries/{id}/books [post]
 func (h *BookHandler) AddBook(
 	c *gin.Context,
 ) error {
+	monasteryID, err := helpers.MonasteryID(c)
+	if err != nil {
+		return err
+	}
 	var req dtos.CreateBookRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		return apperr.NewBadRequestWithMsg(
@@ -102,6 +118,7 @@ func (h *BookHandler) AddBook(
 
 	result, err := h.service.CreateBook(
 		c.Request.Context(),
+		monasteryID,
 		req.Name,
 		req.Description,
 	)
@@ -115,22 +132,27 @@ func (h *BookHandler) AddBook(
 // @Summary	Get categories belonging to a book
 // @Tags		books
 // @Produce	json,application/problem+json
-// @Param		id	path		int	true	"Book ID"
-// @Success	200	{array}		models.Category
-// @Failure	400	{object}	apimodels.ProblemDetails
-// @Failure	500	{object}	apimodels.ProblemDetails
-// @Router		/books/{id}/categories [get]
+// @Param		bookId	path		int	true	"Book ID"
+// @Param		id		path		int	true	"Monastery ID"
+// @Success	200		{array}		models.Category
+// @Failure	400		{object}	apimodels.ProblemDetails
+// @Failure	500		{object}	apimodels.ProblemDetails
+// @Router		/monasteries/{id}/books/{bookId}/categories [get]
 func (h *BookHandler) GetBookCategories(
 	c *gin.Context,
 ) error {
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	monasteryID, err := helpers.MonasteryID(c)
+	if err != nil {
+		return err
+	}
+	id, err := strconv.ParseInt(c.Param("bookId"), 10, 64)
 	if err != nil || id <= 0 {
 		return apperr.NewBadRequest(
 			"invalid book id",
 			err,
 		)
 	}
-	result, err := h.service.GetBookCategories(c.Request.Context(), id)
+	result, err := h.service.GetBookCategories(c.Request.Context(), monasteryID, id)
 	if err != nil {
 		return err
 	}

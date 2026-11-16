@@ -5,5 +5,5 @@ type Book struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Price       uint32 `json:"price"`
+	MonasteryId int64  `json:"monastery_id"`
 }
-

@@ -20,13 +20,14 @@ var _ abstractions.BookRepository = (*BookRepository)(nil)
 
 func (r *BookRepository) GetBooks(
 	ctx context.Context,
+	monasteryID int64,
 	options appmodels.ListOptions,
 ) ([]*models.Book, error) {
 	query := `
-		SELECT id, name, description, price 
-		FROM book WHERE id > ?
+		SELECT id, name, description, price, monastery_id
+		FROM book WHERE monastery_id = ? AND id > ?
 	`
-	args := []any{options.AfterId}
+	args := []any{monasteryID, options.AfterId}
 	if options.Search != "" {
 		query += ` AND (LOCATE(?, name) > 0 OR LOCATE(?, description) > 0)`
 		args = append(args, options.Search, options.Search)
@@ -46,6 +47,7 @@ func (r *BookRepository) GetBooks(
 			&found.Name,
 			&found.Description,
 			&found.Price,
+			&found.MonasteryId,
 		); err != nil {
 			return nil, fmt.Errorf("scan book: %w", err)
 		}
@@ -65,16 +67,17 @@ func NewBookRepo(db *sql.DB) *BookRepository {
 
 func (r *BookRepository) FindById(
 	ctx context.Context,
-	id int64,
+	monasteryID, id int64,
 ) (*models.Book, error) {
-	query := `SELECT id, name, description, price FROM book WHERE id = ?`
+	query := `SELECT id, name, description, price, monastery_id FROM book WHERE monastery_id = ? AND id = ?`
 
 	var foundBook models.Book
-	err := r.db.QueryRowContext(ctx, query, id).Scan(
+	err := r.db.QueryRowContext(ctx, query, monasteryID, id).Scan(
 		&foundBook.Id,
 		&foundBook.Name,
 		&foundBook.Description,
 		&foundBook.Price,
+		&foundBook.MonasteryId,
 	)
 
 	if errors.Is(err, sql.ErrNoRows) {
@@ -94,13 +97,14 @@ func (r *BookRepository) Add(
 	ctx context.Context,
 	book *models.Book,
 ) error {
-	query := `INSERT INTO book (name,description,price) VALUES(?,?,?)`
+	query := `INSERT INTO book (name, description, price, monastery_id) VALUES (?, ?, ?, ?)`
 	result, err := r.db.ExecContext(
 		ctx,
 		query,
 		book.Name,
 		book.Description,
 		book.Price,
+		book.MonasteryId,
 	)
 
 	if err != nil {
@@ -118,14 +122,15 @@ func (r *BookRepository) Add(
 
 func (r *BookRepository) GetCategories(
 	ctx context.Context,
-	bookId int64,
+	monasteryID, bookID int64,
 ) ([]*models.Category, error) {
-	query := `SELECT c.id, c.name FROM category c
-		WHERE EXISTS (
-			SELECT 1 FROM category_book cb 
-			WHERE cb.category_id = c.id AND cb.book_id = ?
+	query := `SELECT c.id, c.name, c.monastery_id FROM category c
+		WHERE c.monastery_id = ? AND EXISTS (
+			SELECT 1 FROM category_book cb
+			JOIN book b ON b.id = cb.book_id AND b.monastery_id = c.monastery_id
+			WHERE cb.category_id = c.id AND b.id = ?
 		) ORDER BY c.id`
-	rows, err := r.db.QueryContext(ctx, query, bookId)
+	rows, err := r.db.QueryContext(ctx, query, monasteryID, bookID)
 	if err != nil {
 		return nil, fmt.Errorf("get categories by book ID: %w", err)
 	}
@@ -134,7 +139,7 @@ func (r *BookRepository) GetCategories(
 	categories := make([]*models.Category, 0)
 	for rows.Next() {
 		var found models.Category
-		if err := rows.Scan(&found.Id, &found.Name); err != nil {
+		if err := rows.Scan(&found.Id, &found.Name, &found.MonasteryId); err != nil {
 			return nil, fmt.Errorf("scan book category: %w", err)
 		}
 		categories = append(categories, &found)
