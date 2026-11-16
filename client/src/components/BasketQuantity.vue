@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { nextTick, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { basket, MAX_QUANTITY, type BasketBook } from '../basket'
-defineProps<{ book: BasketBook; disabled?: boolean }>()
-const quantity = (id: number) => basket.quantityOf(id)
+const props = defineProps<{ book: BasketBook; disabled?: boolean }>()
+const quantity = computed(() =>
+  basket.quantityOf(props.book.id, props.book.monasteryId),
+)
 const increaseButton = ref<HTMLButtonElement>()
 const addButton = ref<HTMLButtonElement>()
 async function decrease(book: BasketBook, event: MouseEvent) {
   const restoreFocus = document.activeElement === event.currentTarget
-  const remaining = quantity(book.id) - 1
-  basket.setQuantity(book.id, remaining)
+  const remaining = quantity.value - 1
+  basket.setQuantity(book.id, remaining, book.monasteryId)
   if (remaining === 0 && restoreFocus) {
     await nextTick()
     addButton.value?.focus({ preventScroll: true })
@@ -25,7 +27,7 @@ async function addBook(book: BasketBook, event: MouseEvent) {
 <template>
   <div class="basket-controls">
     <button
-      v-if="!quantity(book.id)"
+      v-if="!quantity"
       ref="addButton"
       class="button secondary add-book"
       type="button"
@@ -46,7 +48,7 @@ async function addBook(book: BasketBook, event: MouseEvent) {
         type="button"
         :disabled="disabled"
         :aria-label="
-          quantity(book.id) === 1
+          quantity === 1
             ? `Remove ${book.name} from basket`
             : `Decrease quantity of ${book.name}`
         "
@@ -54,13 +56,11 @@ async function addBook(book: BasketBook, event: MouseEvent) {
       >
         −
       </button>
-      <output :aria-label="`Quantity: ${quantity(book.id)}`">{{
-        quantity(book.id)
-      }}</output>
+      <output :aria-label="`Quantity: ${quantity}`">{{ quantity }}</output>
       <button
         type="button"
         ref="increaseButton"
-        :disabled="disabled || quantity(book.id) >= MAX_QUANTITY"
+        :disabled="disabled || quantity >= MAX_QUANTITY"
         :aria-label="`Increase quantity of ${book.name}`"
         @click="basket.add(book)"
       >

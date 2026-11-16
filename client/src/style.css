@@ -736,6 +736,54 @@ main.home-main {
   padding: 2.5rem 3rem 5rem;
   scroll-margin-top: 1.5rem;
 }
+.monastery-catalog-heading {
+  margin-bottom: 1.5rem;
+}
+.monastery-catalog-heading h1 {
+  margin: 0;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+}
+.monastery-catalog-heading p,
+.monastery-link-message {
+  margin: 0.375rem 0 0;
+  color: var(--muted);
+}
+.monastery-directory {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: 0.875rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.monastery-directory a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 4.5rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.625rem;
+  background: var(--grouped);
+  color: var(--content);
+  font-weight: 600;
+}
+.monastery-directory a:hover,
+.monastery-directory a[aria-current] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.monastery-directory a > :last-child,
+.unit-price a {
+  color: var(--accent);
+}
+.unit-price a:hover {
+  text-decoration: underline;
+}
+.monastery-readings {
+  margin-top: 1.5rem;
+}
 .library-toolbar {
   margin-bottom: 1.5rem;
 }

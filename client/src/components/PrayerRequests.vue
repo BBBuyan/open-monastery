@@ -243,7 +243,7 @@ onUnmounted(() => {
       <div v-else-if="loaded && !error" class="state-panel">
         <h2>You haven’t requested any prayers yet</h2>
         <p>Explore the books offered for prayer recitations and rituals.</p>
-        <a class="button primary" href="#readings">Browse books</a>
+        <a class="button primary" href="#readings">Browse monasteries</a>
       </div>
       <div v-if="hasMore && !requestId" class="catalog-pagination">
         <button
