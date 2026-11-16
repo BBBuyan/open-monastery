@@ -12,6 +12,7 @@ type ReadingRepository interface {
 	Claim(ctx context.Context, readingID, monkID int64) error
 	UserExists(ctx context.Context, id int64) (bool, error)
 	BookExists(ctx context.Context, id int64) (bool, error)
+	MonasteryExists(ctx context.Context, id int64) (bool, error)
 	GetReadingsByUserId(
 		ctx context.Context,
 		userID int64,

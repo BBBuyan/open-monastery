@@ -55,6 +55,7 @@ func (s *ReadingService) CreateReading(
 	ctx context.Context,
 	bookId int64,
 	customerId int64,
+	monasteryId int64,
 ) (*models.Reading, error) {
 	userExists, err := s.repo.UserExists(ctx, customerId)
 	if err != nil {
@@ -71,7 +72,15 @@ func (s *ReadingService) CreateReading(
 		return nil, apperr.NewNotFound("book not found", nil)
 	}
 
-	reading := models.NewReading(bookId, customerId)
+	monasteryExists, err := s.repo.MonasteryExists(ctx, monasteryId)
+	if err != nil {
+		return nil, err
+	}
+	if !monasteryExists {
+		return nil, apperr.NewNotFound("monastery not found", nil)
+
+	}
+	reading := models.NewReading(bookId, customerId, monasteryId)
 	if err := s.repo.Add(ctx, reading); err != nil {
 		return nil, err
 	}

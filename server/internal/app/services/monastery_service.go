@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"example.com/open-monastery/internal/app/abstractions"
+	"example.com/open-monastery/internal/app/appmodels"
 	"example.com/open-monastery/internal/domain/models"
 )
 
@@ -22,6 +23,29 @@ func (s *MonasteryService) GetMonastery(
 	id int64,
 ) (*models.Monastery, error) {
 	return s.repo.FindById(ctx, id)
+}
+
+func (s *MonasteryService) GetMonasteries(
+	ctx context.Context,
+	opts appmodels.ListOptions,
+) (*appmodels.Paginated[*models.Monastery], error) {
+	opts, err := opts.Normalize()
+	if err != nil {
+		return nil, err
+	}
+	monasteries, err := s.repo.GetMonasteries(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	var cursor *appmodels.Cursor
+	hasMore := len(monasteries) > opts.Limit
+	if hasMore {
+		monasteries = monasteries[:opts.Limit]
+		cursor = &appmodels.Cursor{
+			ID: monasteries[len(monasteries)-1].Id,
+		}
+	}
+	return appmodels.ToPage(monasteries, hasMore, cursor), nil
 }
 
 func (s *MonasteryService) CreateMonastery(

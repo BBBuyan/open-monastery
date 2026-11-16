@@ -115,6 +115,18 @@ func (r *ReadingRepository) BookExists(
 	return
 }
 
+func (r *ReadingRepository) MonasteryExists(
+	ctx context.Context,
+	id int64,
+) (exists bool, err error) {
+	err = r.db.QueryRowContext(ctx,
+		"SELECT EXISTS(SELECT 1 FROM monastery WHERE id = ?)",
+		id,
+	).Scan(&exists)
+
+	return
+}
+
 // GetReadingsByUserId implements [abstractions.ReadingRepository].
 func (r *ReadingRepository) GetReadingsByUserId(
 	ctx context.Context,

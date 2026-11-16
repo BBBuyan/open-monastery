@@ -5,9 +5,11 @@ import (
 	"strconv"
 
 	"example.com/open-monastery/internal/app/apperr"
+	_ "example.com/open-monastery/internal/app/appmodels"
 	"example.com/open-monastery/internal/app/services"
 	_ "example.com/open-monastery/internal/mapi/apimodels"
 	"example.com/open-monastery/internal/mapi/dtos"
+	"example.com/open-monastery/internal/mapi/helpers"
 	"github.com/gin-gonic/gin"
 )
 
@@ -47,6 +49,31 @@ func (h *MonasteryHandler) GetMonastery(
 	}
 
 	c.JSON(http.StatusOK, result)
+	return nil
+}
+
+// @Summary	Get a page of monasteries
+// @Tags		monasteries
+// @Produce	json,application/problem+json
+// @Param		limit	query		int		false	"Page size (default 20, capped at 100)"
+// @Param		cursor	query		string	false	"Next cursor from the previous page"
+// @Param		q		query		string	false	"Search by monastery name"
+// @Success	200		{object}	appmodels.Paginated[models.Monastery]
+// @Failure	400		{object}	apimodels.ProblemDetails
+// @Failure	500		{object}	apimodels.ProblemDetails
+// @Router		/monasteries [get]
+func (h *MonasteryHandler) GetMonasteries(
+	c *gin.Context,
+) error {
+	opts, err := helpers.ToListOpts(c)
+	if err != nil {
+		return err
+	}
+	monasteries, err := h.service.GetMonasteries(c.Request.Context(), opts)
+	if err != nil {
+		return err
+	}
+	c.JSON(http.StatusOK, monasteries)
 	return nil
 }
 

@@ -7,7 +7,11 @@ CREATE TABLE IF NOT EXISTS book (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
-    price INT UNSIGNED NOT NULL
+    price INT UNSIGNED NOT NULL,
+    monastery_id BIGINT NOT NULL,
+
+    CONSTRAINT fk_book_monastery FOREIGN KEY (monastery_id)
+        REFERENCES monastery(id)
 ) CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
@@ -22,7 +26,7 @@ CREATE TABLE IF NOT EXISTS users (
     phone_number VARCHAR(12) NULL,
 
     UNIQUE KEY uq_users_email (email),
-    CONSTRAINT fk_users_monastery 
+    CONSTRAINT fk_users_monastery
         FOREIGN KEY (monastery_id)
         REFERENCES monastery(id)
 );
@@ -35,6 +39,7 @@ CREATE TABLE IF NOT EXISTS reading (
     status VARCHAR(16) NOT NULL DEFAULT 'pending',
     created_at DATETIME(6) NULL,
     assigned_at DATETIME(6) NULL,
+    monastery_id BIGINT NOT NULL,
 
     CONSTRAINT fk_reading_monk FOREIGN KEY (monk_id)
         REFERENCES users(id),
@@ -43,13 +48,20 @@ CREATE TABLE IF NOT EXISTS reading (
         REFERENCES book(id),
 
     CONSTRAINT fk_reading_customer FOREIGN KEY (customer_id)
-        REFERENCES users(id)
+        REFERENCES users(id),
+
+    CONSTRAINT fk_reading_monastery FOREIGN KEY (monastery_id)
+        REFERENCES monastery(id)
 );
 
 
 CREATE TABLE IF NOT EXISTS category (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL
+    name VARCHAR(255) NOT NULL,
+    monastery_id BIGINT NOT NULL,
+
+    CONSTRAINT fk_category_monastery FOREIGN KEY (monastery_id)
+        REFERENCES monastery(id)
 );
 
 CREATE TABLE IF NOT EXISTS category_book (

@@ -82,6 +82,7 @@ func (h *ReadingHandler) AddReading(c *gin.Context) error {
 		c.Request.Context(),
 		req.BookId,
 		userID,
+		req.MonasteryId,
 	)
 	if err != nil {
 		return err

@@ -61,7 +61,11 @@ func addMonastery(
 	monasteries := api.Group("/monasteries")
 	{
 		monasteries.GET("/:id", withProblemDetails(monasteryHandler.GetMonastery))
-		monasteries.POST("", withProblemDetails(monasteryHandler.AddMonastery))
+		monasteries.GET("", withProblemDetails(monasteryHandler.GetMonasteries))
+		monasteries.POST("",
+			withProblemDetails(middlewares.RequireRole(models.Admin)),
+			withProblemDetails(monasteryHandler.AddMonastery),
+		)
 	}
 }
 
