@@ -54,7 +54,8 @@ onUnmounted(() => document.removeEventListener('pointerdown', outside))
         <path d="M6 28v-3a10 10 0 0 1 20 0v3" />
       </svg>
     </summary>
-    <div class="profile-menu-panel">
+    <!-- Keep focus inside the disclosure when its padding or dividers are clicked. -->
+    <div class="profile-menu-panel" tabindex="-1">
       <nav aria-label="Account">
         <a
           v-if="loggedIn"
