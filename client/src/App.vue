@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import Readings from './components/Readings.vue'
 import Basket from './components/Basket.vue'
 import UserProfile from './components/UserProfile.vue'
@@ -10,6 +10,11 @@ import { readSession, saveSession, type Session } from './session'
 import { basket } from './basket'
 import { formatPrice } from './money'
 import { useTheme } from './theme'
+import {
+  demoMonasteries,
+  monasteryCatalogLink,
+  monasteryIdFromHash,
+} from './demo-catalog'
 const { theme, toggle: toggleTheme } = useTheme()
 const session = ref(readSession())
 const registeredEmail = ref('')
@@ -52,6 +57,10 @@ function pageFromHash() {
       : 'home'
 }
 const active = ref(pageFromHash())
+const monasteryId = ref(monasteryIdFromHash(location.hash))
+const monastery = computed(() =>
+  demoMonasteries.find(({ id }) => id === monasteryId.value),
+)
 const requestId = ref<number>()
 watch(
   session,
@@ -68,6 +77,7 @@ async function sync() {
   if (location.hash === '#main-content') return
   const previous = active.value
   active.value = pageFromHash()
+  monasteryId.value = monasteryIdFromHash(location.hash)
   if (
     !session.value &&
     (active.value === 'profile' || active.value === 'requests')
@@ -80,7 +90,9 @@ async function sync() {
     : undefined
   document.title =
     active.value === 'home'
-      ? 'Open Monastery'
+      ? monastery.value
+        ? `${monastery.value.name} · Open Monastery`
+        : 'Open Monastery'
       : `${active.value === 'login' ? 'Log in' : active.value === 'signup' ? 'Sign up' : active.value === 'requests' ? (requestId.value ? `Prayer request #${requestId.value}` : 'Readings') : active.value === 'profile' ? 'Profile' : active.value === 'basket' ? 'Basket' : 'Checkout'} · Open Monastery`
   await nextTick()
   if (location.hash === '#readings') {
@@ -92,6 +104,9 @@ async function sync() {
     document.getElementById('main-content')?.focus({ preventScroll: true })
   }
 }
+function focusMain() {
+  document.getElementById('main-content')?.focus()
+}
 onMounted(() => {
   void sync()
   window.addEventListener('hashchange', sync)
@@ -100,7 +115,9 @@ onUnmounted(() => window.removeEventListener('hashchange', sync))
 </script>
 
 <template>
-  <a class="skip-link" href="#main-content">Skip to content</a>
+  <a class="skip-link" href="#main-content" @click.prevent="focusMain">
+    Skip to content
+  </a>
   <div class="app-shell">
     <p
       class="visually-hidden"
@@ -128,7 +145,9 @@ onUnmounted(() => window.removeEventListener('hashchange', sync))
             :aria-label="`Basket, ${basketCount} ${basketCount === 1 ? 'book' : 'books'}, ${formatPrice(basketTotal)}`"
             :aria-current="active === 'basket' ? 'page' : undefined"
           >
-            <span class="basket-link-total">{{ formatPrice(basketTotal) }}</span>
+            <span class="basket-link-total">{{
+              formatPrice(basketTotal)
+            }}</span>
             <svg
               viewBox="0 0 24 24"
               width="20"
@@ -162,7 +181,6 @@ onUnmounted(() => window.removeEventListener('hashchange', sync))
       }"
     >
       <template v-if="active === 'home'">
-        <h1 class="visually-hidden">Open Monastery</h1>
         <section class="monastery-banner" aria-label="Monastery illustration">
           <img
             class="banner-atmosphere"
@@ -182,9 +200,35 @@ onUnmounted(() => window.removeEventListener('hashchange', sync))
           id="readings"
           class="home-catalog"
           tabindex="-1"
-          aria-label="Books"
+          aria-labelledby="catalog-heading"
         >
-          <Readings />
+          <div class="monastery-catalog-heading">
+            <h1 id="catalog-heading">Choose a monastery</h1>
+            <p>Demo catalogs and prices</p>
+          </div>
+          <p v-if="monasteryId && !monastery" class="monastery-link-message">
+            This monastery is unavailable. Choose one below to browse its
+            books.
+          </p>
+          <ul class="monastery-directory">
+            <li v-for="entry in demoMonasteries" :key="entry.id">
+              <a
+                :href="monasteryCatalogLink(entry.id)"
+                :aria-current="entry.id === monasteryId ? 'true' : undefined"
+              >
+                <span>{{ entry.name }}</span>
+                <span aria-hidden="true">{{
+                  entry.id === monasteryId ? '✓' : '→'
+                }}</span>
+              </a>
+            </li>
+          </ul>
+          <Readings
+            v-if="monastery"
+            :key="monastery.id"
+            :monastery="monastery"
+            class="monastery-readings"
+          />
         </section>
       </template>
       <div
@@ -203,7 +247,7 @@ onUnmounted(() => window.removeEventListener('hashchange', sync))
         <UserProfile :email="session.email" />
       </div>
       <div v-else-if="active === 'requests' && session" class="catalog-view">
-        <a class="return-link" href="#readings">← Back to books</a>
+        <a class="return-link" href="#readings">← Browse monasteries</a>
         <PrayerRequests
           :request-id="requestId"
           :session="session"
@@ -215,7 +259,7 @@ onUnmounted(() => window.removeEventListener('hashchange', sync))
         class="catalog-view"
       >
         <a class="return-link" href="#readings"
-          ><span aria-hidden="true">←</span> Back to books</a
+          ><span aria-hidden="true">←</span> Browse monasteries</a
         >
         <Basket :checkout="active === 'checkout'" />
       </div>

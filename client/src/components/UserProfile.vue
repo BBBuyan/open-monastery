@@ -4,7 +4,7 @@ defineProps<{ email: string }>()
 
 <template>
   <div class="profile-page">
-    <a class="return-link" href="#readings">← Back to books</a>
+    <a class="return-link" href="#readings">← Browse monasteries</a>
     <header class="profile-heading">
       <span class="profile-avatar" aria-hidden="true">
         <svg

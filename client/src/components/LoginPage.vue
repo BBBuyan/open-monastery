@@ -64,7 +64,7 @@ onUnmounted(() => controller?.abort())
 
 <template>
   <section class="login-page" aria-labelledby="login-title">
-    <a class="return-link" href="#readings">← Back to books</a>
+    <a class="return-link" href="#readings">← Browse monasteries</a>
     <h1 id="login-title">{{ signup ? 'Create an account' : 'Log in' }}</h1>
     <p v-if="!signup && registeredEmail" class="login-notice" role="status">
       Your account has been created. Log in with your email and password.
