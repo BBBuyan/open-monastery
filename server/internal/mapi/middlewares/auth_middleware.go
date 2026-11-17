@@ -35,7 +35,7 @@ func RequireAuth(
 	}
 }
 
-func RequireRole(required models.UserType) func(*gin.Context) error {
+func RequireRole(allowed ...models.UserType) func(*gin.Context) error {
 	return func(c *gin.Context) error {
 		identity, ok := authenticatedIdentity(c)
 		if !ok {
@@ -43,10 +43,12 @@ func RequireRole(required models.UserType) func(*gin.Context) error {
 			return nil
 		}
 
-		if !slices.Contains(identity.Roles, required) {
-			return apperr.NewForbidden("user_type.forbidden")
+		for _, role := range allowed {
+			if slices.Contains(identity.Roles, role) {
+				return nil
+			}
 		}
-		return nil
+		return apperr.NewForbidden("user_type.forbidden")
 	}
 }
 

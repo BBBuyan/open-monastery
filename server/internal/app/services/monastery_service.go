@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"example.com/open-monastery/internal/app/abstractions"
+	"example.com/open-monastery/internal/app/apperr"
 	"example.com/open-monastery/internal/app/appmodels"
 	"example.com/open-monastery/internal/domain/models"
 )
@@ -60,4 +61,23 @@ func (s *MonasteryService) CreateMonastery(
 		return nil, err
 	}
 	return monastery, nil
+}
+
+func (s *MonasteryService) CheckWriteAccess(ctx context.Context, monasteryID, userID int64) error {
+	allowed, err := s.repo.CanWrite(ctx, monasteryID, userID)
+	if err != nil {
+		return err
+	}
+	if !allowed {
+		return apperr.NewForbidden("monastery.forbidden")
+	}
+	return nil
+}
+
+func (s *MonasteryService) GrantManager(ctx context.Context, monasteryID, userID int64) error {
+	return s.repo.GrantManager(ctx, monasteryID, userID)
+}
+
+func (s *MonasteryService) RevokeManager(ctx context.Context, monasteryID, userID int64) error {
+	return s.repo.RevokeManager(ctx, monasteryID, userID)
 }

@@ -113,6 +113,51 @@ func (r *ReadingRepository) Claim(ctx context.Context, monasteryID, readingID, m
 	return apperr.NewConflict("reading.not_claimable", nil)
 }
 
+func (r *ReadingRepository) Assign(ctx context.Context, monasteryID, readingID, monkID int64) error {
+	result, err := r.db.ExecContext(ctx, `
+		UPDATE reading r
+		JOIN users u ON u.id = ? AND u.monastery_id = r.monastery_id AND u.user_type = ?
+		SET r.monk_id = u.id, r.status = ?, r.assigned_at = UTC_TIMESTAMP(6)
+		WHERE r.id = ? AND r.monastery_id = ?
+			AND r.status IN (?, ?)
+			AND (r.status = ? OR r.monk_id IS NULL OR r.monk_id <> u.id)
+	`, monkID, models.Monk, enums.Scheduled, readingID, monasteryID,
+		enums.Pending, enums.Scheduled, enums.Pending)
+	if err != nil {
+		return translateWriteError("assign reading", err)
+	}
+	updated, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("get number of assigned readings: %w", err)
+	}
+	if updated != 0 {
+		return nil
+	}
+
+	var status enums.ReadingStatus
+	var assignee sql.NullInt64
+	var eligible bool
+	err = r.db.QueryRowContext(ctx, `
+		SELECT r.status, r.monk_id, u.id IS NOT NULL
+		FROM reading r
+		LEFT JOIN users u ON u.id = ? AND u.monastery_id = r.monastery_id AND u.user_type = ?
+		WHERE r.id = ? AND r.monastery_id = ?
+	`, monkID, models.Monk, readingID, monasteryID).Scan(&status, &assignee, &eligible)
+	if errors.Is(err, sql.ErrNoRows) {
+		return apperr.NewNotFound("reading.not_found", nil)
+	}
+	if err != nil {
+		return fmt.Errorf("check reading assignment: %w", err)
+	}
+	if !eligible {
+		return apperr.NewNotFound("monk.not_found", nil)
+	}
+	if status == enums.Scheduled && assignee.Valid && assignee.Int64 == monkID {
+		return nil
+	}
+	return apperr.NewConflict("reading.not_assignable", nil)
+}
+
 func (r *ReadingRepository) UserExists(
 	ctx context.Context,
 	id int64,

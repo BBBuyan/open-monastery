@@ -19,60 +19,66 @@ import (
 
 func addBook(
 	db *sql.DB,
-	api *gin.RouterGroup,
+	api, authAPI *gin.RouterGroup,
+	monasteryService *services.MonasteryService,
 ) {
 	bookRepository := database.NewBookRepo(db)
 	bookService := services.NewBookService(bookRepository)
-	bookHandler := handlers.NewBookHandler(bookService)
+	bookHandler := handlers.NewBookHandler(bookService, monasteryService)
 
 	books := api.Group("/monasteries/:id/books")
 	{
 		books.GET("/:bookId", withProblemDetails(bookHandler.GetBook))
 		books.GET("", withProblemDetails(bookHandler.GetBooks))
-		books.POST("", withProblemDetails(bookHandler.AddBook))
 		books.GET("/:bookId/categories", withProblemDetails(bookHandler.GetBookCategories))
 	}
+	authAPI.POST(
+		"/monasteries/:id/books",
+		withProblemDetails(middlewares.RequireRole(models.Manager, models.Admin)),
+		withProblemDetails(bookHandler.AddBook),
+	)
 }
 func addCategory(
 	db *sql.DB,
-	api *gin.RouterGroup,
+	api, authAPI *gin.RouterGroup,
+	monasteryService *services.MonasteryService,
 ) {
 	categoryRepository := database.NewCategoryRepo(db)
 	categoryService := services.NewCategoryService(categoryRepository)
-	categoryHandler := handlers.NewCategoryHandler(categoryService)
+	categoryHandler := handlers.NewCategoryHandler(categoryService, monasteryService)
 
 	categories := api.Group("/monasteries/:id/categories")
 	{
 		categories.GET("", withProblemDetails(categoryHandler.GetCategories))
-		categories.POST("", withProblemDetails(categoryHandler.AddCategory))
-		categories.POST("/:categoryId/books", withProblemDetails(categoryHandler.AddBook))
 		categories.GET("/:categoryId/books", withProblemDetails(categoryHandler.GetBooksByCategoryId))
 	}
+	authCategories := authAPI.Group("/monasteries/:id/categories",
+		withProblemDetails(middlewares.RequireRole(models.Manager, models.Admin)))
+	authCategories.POST("", withProblemDetails(categoryHandler.AddCategory))
+	authCategories.POST("/:categoryId/books", withProblemDetails(categoryHandler.AddBook))
 }
 
 func addMonastery(
-	db *sql.DB,
-	api *gin.RouterGroup,
+	api, authAPI *gin.RouterGroup,
+	monasteryService *services.MonasteryService,
 ) {
-	monasteryRepository := database.NewMonasteryRepo(db)
-	monasteryService := services.NewMonasteryService(monasteryRepository)
 	monasteryHandler := handlers.NewMonasteryHandler(monasteryService)
 
 	monasteries := api.Group("/monasteries")
 	{
 		monasteries.GET("/:id", withProblemDetails(monasteryHandler.GetMonastery))
 		monasteries.GET("", withProblemDetails(monasteryHandler.GetMonasteries))
-		monasteries.POST("",
-			withProblemDetails(middlewares.RequireRole(models.Admin)),
-			withProblemDetails(monasteryHandler.AddMonastery),
-		)
 	}
+	adminMonasteries := authAPI.Group("/monasteries", withProblemDetails(middlewares.RequireRole(models.Admin)))
+	adminMonasteries.POST("", withProblemDetails(monasteryHandler.AddMonastery))
+	adminMonasteries.PUT("/:id/managers/:userId", withProblemDetails(monasteryHandler.GrantManager))
+	adminMonasteries.DELETE("/:id/managers/:userId", withProblemDetails(monasteryHandler.RevokeManager))
 }
 
-func addReadings(db *sql.DB, authApi *gin.RouterGroup) {
+func addReadings(db *sql.DB, authApi *gin.RouterGroup, monasteryService *services.MonasteryService) {
 	readingRepository := database.NewReadingRepository(db)
 	readingService := services.NewReadingService(readingRepository)
-	readingHandler := handlers.NewReadingHandler(readingService)
+	readingHandler := handlers.NewReadingHandler(readingService, monasteryService)
 	readings := authApi.Group("/monasteries/:id/readings")
 	{
 		readings.GET("", withProblemDetails(readingHandler.GetReadings))
@@ -80,6 +86,10 @@ func addReadings(db *sql.DB, authApi *gin.RouterGroup) {
 		readings.POST("/:readingId/claim",
 			withProblemDetails(middlewares.RequireRole(models.Monk)),
 			withProblemDetails(readingHandler.ClaimReading),
+		)
+		readings.PUT("/:readingId/assignment",
+			withProblemDetails(middlewares.RequireRole(models.Manager, models.Admin)),
+			withProblemDetails(readingHandler.AssignReading),
 		)
 	}
 }
@@ -115,12 +125,13 @@ func RegisterAPI(
 
 	api := r.Group("/api/v1")
 	authApi := api.Group("", authFunc)
+	monasteryService := services.NewMonasteryService(database.NewMonasteryRepo(db))
 
 	addAuth(db, api, tokenIssuer)
-	addBook(db, api)
-	addCategory(db, api)
-	addReadings(db, authApi)
-	addMonastery(db, api)
+	addBook(db, api, authApi, monasteryService)
+	addCategory(db, api, authApi, monasteryService)
+	addReadings(db, authApi, monasteryService)
+	addMonastery(api, authApi, monasteryService)
 
 	addSwagger(r)
 

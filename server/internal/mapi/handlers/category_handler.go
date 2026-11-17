@@ -16,11 +16,12 @@ import (
 )
 
 type CategoryHandler struct {
-	categoryService *services.CategoryService
+	monasteryService *services.MonasteryService
+	categoryService  *services.CategoryService
 }
 
-func NewCategoryHandler(service *services.CategoryService) *CategoryHandler {
-	return &CategoryHandler{categoryService: service}
+func NewCategoryHandler(service *services.CategoryService, monasteryService *services.MonasteryService) *CategoryHandler {
+	return &CategoryHandler{monasteryService: monasteryService, categoryService: service}
 }
 
 // @Summary	Get categories
@@ -45,18 +46,22 @@ func (h *CategoryHandler) GetCategories(c *gin.Context) error {
 }
 
 // @Summary	Create a category
+// @Description	Requires the Manager role for this monastery or the Admin role.
 // @Tags		categories
+// @Security	BearerAuth
 // @Accept		json
 // @Produce	json,application/problem+json
 // @Param		category	body		dtos.CreateCategoryRequest	true	"Category to create"
 // @Param		id			path		int							true	"Monastery ID"
 // @Success	201			{object}	models.Category
 // @Failure	400			{object}	apimodels.ProblemDetails
+// @Failure	401			{object}	apimodels.ProblemDetails
+// @Failure	403			{object}	apimodels.ProblemDetails
 // @Failure	404			{object}	apimodels.ProblemDetails
 // @Failure	500			{object}	apimodels.ProblemDetails
 // @Router		/monasteries/{id}/categories [post]
 func (h *CategoryHandler) AddCategory(c *gin.Context) error {
-	monasteryID, err := helpers.MonasteryID(c)
+	monasteryID, err := monasteryForWrite(c, h.monasteryService)
 	if err != nil {
 		return err
 	}
@@ -74,7 +79,9 @@ func (h *CategoryHandler) AddCategory(c *gin.Context) error {
 }
 
 // @Summary	Add a book to a category
+// @Description	Requires the Manager role for this monastery or the Admin role.
 // @Tags		categories
+// @Security	BearerAuth
 // @Accept		json
 // @Param		categoryId	path	int								true	"Category ID"
 // @Param		book		body	dtos.AddBookToCategoryRequest	true	"Book to add"
@@ -82,11 +89,13 @@ func (h *CategoryHandler) AddCategory(c *gin.Context) error {
 // @Param		id	path	int	true	"Monastery ID"
 // @Success	204	"Book added"
 // @Failure	400	{object}	apimodels.ProblemDetails
+// @Failure	401	{object}	apimodels.ProblemDetails
+// @Failure	403	{object}	apimodels.ProblemDetails
 // @Failure	404	{object}	apimodels.ProblemDetails
 // @Failure	500	{object}	apimodels.ProblemDetails
 // @Router		/monasteries/{id}/categories/{categoryId}/books [post]
 func (h *CategoryHandler) AddBook(c *gin.Context) error {
-	monasteryID, err := helpers.MonasteryID(c)
+	monasteryID, err := monasteryForWrite(c, h.monasteryService)
 	if err != nil {
 		return err
 	}

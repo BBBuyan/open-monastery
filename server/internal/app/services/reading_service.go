@@ -83,3 +83,7 @@ func (s *ReadingService) CreateReading(
 func (s *ReadingService) ClaimReading(ctx context.Context, monasteryID, readingID, monkID int64) error {
 	return s.repo.Claim(ctx, monasteryID, readingID, monkID)
 }
+
+func (s *ReadingService) AssignReading(ctx context.Context, monasteryID, readingID, monkID int64) error {
+	return s.repo.Assign(ctx, monasteryID, readingID, monkID)
+}

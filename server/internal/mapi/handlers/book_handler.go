@@ -15,12 +15,14 @@ import (
 )
 
 type BookHandler struct {
-	service *services.BookService
+	monasteryService *services.MonasteryService
+	service          *services.BookService
 }
 
-func NewBookHandler(service *services.BookService) *BookHandler {
+func NewBookHandler(service *services.BookService, monasteryService *services.MonasteryService) *BookHandler {
 	return &BookHandler{
-		service: service,
+		monasteryService: monasteryService,
+		service:          service,
 	}
 }
 
@@ -90,20 +92,24 @@ func (h *BookHandler) GetBooks(
 }
 
 // @Summary	Create a book
+// @Description	Requires the Manager role for this monastery or the Admin role.
 // @Tags		books
+// @Security	BearerAuth
 // @Accept		json
 // @Produce	json,application/problem+json
 // @Param		book	body		dtos.CreateBookRequest	true	"Book to create"
 // @Param		id		path		int						true	"Monastery ID"
 // @Success	201		{object}	models.Book
 // @Failure	400		{object}	apimodels.ProblemDetails
+// @Failure	401		{object}	apimodels.ProblemDetails
+// @Failure	403		{object}	apimodels.ProblemDetails
 // @Failure	404		{object}	apimodels.ProblemDetails
 // @Failure	500		{object}	apimodels.ProblemDetails
 // @Router		/monasteries/{id}/books [post]
 func (h *BookHandler) AddBook(
 	c *gin.Context,
 ) error {
-	monasteryID, err := helpers.MonasteryID(c)
+	monasteryID, err := monasteryForWrite(c, h.monasteryService)
 	if err != nil {
 		return err
 	}

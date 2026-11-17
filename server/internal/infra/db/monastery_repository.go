@@ -16,6 +16,64 @@ type MonasteryRepository struct {
 	db *sql.DB
 }
 
+func (r *MonasteryRepository) CanWrite(ctx context.Context, monasteryID, userID int64) (bool, error) {
+	var allowed bool
+	err := r.db.QueryRowContext(ctx, `
+		SELECT EXISTS (
+			SELECT 1 FROM users WHERE id = ?
+			AND (user_type = ? OR (user_type = ? AND monastery_id = ?))
+		)
+	`, userID, models.Admin, models.Manager, monasteryID).Scan(&allowed)
+	if err != nil {
+		return false, fmt.Errorf("check monastery write access: %w", err)
+	}
+	return allowed, nil
+}
+
+func (r *MonasteryRepository) GrantManager(ctx context.Context, monasteryID, userID int64) error {
+	result, err := r.db.ExecContext(ctx, `
+		UPDATE users SET user_type = ?, monastery_id = ?
+		WHERE id = ? AND user_type = ?
+	`, models.Manager, monasteryID, userID, models.Customer)
+	if err != nil {
+		return translateWriteError("grant monastery manager", err)
+	}
+	updated, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("count appointed monastery managers: %w", err)
+	}
+	if updated > 0 {
+		return nil
+	}
+
+	var role models.UserType
+	var assignedMonastery sql.NullInt64
+	err = r.db.QueryRowContext(ctx, `
+		SELECT user_type, monastery_id FROM users WHERE id = ?
+	`, userID).Scan(&role, &assignedMonastery)
+	if errors.Is(err, sql.ErrNoRows) {
+		return apperr.NewNotFound("user.not_found", err)
+	}
+	if err != nil {
+		return fmt.Errorf("check existing manager appointment: %w", err)
+	}
+	if role == models.Manager && assignedMonastery.Valid && assignedMonastery.Int64 == monasteryID {
+		return nil
+	}
+	return apperr.NewConflict("user.not_eligible_for_manager", nil)
+}
+
+func (r *MonasteryRepository) RevokeManager(ctx context.Context, monasteryID, userID int64) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE users SET user_type = ?, monastery_id = NULL
+		WHERE id = ? AND monastery_id = ? AND user_type = ?
+	`, models.Customer, userID, monasteryID, models.Manager)
+	if err != nil {
+		return fmt.Errorf("revoke monastery manager: %w", err)
+	}
+	return nil
+}
+
 var _ abstractions.MonasteryRepository = (*MonasteryRepository)(nil)
 
 func NewMonasteryRepo(db *sql.DB) *MonasteryRepository {

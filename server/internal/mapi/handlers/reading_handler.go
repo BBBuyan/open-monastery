@@ -17,11 +17,12 @@ import (
 )
 
 type ReadingHandler struct {
-	service *services.ReadingService
+	monasteryService *services.MonasteryService
+	service          *services.ReadingService
 }
 
-func NewReadingHandler(service *services.ReadingService) *ReadingHandler {
-	return &ReadingHandler{service: service}
+func NewReadingHandler(service *services.ReadingService, monasteryService *services.MonasteryService) *ReadingHandler {
+	return &ReadingHandler{monasteryService: monasteryService, service: service}
 }
 
 // @Summary		Get a page of readings
@@ -130,6 +131,43 @@ func (h *ReadingHandler) ClaimReading(c *gin.Context) error {
 		return apperr.NewBadRequest("invalid.id", err)
 	}
 	if err := h.service.ClaimReading(c.Request.Context(), monasteryID, readingID, monkID); err != nil {
+		return err
+	}
+	c.Status(http.StatusNoContent)
+	return nil
+}
+
+// @Summary		Assign or reassign a reading
+// @Description	Requires the Manager role for this monastery or the Admin role. The monk must belong to the monastery.
+// @Security		BearerAuth
+// @Tags			readings
+// @Accept			json
+// @Produce		application/problem+json
+// @Param			id			path	int							true	"Monastery ID"
+// @Param			readingId	path	int							true	"Reading ID"
+// @Param			assignment	body	dtos.AssignReadingRequest	true	"Monk to assign"
+// @Success		204
+// @Failure		400	{object}	apimodels.ProblemDetails
+// @Failure		401	{object}	apimodels.ProblemDetails
+// @Failure		403	{object}	apimodels.ProblemDetails
+// @Failure		404	{object}	apimodels.ProblemDetails
+// @Failure		409	{object}	apimodels.ProblemDetails
+// @Failure		500	{object}	apimodels.ProblemDetails
+// @Router			/monasteries/{id}/readings/{readingId}/assignment [put]
+func (h *ReadingHandler) AssignReading(c *gin.Context) error {
+	monasteryID, err := monasteryForWrite(c, h.monasteryService)
+	if err != nil {
+		return err
+	}
+	readingID, err := strconv.ParseInt(c.Param("readingId"), 10, 64)
+	if err != nil || readingID <= 0 {
+		return apperr.NewBadRequest("invalid.id", err)
+	}
+	var req dtos.AssignReadingRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		return apperr.NewBadRequest("invalid.body", err)
+	}
+	if err := h.service.AssignReading(c.Request.Context(), monasteryID, readingID, req.MonkId); err != nil {
 		return err
 	}
 	c.Status(http.StatusNoContent)
