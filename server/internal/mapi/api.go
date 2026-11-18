@@ -10,7 +10,7 @@ import (
 	"example.com/open-monastery/internal/domain/models"
 	database "example.com/open-monastery/internal/infra/db"
 	"example.com/open-monastery/internal/infra/password"
-	"example.com/open-monastery/internal/mapi/handlers"
+	"example.com/open-monastery/internal/mapi/controllers"
 	"example.com/open-monastery/internal/mapi/middlewares"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -20,11 +20,10 @@ import (
 func addBook(
 	db *sql.DB,
 	api, authAPI *gin.RouterGroup,
-	monasteryService *services.MonasteryService,
 ) {
 	bookRepository := database.NewBookRepo(db)
 	bookService := services.NewBookService(bookRepository)
-	bookHandler := handlers.NewBookHandler(bookService, monasteryService)
+	bookHandler := controllers.NewBookController(bookService)
 
 	books := api.Group("/monasteries/:id/books")
 	{
@@ -41,11 +40,10 @@ func addBook(
 func addCategory(
 	db *sql.DB,
 	api, authAPI *gin.RouterGroup,
-	monasteryService *services.MonasteryService,
 ) {
 	categoryRepository := database.NewCategoryRepo(db)
 	categoryService := services.NewCategoryService(categoryRepository)
-	categoryHandler := handlers.NewCategoryHandler(categoryService, monasteryService)
+	categoryHandler := controllers.NewCategoryController(categoryService)
 
 	categories := api.Group("/monasteries/:id/categories")
 	{
@@ -59,11 +57,11 @@ func addCategory(
 }
 
 func addMonastery(
+	db *sql.DB,
 	api, authAPI *gin.RouterGroup,
-	monasteryService *services.MonasteryService,
 ) {
-	monasteryHandler := handlers.NewMonasteryHandler(monasteryService)
-
+	monasteryService := services.NewMonasteryService(database.NewMonasteryRepo(db))
+	monasteryHandler := controllers.NewMonasteryController(monasteryService)
 	monasteries := api.Group("/monasteries")
 	{
 		monasteries.GET("/:id", withProblemDetails(monasteryHandler.GetMonastery))
@@ -75,20 +73,23 @@ func addMonastery(
 	adminMonasteries.DELETE("/:id/managers/:userId", withProblemDetails(monasteryHandler.RevokeManager))
 }
 
-func addReadings(db *sql.DB, authApi *gin.RouterGroup, monasteryService *services.MonasteryService) {
+func addReadings(db *sql.DB, authApi *gin.RouterGroup) {
 	readingRepository := database.NewReadingRepository(db)
 	readingService := services.NewReadingService(readingRepository)
-	readingHandler := handlers.NewReadingHandler(readingService, monasteryService)
+	readingHandler := controllers.NewReadingController(readingService)
 	readings := authApi.Group("/monasteries/:id/readings")
 	{
-		readings.GET("", withProblemDetails(readingHandler.GetReadings))
+		readings.GET("",
+			withProblemDetails(middlewares.RequireRole(models.Monk)),
+			withProblemDetails(readingHandler.GetReadings),
+		)
 		readings.POST("", withProblemDetails(readingHandler.AddReading))
 		readings.POST("/:readingId/claim",
 			withProblemDetails(middlewares.RequireRole(models.Monk)),
 			withProblemDetails(readingHandler.ClaimReading),
 		)
 		readings.PUT("/:readingId/assignment",
-			withProblemDetails(middlewares.RequireRole(models.Manager, models.Admin)),
+			withProblemDetails(middlewares.RequireRole(models.Manager)),
 			withProblemDetails(readingHandler.AssignReading),
 		)
 	}
@@ -110,7 +111,8 @@ func addAuth(
 	authRepo := database.NewAuthRepository(db)
 	passHasher := password.NewArgonPasswordHasher()
 	authService := services.NewAuthService(authRepo, passHasher, tokenIssuer)
-	authHandler := handlers.NewAuthHandler(authService)
+	authHandler := controllers.NewAuthController(authService)
+
 	api.POST("/auth/login", withProblemDetails(authHandler.Login))
 	api.POST("/auth/register/monks", withProblemDetails(authHandler.RegisterMonk))
 	api.POST("/auth/register/users", withProblemDetails(authHandler.RegisterUser))
@@ -125,13 +127,12 @@ func RegisterAPI(
 
 	api := r.Group("/api/v1")
 	authApi := api.Group("", authFunc)
-	monasteryService := services.NewMonasteryService(database.NewMonasteryRepo(db))
 
 	addAuth(db, api, tokenIssuer)
-	addBook(db, api, authApi, monasteryService)
-	addCategory(db, api, authApi, monasteryService)
-	addReadings(db, authApi, monasteryService)
-	addMonastery(api, authApi, monasteryService)
+	addBook(db, api, authApi)
+	addCategory(db, api, authApi)
+	addReadings(db, authApi)
+	addMonastery(db, api, authApi)
 
 	addSwagger(r)
 

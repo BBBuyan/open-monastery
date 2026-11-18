@@ -1,4 +1,4 @@
-package handlers
+package controllers
 
 import (
 	"net/http"
@@ -14,12 +14,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type MonasteryHandler struct {
+type MonasteryController struct {
 	service *services.MonasteryService
 }
 
-func NewMonasteryHandler(service *services.MonasteryService) *MonasteryHandler {
-	return &MonasteryHandler{
+func NewMonasteryController(service *services.MonasteryService) *MonasteryController {
+	return &MonasteryController{
 		service: service,
 	}
 }
@@ -35,7 +35,7 @@ func NewMonasteryHandler(service *services.MonasteryService) *MonasteryHandler {
 //	@Failure	400	{object}	apimodels.ProblemDetails
 //	@Failure	404	{object}	apimodels.ProblemDetails
 //	@Router		/monasteries/{id} [get]
-func (h *MonasteryHandler) GetMonastery(
+func (h *MonasteryController) GetMonastery(
 	c *gin.Context,
 ) error {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
@@ -67,7 +67,7 @@ func (h *MonasteryHandler) GetMonastery(
 //	@Failure	400		{object}	apimodels.ProblemDetails
 //	@Failure	500		{object}	apimodels.ProblemDetails
 //	@Router		/monasteries [get]
-func (h *MonasteryHandler) GetMonasteries(
+func (h *MonasteryController) GetMonasteries(
 	c *gin.Context,
 ) error {
 	opts, err := helpers.ToListOpts(c)
@@ -96,7 +96,7 @@ func (h *MonasteryHandler) GetMonasteries(
 //	@Failure	403			{object}	apimodels.ProblemDetails
 //	@Failure	500			{object}	apimodels.ProblemDetails
 //	@Router		/monasteries [post]
-func (h *MonasteryHandler) AddMonastery(
+func (h *MonasteryController) AddMonastery(
 	c *gin.Context,
 ) error {
 	var req dtos.CreateMonasteryRequest
@@ -128,7 +128,7 @@ func (h *MonasteryHandler) AddMonastery(
 //	@Failure		409	{object}	apimodels.ProblemDetails
 //	@Failure		500	{object}	apimodels.ProblemDetails
 //	@Router			/monasteries/{id}/managers/{userId} [put]
-func (h *MonasteryHandler) GrantManager(c *gin.Context) error {
+func (h *MonasteryController) GrantManager(c *gin.Context) error {
 	monasteryID, userID, err := managerPathIDs(c)
 	if err != nil {
 		return err
@@ -155,7 +155,7 @@ func (h *MonasteryHandler) GrantManager(c *gin.Context) error {
 //	@Failure		403	{object}	apimodels.ProblemDetails
 //	@Failure		500	{object}	apimodels.ProblemDetails
 //	@Router			/monasteries/{id}/managers/{userId} [delete]
-func (h *MonasteryHandler) RevokeManager(c *gin.Context) error {
+func (h *MonasteryController) RevokeManager(c *gin.Context) error {
 	monasteryID, userID, err := managerPathIDs(c)
 	if err != nil {
 		return err

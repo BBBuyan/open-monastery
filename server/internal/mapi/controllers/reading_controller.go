@@ -1,4 +1,4 @@
-package handlers
+package controllers
 
 import (
 	"errors"
@@ -16,13 +16,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type ReadingHandler struct {
-	monasteryService *services.MonasteryService
+type ReadingController struct {
 	service          *services.ReadingService
 }
 
-func NewReadingHandler(service *services.ReadingService, monasteryService *services.MonasteryService) *ReadingHandler {
-	return &ReadingHandler{monasteryService: monasteryService, service: service}
+func NewReadingController(service *services.ReadingService) *ReadingController {
+	return &ReadingController{service: service}
 }
 
 // GetReadings returns a page of the authenticated requester's readings at the specified monastery.
@@ -40,7 +39,7 @@ func NewReadingHandler(service *services.ReadingService, monasteryService *servi
 //	@Failure		401		{object}	apimodels.ProblemDetails
 //	@Failure		500		{object}	apimodels.ProblemDetails
 //	@Router			/monasteries/{id}/readings [get]
-func (h *ReadingHandler) GetReadings(c *gin.Context) error {
+func (h *ReadingController) GetReadings(c *gin.Context) error {
 	monasteryID, err := helpers.MonasteryID(c)
 	if err != nil {
 		return err
@@ -79,7 +78,7 @@ func (h *ReadingHandler) GetReadings(c *gin.Context) error {
 //	@Failure		404		{object}	apimodels.ProblemDetails
 //	@Failure		500		{object}	apimodels.ProblemDetails
 //	@Router			/monasteries/{id}/readings [post]
-func (h *ReadingHandler) AddReading(c *gin.Context) error {
+func (h *ReadingController) AddReading(c *gin.Context) error {
 	monasteryID, err := helpers.MonasteryID(c)
 	if err != nil {
 		return err
@@ -123,7 +122,7 @@ func (h *ReadingHandler) AddReading(c *gin.Context) error {
 //	@Failure		409	{object}	apimodels.ProblemDetails
 //	@Failure		500	{object}	apimodels.ProblemDetails
 //	@Router			/monasteries/{id}/readings/{readingId}/claim [post]
-func (h *ReadingHandler) ClaimReading(c *gin.Context) error {
+func (h *ReadingController) ClaimReading(c *gin.Context) error {
 	monasteryID, err := helpers.MonasteryID(c)
 	if err != nil {
 		return err
@@ -162,7 +161,7 @@ func (h *ReadingHandler) ClaimReading(c *gin.Context) error {
 //	@Failure		409	{object}	apimodels.ProblemDetails
 //	@Failure		500	{object}	apimodels.ProblemDetails
 //	@Router			/monasteries/{id}/readings/{readingId}/assignment [put]
-func (h *ReadingHandler) AssignReading(c *gin.Context) error {
+func (h *ReadingController) AssignReading(c *gin.Context) error {
 	monasteryID, err := monasteryForWrite(c, h.monasteryService)
 	if err != nil {
 		return err

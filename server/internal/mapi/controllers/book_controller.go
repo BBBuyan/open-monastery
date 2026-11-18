@@ -1,4 +1,4 @@
-package handlers
+package controllers
 
 import (
 	"net/http"
@@ -14,14 +14,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type BookHandler struct {
-	monasteryService *services.MonasteryService
+type BookController struct {
 	service          *services.BookService
 }
 
-func NewBookHandler(service *services.BookService, monasteryService *services.MonasteryService) *BookHandler {
-	return &BookHandler{
-		monasteryService: monasteryService,
+func NewBookController(service *services.BookService) *BookController {
+	return &BookController{
 		service:          service,
 	}
 }
@@ -38,7 +36,7 @@ func NewBookHandler(service *services.BookService, monasteryService *services.Mo
 //	@Failure	400	{object}	apimodels.ProblemDetails
 //	@Failure	404	{object}	apimodels.ProblemDetails
 //	@Router		/monasteries/{id}/books/{bookId} [get]
-func (h *BookHandler) GetBook(
+func (h *BookController) GetBook(
 	c *gin.Context,
 ) error {
 	monasteryID, err := helpers.MonasteryID(c)
@@ -75,7 +73,7 @@ func (h *BookHandler) GetBook(
 //	@Failure	400		{object}	apimodels.ProblemDetails
 //	@Failure	500		{object}	apimodels.ProblemDetails
 //	@Router		/monasteries/{id}/books [get]
-func (h *BookHandler) GetBooks(
+func (h *BookController) GetBooks(
 	c *gin.Context,
 ) error {
 	monasteryID, err := helpers.MonasteryID(c)
@@ -112,7 +110,7 @@ func (h *BookHandler) GetBooks(
 //	@Failure		404		{object}	apimodels.ProblemDetails
 //	@Failure		500		{object}	apimodels.ProblemDetails
 //	@Router			/monasteries/{id}/books [post]
-func (h *BookHandler) AddBook(
+func (h *BookController) AddBook(
 	c *gin.Context,
 ) error {
 	monasteryID, err := monasteryForWrite(c, h.monasteryService)
@@ -152,7 +150,7 @@ func (h *BookHandler) AddBook(
 //	@Failure	400		{object}	apimodels.ProblemDetails
 //	@Failure	500		{object}	apimodels.ProblemDetails
 //	@Router		/monasteries/{id}/books/{bookId}/categories [get]
-func (h *BookHandler) GetBookCategories(
+func (h *BookController) GetBookCategories(
 	c *gin.Context,
 ) error {
 	monasteryID, err := helpers.MonasteryID(c)

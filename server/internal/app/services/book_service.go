@@ -55,6 +55,7 @@ func (s *BookService) GetBooks(
 
 func (s *BookService) CreateBook(
 	ctx context.Context,
+	user_id int64,
 	monasteryID int64,
 	name string,
 	desc string,
@@ -63,6 +64,7 @@ func (s *BookService) CreateBook(
 		Name:        name,
 		Description: desc,
 		MonasteryId: monasteryID,
+		CreatedBy:   user_id,
 	}
 	err := s.repo.Add(ctx, book)
 	if err != nil {

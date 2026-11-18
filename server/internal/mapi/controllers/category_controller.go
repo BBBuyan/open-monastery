@@ -1,4 +1,4 @@
-package handlers
+package controllers
 
 import (
 	"net/http"
@@ -15,13 +15,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type CategoryHandler struct {
-	monasteryService *services.MonasteryService
+type CategoryController struct {
 	categoryService  *services.CategoryService
 }
 
-func NewCategoryHandler(service *services.CategoryService, monasteryService *services.MonasteryService) *CategoryHandler {
-	return &CategoryHandler{monasteryService: monasteryService, categoryService: service}
+func NewCategoryController(service *services.CategoryService) *CategoryController {
+	return &CategoryController{categoryService: service}
 }
 
 // GetCategories lists the categories in the specified monastery.
@@ -34,7 +33,7 @@ func NewCategoryHandler(service *services.CategoryService, monasteryService *ser
 //	@Failure	400	{object}	apimodels.ProblemDetails
 //	@Failure	500	{object}	apimodels.ProblemDetails
 //	@Router		/monasteries/{id}/categories [get]
-func (h *CategoryHandler) GetCategories(c *gin.Context) error {
+func (h *CategoryController) GetCategories(c *gin.Context) error {
 	monasteryID, err := helpers.MonasteryID(c)
 	if err != nil {
 		return err
@@ -64,7 +63,7 @@ func (h *CategoryHandler) GetCategories(c *gin.Context) error {
 //	@Failure		404			{object}	apimodels.ProblemDetails
 //	@Failure		500			{object}	apimodels.ProblemDetails
 //	@Router			/monasteries/{id}/categories [post]
-func (h *CategoryHandler) AddCategory(c *gin.Context) error {
+func (h *CategoryController) AddCategory(c *gin.Context) error {
 	monasteryID, err := monasteryForWrite(c, h.monasteryService)
 	if err != nil {
 		return err
@@ -100,7 +99,7 @@ func (h *CategoryHandler) AddCategory(c *gin.Context) error {
 //	@Failure		404	{object}	apimodels.ProblemDetails
 //	@Failure		500	{object}	apimodels.ProblemDetails
 //	@Router			/monasteries/{id}/categories/{categoryId}/books [post]
-func (h *CategoryHandler) AddBook(c *gin.Context) error {
+func (h *CategoryController) AddBook(c *gin.Context) error {
 	monasteryID, err := monasteryForWrite(c, h.monasteryService)
 	if err != nil {
 		return err
@@ -142,7 +141,7 @@ func (h *CategoryHandler) AddBook(c *gin.Context) error {
 //	@Failure	400			{object}	apimodels.ProblemDetails
 //	@Failure	500			{object}	apimodels.ProblemDetails
 //	@Router		/monasteries/{id}/categories/{categoryId}/books [get]
-func (h *CategoryHandler) GetBooksByCategoryId(c *gin.Context) error {
+func (h *CategoryController) GetBooksByCategoryId(c *gin.Context) error {
 	monasteryID, err := helpers.MonasteryID(c)
 	if err != nil {
 		return err

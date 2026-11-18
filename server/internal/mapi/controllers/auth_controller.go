@@ -1,4 +1,4 @@
-package handlers
+package controllers
 
 import (
 	"errors"
@@ -11,12 +11,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type AuthHandler struct {
+type AuthController struct {
 	service *services.AuthService
 }
 
-func NewAuthHandler(service *services.AuthService) *AuthHandler {
-	return &AuthHandler{service: service}
+func NewAuthController(service *services.AuthService) *AuthController {
+	return &AuthController{service: service}
 }
 
 // Login authenticates a user with an email address and password.
@@ -31,7 +31,7 @@ func NewAuthHandler(service *services.AuthService) *AuthHandler {
 //	@Failure	401			{object}	apimodels.ProblemDetails
 //	@Failure	500			{object}	apimodels.ProblemDetails
 //	@Router		/auth/login [post]
-func (h *AuthHandler) Login(c *gin.Context) error {
+func (h *AuthController) Login(c *gin.Context) error {
 	var req dtos.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		return apperr.NewBadRequest("invalid.body", err)
@@ -61,7 +61,7 @@ func (h *AuthHandler) Login(c *gin.Context) error {
 //	@Failure	422		{object}	apimodels.ProblemDetails
 //	@Failure	500		{object}	apimodels.ProblemDetails
 //	@Router		/auth/register [post]
-func (h *AuthHandler) RegisterUser(c *gin.Context) error {
+func (h *AuthController) RegisterUser(c *gin.Context) error {
 	var req dtos.CreateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		return apperr.NewBadRequest("invalid.body", err)
@@ -90,7 +90,7 @@ func (h *AuthHandler) RegisterUser(c *gin.Context) error {
 //	@Failure	422		{object}	apimodels.ProblemDetails
 //	@Failure	500		{object}	apimodels.ProblemDetails
 //	@Router		/auth/register/monks [post]
-func (h *AuthHandler) RegisterMonk(c *gin.Context) error {
+func (h *AuthController) RegisterMonk(c *gin.Context) error {
 	var req dtos.CreateMonkRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		return apperr.NewBadRequest("invalid.body", err)
