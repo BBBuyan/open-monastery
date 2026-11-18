@@ -6,7 +6,8 @@ import (
 	"time"
 
 	"example.com/open-monastery/internal/app/abstractions"
-	"example.com/open-monastery/internal/domain/models"
+	"example.com/open-monastery/internal/app/appmodels"
+	"example.com/open-monastery/internal/domain/enums"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -20,7 +21,7 @@ type JwtIssuer struct {
 
 type accessClaims struct {
 	jwt.RegisteredClaims
-	Roles []models.UserType `json:"roles"`
+	Roles enums.UserType `json:"roles"`
 }
 
 var _ abstractions.TokeIssuer = (*JwtIssuer)(nil)
@@ -34,7 +35,7 @@ func NewJwtIssuer(signingKey []byte) *JwtIssuer {
 	}
 }
 
-func (j *JwtIssuer) IssueAccessToken(userID int64, userType models.UserType) (string, error) {
+func (j *JwtIssuer) IssueAccessToken(userID int64, userType enums.UserType) (string, error) {
 	now := time.Now()
 	claims := accessClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -44,13 +45,13 @@ func (j *JwtIssuer) IssueAccessToken(userID int64, userType models.UserType) (st
 			IssuedAt:  jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(now.Add(time.Duration(j.ValidMinute) * time.Minute)),
 		},
-		Roles: []models.UserType{userType},
+		Roles: userType,
 	}
 
 	return jwt.NewWithClaims(j.SigningMethod, claims).SignedString(j.signingKey)
 }
 
-func (j *JwtIssuer) ValidateToken(tokenStr string) (abstractions.AccessIdentity, error) {
+func (j *JwtIssuer) ValidateToken(tokenStr string) (appmodels.Actor, error) {
 	var claims accessClaims
 
 	token, err := jwt.ParseWithClaims(
@@ -66,12 +67,12 @@ func (j *JwtIssuer) ValidateToken(tokenStr string) (abstractions.AccessIdentity,
 		jwt.WithIssuedAt(),
 	)
 	if err != nil {
-		return abstractions.AccessIdentity{}, err
+		return appmodels.Actor{}, err
 	}
 	userID, err := strconv.ParseInt(claims.Subject, 10, 64)
 	if !token.Valid || err != nil || userID <= 0 {
-		return abstractions.AccessIdentity{}, errors.New("invalid token")
+		return appmodels.Actor{}, errors.New("invalid token")
 	}
 
-	return abstractions.AccessIdentity{UserID: userID, Roles: claims.Roles}, nil
+	return appmodels.Actor{Id: userID, Role: claims.Roles}, nil
 }
