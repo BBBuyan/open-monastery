@@ -11,6 +11,9 @@ tasks:
     cmds:
       - echo "{{.GREETING}}"
     silent: true
+  go-fmt:
+    desc: format all go files
+    cmd: go fmt ./...
   swag-gen:
     desc: generate swagger
     cmd: >-
