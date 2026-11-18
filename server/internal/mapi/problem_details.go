@@ -48,7 +48,7 @@ func problemFromError(err error, path string) (int, any) {
 		return problem.Status, problem
 	}
 
-	slog.Error("Internal Error","error",err)
+	slog.Error("Internal Error", "error", err)
 
 	problem.Status = http.StatusInternalServerError
 	problem.Title = new(internalServerErrorTitle)
