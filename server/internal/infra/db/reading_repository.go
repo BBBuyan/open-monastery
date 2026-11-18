@@ -54,7 +54,7 @@ func (r *ReadingRepository) Add(
 		return fmt.Errorf("get number of readings added: %w", err)
 	}
 	if added == 0 {
-		return apperr.NewNotFound("book not found", nil)
+		return apperr.NewInvalid("book does not exist or does not belong to the monastery", nil)
 	}
 
 	id, err := result.LastInsertId()
@@ -121,7 +121,7 @@ func (r *ReadingRepository) Assign(ctx context.Context, monasteryID, readingID, 
 		WHERE r.id = ? AND r.monastery_id = ?
 			AND r.status IN (?, ?)
 			AND (r.status = ? OR r.monk_id IS NULL OR r.monk_id <> u.id)
-	`, monkID, models.Monk, enums.Scheduled, readingID, monasteryID,
+	`, monkID, enums.Monk, enums.Scheduled, readingID, monasteryID,
 		enums.Pending, enums.Scheduled, enums.Pending)
 	if err != nil {
 		return translateWriteError("assign reading", err)
@@ -142,7 +142,7 @@ func (r *ReadingRepository) Assign(ctx context.Context, monasteryID, readingID, 
 		FROM reading r
 		LEFT JOIN users u ON u.id = ? AND u.monastery_id = r.monastery_id AND u.user_type = ?
 		WHERE r.id = ? AND r.monastery_id = ?
-	`, monkID, models.Monk, readingID, monasteryID).Scan(&status, &assignee, &eligible)
+	`, monkID, enums.Monk, readingID, monasteryID).Scan(&status, &assignee, &eligible)
 	if errors.Is(err, sql.ErrNoRows) {
 		return apperr.NewNotFound("reading.not_found", nil)
 	}

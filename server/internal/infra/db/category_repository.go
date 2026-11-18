@@ -139,9 +139,7 @@ func (r *CategoryRepository) RemoveBook(
 	_, err := r.db.ExecContext(
 		ctx,
 		`DELETE cb FROM category_book cb
-		JOIN category c ON c.id = cb.category_id
-		JOIN book b ON b.id = cb.book_id AND b.monastery_id = c.monastery_id
-		WHERE cb.category_id = ? AND cb.book_id = ? AND c.monastery_id = ?`,
+		WHERE cb.category_id = ? AND cb.book_id = ? AND cb.monastery_id = ?`,
 		categoryId,
 		bookId,
 		monasteryID,

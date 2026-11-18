@@ -18,28 +18,28 @@ func NewCategoryService(repo abstractions.CategoryRepository) *CategoryService {
 
 func (s *CategoryService) GetCategory(
 	ctx context.Context,
-	monasteryID, id int64,
+	monasteryId, id int64,
 ) (*models.Category, error) {
-	return s.repo.FindById(ctx, monasteryID, id)
+	return s.repo.FindById(ctx, monasteryId, id)
 }
 
 func (s *CategoryService) GetCategories(
 	ctx context.Context,
-	monasteryID int64,
+	monasteryId int64,
 ) ([]*models.Category, error) {
-	return s.repo.GetAll(ctx, monasteryID)
+	return s.repo.GetAll(ctx, monasteryId)
 }
 
 func (s *CategoryService) GetBooksByCategoryId(
 	ctx context.Context,
-	monasteryID, categoryId int64,
+	monasteryId, categoryId int64,
 	opts appmodels.ListOptions,
 ) (*appmodels.Paginated[*models.Book], error) {
 	opts, err := opts.Normalize()
 	if err != nil {
 		return nil, err
 	}
-	books, err := s.repo.GetBooksByCategoryId(ctx, monasteryID, categoryId, opts)
+	books, err := s.repo.GetBooksByCategoryId(ctx, monasteryId, categoryId, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -59,24 +59,25 @@ func (s *CategoryService) GetBooksByCategoryId(
 
 func (s *CategoryService) AddBook(
 	ctx context.Context,
-	monasteryID, categoryId, bookId int64,
+	monasteryId, categoryId, bookId int64,
 ) error {
-	return s.repo.AddBook(ctx, monasteryID, categoryId, bookId)
+	return s.repo.AddBook(ctx, monasteryId, categoryId, bookId)
 }
 
 func (s *CategoryService) RemoveBook(
 	ctx context.Context,
-	monasteryID, categoryId, bookId int64,
+	monasteryId, categoryId, bookId int64,
 ) error {
-	return s.repo.RemoveBook(ctx, monasteryID, categoryId, bookId)
+	return s.repo.RemoveBook(ctx, monasteryId, categoryId, bookId)
 }
 
 func (s *CategoryService) CreateCategory(
 	ctx context.Context,
-	monasteryID int64,
 	name string,
+	monasteryId int64,
+	userId int64,
 ) (*models.Category, error) {
-	category := &models.Category{Name: name, MonasteryId: monasteryID}
+	category := models.NewCategory(name, monasteryId, userId)
 	if err := s.repo.Add(ctx, category); err != nil {
 		return nil, err
 	}

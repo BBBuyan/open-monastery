@@ -8,7 +8,6 @@ import (
 )
 
 var (
-	ErrContactRequired   = errors.New("at least one contact method is required")
 	ErrEmailTooLong      = errors.New("email is too long")
 	ErrEmailNotParseable = errors.New("email not parseable")
 	ErrInvalidEmail      = errors.New("invalid email")

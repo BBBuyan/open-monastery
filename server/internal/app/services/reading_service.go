@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"example.com/open-monastery/internal/app/abstractions"
-	"example.com/open-monastery/internal/app/apperr"
 	"example.com/open-monastery/internal/app/appmodels"
 	"example.com/open-monastery/internal/domain/models"
 )
@@ -58,20 +57,6 @@ func (s *ReadingService) CreateReading(
 	customerId int64,
 	monasteryId int64,
 ) (*models.Reading, error) {
-	userExists, err := s.repo.UserExists(ctx, customerId)
-	if err != nil {
-		return nil, err
-	}
-	if !userExists {
-		return nil, apperr.NewNotFound("user not found", nil)
-	}
-	monasteryExists, err := s.repo.MonasteryExists(ctx, monasteryId)
-	if err != nil {
-		return nil, err
-	}
-	if !monasteryExists {
-		return nil, apperr.NewNotFound("monastery not found", nil)
-	}
 	reading := models.NewReading(bookId, customerId, monasteryId)
 	if err := s.repo.Add(ctx, reading); err != nil {
 		return nil, err
@@ -80,10 +65,15 @@ func (s *ReadingService) CreateReading(
 	return reading, nil
 }
 
-func (s *ReadingService) ClaimReading(ctx context.Context, monasteryID, readingID, monkID int64) error {
-	return s.repo.Claim(ctx, monasteryID, readingID, monkID)
+func (s *ReadingService) ClaimReading(
+	ctx context.Context,
+	monasteryID, readingID, userId int64,
+) error {
+	return s.repo.Claim(ctx, monasteryID, readingID, userId)
 }
 
-func (s *ReadingService) AssignReading(ctx context.Context, monasteryID, readingID, monkID int64) error {
+func (s *ReadingService) AssignReading(
+	ctx context.Context, monasteryID, readingID, monkID int64,
+) error {
 	return s.repo.Assign(ctx, monasteryID, readingID, monkID)
 }

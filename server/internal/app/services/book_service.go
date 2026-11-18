@@ -5,6 +5,7 @@ import (
 
 	"example.com/open-monastery/internal/app/abstractions"
 	"example.com/open-monastery/internal/app/appmodels"
+	"example.com/open-monastery/internal/app/commands"
 	"example.com/open-monastery/internal/domain/models"
 )
 
@@ -55,17 +56,15 @@ func (s *BookService) GetBooks(
 
 func (s *BookService) CreateBook(
 	ctx context.Context,
-	user_id int64,
-	monasteryID int64,
-	name string,
-	desc string,
+	cmd commands.CreateBookCommand,
 ) (*models.Book, error) {
-	book := &models.Book{
-		Name:        name,
-		Description: desc,
-		MonasteryId: monasteryID,
-		CreatedBy:   user_id,
-	}
+	book := models.NewBook(
+		cmd.Name,
+		cmd.Desc,
+		cmd.Price,
+		cmd.MonasteryID,
+		cmd.UserId,
+	)
 	err := s.repo.Add(ctx, book)
 	if err != nil {
 		return nil, err

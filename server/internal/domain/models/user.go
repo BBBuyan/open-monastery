@@ -1,12 +1,10 @@
 package models
 
 import (
-	"regexp"
+	"time"
 
 	"example.com/open-monastery/internal/domain/enums"
 )
-
-var mongolianPhoneRegex = regexp.MustCompile(`^\+976[0-9]{8}$`)
 
 type User struct {
 	Id           int64
@@ -17,6 +15,7 @@ type User struct {
 	Email        Email
 	PhoneNumber  *PhoneNumber
 	MonasteryId  *int64
+	CreatedAt    time.Time
 }
 
 func NewUser(
@@ -24,13 +23,16 @@ func NewUser(
 	lastName string,
 	email Email,
 	phone *PhoneNumber,
+	passHash string,
 ) (*User, error) {
 	user := &User{
-		FirstName:   firstName,
-		LastName:    lastName,
-		UserType:    enums.Customer,
-		Email:       email,
-		PhoneNumber: phone,
+		FirstName:    firstName,
+		LastName:     lastName,
+		UserType:     enums.Customer,
+		Email:        email,
+		PhoneNumber:  phone,
+		PasswordHash: passHash,
+		CreatedAt: time.Now().UTC().Truncate(time.Microsecond),
 	}
 	return user, nil
 }

@@ -14,13 +14,13 @@ type Category struct {
 
 func NewCategory(
 	name string,
-	userId int64,
 	monasteryId int64,
-) (*Category, error) {
+	userId int64,
+) *Category {
 	return &Category{
 		Name:        name,
 		MonasteryId: monasteryId,
 		CreatedBy:   userId,
 		CreatedAt:   time.Now().UTC().Truncate(time.Microsecond),
-	}, nil
+	}
 }

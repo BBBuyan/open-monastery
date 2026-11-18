@@ -1,11 +1,16 @@
 package models
 
-import "errors"
+import (
+	"errors"
+	"regexp"
+)
 
 var (
 	ErrPhoneNumberTooLong = errors.New("phone number is too long")
 	ErrInvalidPhoneNumber = errors.New("invalid phone number")
 )
+
+var mongolianPhoneRegex = regexp.MustCompile(`^\+976[0-9]{8}$`)
 
 type PhoneNumber struct {
 	value string

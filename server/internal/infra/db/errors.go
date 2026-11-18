@@ -17,8 +17,15 @@ func translateWriteError(operation string, err error) error {
 				err,
 			)
 		case 1452:
+			// delete/update of a parent is blocked because children reference it
 			return apperr.NewNotFound(
-				"not found",
+				"one or more referenced entity does not exist",
+				err,
+			)
+		case 1451:
+			// insert/update references a nonexistent parent
+			return apperr.NewInvalid(
+				"entity is still referenced by another entity",
 				err,
 			)
 		}
