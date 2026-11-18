@@ -5,13 +5,13 @@ import (
 )
 
 type Book struct {
-	Id          int64     `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Price       uint32    `json:"price"`
-	MonasteryId int64     `json:"monastery_id"`
-	CreatedBy   int64     `json:"created_by"`
-	CreatedAt   time.Time `json:"created_at"`
+	Id          int64
+	Name        string
+	Description string
+	Price       uint32
+	MonasteryId int64
+	CreatedBy   int64
+	CreatedAt   time.Time
 }
 
 func NewBook(

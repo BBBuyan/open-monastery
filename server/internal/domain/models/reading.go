@@ -7,17 +7,17 @@ import (
 )
 
 type Reading struct {
-	Id          int64  `json:"id"`
-	BookId      int64  `json:"book_id"`
-	MonkId      *int64 `json:"monk_id"`
-	CustomerId  int64  `json:"customer_id"`
-	MonasteryId int64  `json:"monastery_id"`
+	Id          int64
+	BookId      int64
+	MonkId      *int64
+	CustomerId  int64
+	MonasteryId int64
 
-	Status enums.ReadingStatus `json:"status"`
+	Status enums.ReadingStatus
 	// CreatedAt is the UTC creation time, when recorded.
-	CreatedAt *time.Time `json:"created_at,omitempty"`
+	CreatedAt *time.Time
 	// AssignedAt is the UTC time when a monk claimed the reading, when recorded.
-	AssignedAt *time.Time `json:"assigned_at,omitempty"`
+	AssignedAt *time.Time
 }
 
 func NewReading(

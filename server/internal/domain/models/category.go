@@ -5,11 +5,11 @@ import (
 )
 
 type Category struct {
-	Id          int64     `json:"id"`
-	Name        string    `json:"name"`
-	MonasteryId int64     `json:"monastery_id"`
-	CreatedBy   int64     `json:"created_by"`
-	CreatedAt   time.Time `json:"created_at"`
+	Id          int64
+	Name        string
+	MonasteryId int64
+	CreatedBy   int64
+	CreatedAt   time.Time
 }
 
 func NewCategory(
