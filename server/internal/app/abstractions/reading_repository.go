@@ -11,8 +11,6 @@ type ReadingRepository interface {
 	Add(ctx context.Context, reading *models.Reading) error
 	Claim(ctx context.Context, monasteryID, readingID, monkID int64) error
 	Assign(ctx context.Context, monasteryID, readingID, monkID int64) error
-	UserExists(ctx context.Context, id int64) (bool, error)
-	MonasteryExists(ctx context.Context, id int64) (bool, error)
 	GetReadingsByUserId(
 		ctx context.Context,
 		monasteryID int64,

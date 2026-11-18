@@ -1,13 +1,11 @@
 package abstractions
 
-import "example.com/open-monastery/internal/domain/models"
-
-type AccessIdentity struct {
-	UserID int64
-	Roles  []models.UserType
-}
+import (
+	"example.com/open-monastery/internal/app/appmodels"
+	"example.com/open-monastery/internal/domain/enums"
+)
 
 type TokeIssuer interface {
-	IssueAccessToken(userID int64, userType models.UserType) (string, error)
-	ValidateToken(tokenStr string) (AccessIdentity, error)
+	IssueAccessToken(userID int64, userType enums.UserType) (string, error)
+	ValidateToken(tokenStr string) (appmodels.Actor, error)
 }
