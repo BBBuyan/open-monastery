@@ -27,19 +27,21 @@ func NewReading(
 ) *Reading {
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	return &Reading{
-		BookId:     bookId,
-		CustomerId: customerId,
+		BookId:      bookId,
+		CustomerId:  customerId,
 		MonasteryId: monasteryId,
-		CreatedAt:  &now,
-		Status:     enums.Pending,
+		CreatedAt:   &now,
+		Status:      enums.Pending,
 	}
 }
 
 func (r *Reading) AssignToMonk(
-	monkId int64,
-) {
-	now := time.Now().UTC().Truncate(time.Microsecond)
-	r.MonkId = &monkId
-	r.AssignedAt = &now
+	userId int64,
+) error {
+	r.MonkId = &userId
 	r.Status = enums.Scheduled
+
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	r.AssignedAt = &now
+	return nil
 }
