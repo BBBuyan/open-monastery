@@ -25,19 +25,21 @@ func NewReadingHandler(service *services.ReadingService, monasteryService *servi
 	return &ReadingHandler{monasteryService: monasteryService, service: service}
 }
 
-// @Summary		Get a page of readings
-// @Description	Returns readings owned by the authenticated requester at the monastery.
-// @Security		BearerAuth
-// @Tags			readings
-// @Produce		json,application/problem+json
-// @Param			limit	query		int		false	"Page size (default 20, capped at 100)"
-// @Param			cursor	query		string	false	"Next cursor from the previous page"
-// @Param			id		path		int		true	"Monastery ID"
-// @Success		200		{object}	appmodels.Paginated[models.Reading]
-// @Failure		400		{object}	apimodels.ProblemDetails
-// @Failure		401		{object}	apimodels.ProblemDetails
-// @Failure		500		{object}	apimodels.ProblemDetails
-// @Router			/monasteries/{id}/readings [get]
+// GetReadings returns a page of the authenticated requester's readings at the specified monastery.
+//
+//	@Summary		Get a page of readings
+//	@Description	Returns readings owned by the authenticated requester at the monastery.
+//	@Security		BearerAuth
+//	@Tags			readings
+//	@Produce		json,application/problem+json
+//	@Param			limit	query		int		false	"Page size (default 20, capped at 100)"
+//	@Param			cursor	query		string	false	"Next cursor from the previous page"
+//	@Param			id		path		int		true	"Monastery ID"
+//	@Success		200		{object}	appmodels.Paginated[models.Reading]
+//	@Failure		400		{object}	apimodels.ProblemDetails
+//	@Failure		401		{object}	apimodels.ProblemDetails
+//	@Failure		500		{object}	apimodels.ProblemDetails
+//	@Router			/monasteries/{id}/readings [get]
 func (h *ReadingHandler) GetReadings(c *gin.Context) error {
 	monasteryID, err := helpers.MonasteryID(c)
 	if err != nil {
@@ -61,20 +63,22 @@ func (h *ReadingHandler) GetReadings(c *gin.Context) error {
 	return nil
 }
 
-// @Summary		Create a reading
-// @Description	Creates a pending reading for the authenticated requester using a book from the monastery.
-// @Security		BearerAuth
-// @Tags			readings
-// @Accept			json
-// @Produce		json,application/problem+json
-// @Param			reading	body		dtos.CreateReadingRequest	true	"Reading to create"
-// @Param			id		path		int							true	"Monastery ID"
-// @Success		201		{object}	models.Reading
-// @Failure		400		{object}	apimodels.ProblemDetails
-// @Failure		401		{object}	apimodels.ProblemDetails
-// @Failure		404		{object}	apimodels.ProblemDetails
-// @Failure		500		{object}	apimodels.ProblemDetails
-// @Router			/monasteries/{id}/readings [post]
+// AddReading creates a pending reading for the authenticated requester at the specified monastery.
+//
+//	@Summary		Create a reading
+//	@Description	Creates a pending reading for the authenticated requester using a book from the monastery.
+//	@Security		BearerAuth
+//	@Tags			readings
+//	@Accept			json
+//	@Produce		json,application/problem+json
+//	@Param			reading	body		dtos.CreateReadingRequest	true	"Reading to create"
+//	@Param			id		path		int							true	"Monastery ID"
+//	@Success		201		{object}	models.Reading
+//	@Failure		400		{object}	apimodels.ProblemDetails
+//	@Failure		401		{object}	apimodels.ProblemDetails
+//	@Failure		404		{object}	apimodels.ProblemDetails
+//	@Failure		500		{object}	apimodels.ProblemDetails
+//	@Router			/monasteries/{id}/readings [post]
 func (h *ReadingHandler) AddReading(c *gin.Context) error {
 	monasteryID, err := helpers.MonasteryID(c)
 	if err != nil {
@@ -102,21 +106,23 @@ func (h *ReadingHandler) AddReading(c *gin.Context) error {
 	return nil
 }
 
-// @Summary		Claim an unassigned reading
-// @Description	Assigns the reading to the authenticated monk if the monk belongs to the monastery.
-// @Security		BearerAuth
-// @Tags			readings
-// @Produce		application/problem+json
-// @Param			readingId	path	int	true	"Reading ID"
-// @Param			id			path	int	true	"Monastery ID"
-// @Success		204
-// @Failure		400	{object}	apimodels.ProblemDetails
-// @Failure		401	{object}	apimodels.ProblemDetails
-// @Failure		403	{object}	apimodels.ProblemDetails
-// @Failure		404	{object}	apimodels.ProblemDetails
-// @Failure		409	{object}	apimodels.ProblemDetails
-// @Failure		500	{object}	apimodels.ProblemDetails
-// @Router			/monasteries/{id}/readings/{readingId}/claim [post]
+// ClaimReading assigns an unassigned reading to the authenticated monk.
+//
+//	@Summary		Claim an unassigned reading
+//	@Description	Assigns the reading to the authenticated monk if the monk belongs to the monastery.
+//	@Security		BearerAuth
+//	@Tags			readings
+//	@Produce		application/problem+json
+//	@Param			readingId	path	int	true	"Reading ID"
+//	@Param			id			path	int	true	"Monastery ID"
+//	@Success		204
+//	@Failure		400	{object}	apimodels.ProblemDetails
+//	@Failure		401	{object}	apimodels.ProblemDetails
+//	@Failure		403	{object}	apimodels.ProblemDetails
+//	@Failure		404	{object}	apimodels.ProblemDetails
+//	@Failure		409	{object}	apimodels.ProblemDetails
+//	@Failure		500	{object}	apimodels.ProblemDetails
+//	@Router			/monasteries/{id}/readings/{readingId}/claim [post]
 func (h *ReadingHandler) ClaimReading(c *gin.Context) error {
 	monasteryID, err := helpers.MonasteryID(c)
 	if err != nil {
@@ -137,23 +143,25 @@ func (h *ReadingHandler) ClaimReading(c *gin.Context) error {
 	return nil
 }
 
-// @Summary		Assign or reassign a reading
-// @Description	Requires the Manager role for this monastery or the Admin role. The monk must belong to the monastery.
-// @Security		BearerAuth
-// @Tags			readings
-// @Accept			json
-// @Produce		application/problem+json
-// @Param			id			path	int							true	"Monastery ID"
-// @Param			readingId	path	int							true	"Reading ID"
-// @Param			assignment	body	dtos.AssignReadingRequest	true	"Monk to assign"
-// @Success		204
-// @Failure		400	{object}	apimodels.ProblemDetails
-// @Failure		401	{object}	apimodels.ProblemDetails
-// @Failure		403	{object}	apimodels.ProblemDetails
-// @Failure		404	{object}	apimodels.ProblemDetails
-// @Failure		409	{object}	apimodels.ProblemDetails
-// @Failure		500	{object}	apimodels.ProblemDetails
-// @Router			/monasteries/{id}/readings/{readingId}/assignment [put]
+// AssignReading assigns or reassigns a reading to a monk in the specified monastery.
+//
+//	@Summary		Assign or reassign a reading
+//	@Description	Requires the Manager role for this monastery or the Admin role. The monk must belong to the monastery.
+//	@Security		BearerAuth
+//	@Tags			readings
+//	@Accept			json
+//	@Produce		application/problem+json
+//	@Param			id			path	int							true	"Monastery ID"
+//	@Param			readingId	path	int							true	"Reading ID"
+//	@Param			assignment	body	dtos.AssignReadingRequest	true	"Monk to assign"
+//	@Success		204
+//	@Failure		400	{object}	apimodels.ProblemDetails
+//	@Failure		401	{object}	apimodels.ProblemDetails
+//	@Failure		403	{object}	apimodels.ProblemDetails
+//	@Failure		404	{object}	apimodels.ProblemDetails
+//	@Failure		409	{object}	apimodels.ProblemDetails
+//	@Failure		500	{object}	apimodels.ProblemDetails
+//	@Router			/monasteries/{id}/readings/{readingId}/assignment [put]
 func (h *ReadingHandler) AssignReading(c *gin.Context) error {
 	monasteryID, err := monasteryForWrite(c, h.monasteryService)
 	if err != nil {

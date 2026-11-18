@@ -26,16 +26,18 @@ func NewBookHandler(service *services.BookService, monasteryService *services.Mo
 	}
 }
 
-// @Summary	Get Book
-// @Param		bookId	path	int	true	"Book ID"
-// @Tags		books
-// @Accept		json
-// @Produce	json,application/problem+json
-// @Param		id	path		int	true	"Monastery ID"
-// @Success	200	{object}	models.Book
-// @Failure	400	{object}	apimodels.ProblemDetails
-// @Failure	404	{object}	apimodels.ProblemDetails
-// @Router		/monasteries/{id}/books/{bookId} [get]
+// GetBook retrieves a book by ID from the specified monastery.
+//
+//	@Summary	Get Book
+//	@Param		bookId	path	int	true	"Book ID"
+//	@Tags		books
+//	@Accept		json
+//	@Produce	json,application/problem+json
+//	@Param		id	path		int	true	"Monastery ID"
+//	@Success	200	{object}	models.Book
+//	@Failure	400	{object}	apimodels.ProblemDetails
+//	@Failure	404	{object}	apimodels.ProblemDetails
+//	@Router		/monasteries/{id}/books/{bookId} [get]
 func (h *BookHandler) GetBook(
 	c *gin.Context,
 ) error {
@@ -60,17 +62,19 @@ func (h *BookHandler) GetBook(
 	return nil
 }
 
-// @Summary	Get a page of books
-// @Tags		books
-// @Produce	json,application/problem+json
-// @Param		limit	query		int		false	"Page size (default 20, capped at 100)"
-// @Param		cursor	query		string	false	"Last book ID from the previous page"
-// @Param		q		query		string	false	"Search name or description"
-// @Param		id		path		int		true	"Monastery ID"
-// @Success	200		{object}	appmodels.Paginated[models.Book]
-// @Failure	400		{object}	apimodels.ProblemDetails
-// @Failure	500		{object}	apimodels.ProblemDetails
-// @Router		/monasteries/{id}/books [get]
+// GetBooks returns a page of books from the specified monastery.
+//
+//	@Summary	Get a page of books
+//	@Tags		books
+//	@Produce	json,application/problem+json
+//	@Param		limit	query		int		false	"Page size (default 20, capped at 100)"
+//	@Param		cursor	query		string	false	"Last book ID from the previous page"
+//	@Param		q		query		string	false	"Search name or description"
+//	@Param		id		path		int		true	"Monastery ID"
+//	@Success	200		{object}	appmodels.Paginated[models.Book]
+//	@Failure	400		{object}	apimodels.ProblemDetails
+//	@Failure	500		{object}	apimodels.ProblemDetails
+//	@Router		/monasteries/{id}/books [get]
 func (h *BookHandler) GetBooks(
 	c *gin.Context,
 ) error {
@@ -91,21 +95,23 @@ func (h *BookHandler) GetBooks(
 	return nil
 }
 
-// @Summary	Create a book
-// @Description	Requires the Manager role for this monastery or the Admin role.
-// @Tags		books
-// @Security	BearerAuth
-// @Accept		json
-// @Produce	json,application/problem+json
-// @Param		book	body		dtos.CreateBookRequest	true	"Book to create"
-// @Param		id		path		int						true	"Monastery ID"
-// @Success	201		{object}	models.Book
-// @Failure	400		{object}	apimodels.ProblemDetails
-// @Failure	401		{object}	apimodels.ProblemDetails
-// @Failure	403		{object}	apimodels.ProblemDetails
-// @Failure	404		{object}	apimodels.ProblemDetails
-// @Failure	500		{object}	apimodels.ProblemDetails
-// @Router		/monasteries/{id}/books [post]
+// AddBook creates a book in the specified monastery.
+//
+//	@Summary		Create a book
+//	@Description	Requires the Manager role for this monastery or the Admin role.
+//	@Tags			books
+//	@Security		BearerAuth
+//	@Accept			json
+//	@Produce		json,application/problem+json
+//	@Param			book	body		dtos.CreateBookRequest	true	"Book to create"
+//	@Param			id		path		int						true	"Monastery ID"
+//	@Success		201		{object}	models.Book
+//	@Failure		400		{object}	apimodels.ProblemDetails
+//	@Failure		401		{object}	apimodels.ProblemDetails
+//	@Failure		403		{object}	apimodels.ProblemDetails
+//	@Failure		404		{object}	apimodels.ProblemDetails
+//	@Failure		500		{object}	apimodels.ProblemDetails
+//	@Router			/monasteries/{id}/books [post]
 func (h *BookHandler) AddBook(
 	c *gin.Context,
 ) error {
@@ -135,15 +141,17 @@ func (h *BookHandler) AddBook(
 	return nil
 }
 
-// @Summary	Get categories belonging to a book
-// @Tags		books
-// @Produce	json,application/problem+json
-// @Param		bookId	path		int	true	"Book ID"
-// @Param		id		path		int	true	"Monastery ID"
-// @Success	200		{array}		models.Category
-// @Failure	400		{object}	apimodels.ProblemDetails
-// @Failure	500		{object}	apimodels.ProblemDetails
-// @Router		/monasteries/{id}/books/{bookId}/categories [get]
+// GetBookCategories returns the categories associated with a book.
+//
+//	@Summary	Get categories belonging to a book
+//	@Tags		books
+//	@Produce	json,application/problem+json
+//	@Param		bookId	path		int	true	"Book ID"
+//	@Param		id		path		int	true	"Monastery ID"
+//	@Success	200		{array}		models.Category
+//	@Failure	400		{object}	apimodels.ProblemDetails
+//	@Failure	500		{object}	apimodels.ProblemDetails
+//	@Router		/monasteries/{id}/books/{bookId}/categories [get]
 func (h *BookHandler) GetBookCategories(
 	c *gin.Context,
 ) error {

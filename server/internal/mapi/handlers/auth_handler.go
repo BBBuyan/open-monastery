@@ -19,16 +19,18 @@ func NewAuthHandler(service *services.AuthService) *AuthHandler {
 	return &AuthHandler{service: service}
 }
 
-// @Summary	Log in with an email address and password
-// @Tags		auth
-// @Accept		json
-// @Produce	json,application/problem+json
-// @Param		credentials	body		dtos.LoginRequest	true	"Login credentials"
-// @Success	200			{object}	apimodels.LoginResponse
-// @Failure	400			{object}	apimodels.ProblemDetails
-// @Failure	401			{object}	apimodels.ProblemDetails
-// @Failure	500			{object}	apimodels.ProblemDetails
-// @Router		/auth/login [post]
+// Login authenticates a user with an email address and password.
+//
+//	@Summary	Log in with an email address and password
+//	@Tags		auth
+//	@Accept		json
+//	@Produce	json,application/problem+json
+//	@Param		credentials	body		dtos.LoginRequest	true	"Login credentials"
+//	@Success	200			{object}	apimodels.LoginResponse
+//	@Failure	400			{object}	apimodels.ProblemDetails
+//	@Failure	401			{object}	apimodels.ProblemDetails
+//	@Failure	500			{object}	apimodels.ProblemDetails
+//	@Router		/auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) error {
 	var req dtos.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -46,17 +48,19 @@ func (h *AuthHandler) Login(c *gin.Context) error {
 	return nil
 }
 
-// @Summary	Create a user
-// @Tags		auth
-// @Accept		json
-// @Produce	json,application/problem+json
-// @Param		user	body		dtos.CreateUserRequest	true	"User to create"
-// @Success	201		{object}	models.User
-// @Failure	400		{object}	apimodels.ProblemDetails
-// @Failure	409		{object}	apimodels.ProblemDetails
-// @Failure	422		{object}	apimodels.ProblemDetails
-// @Failure	500		{object}	apimodels.ProblemDetails
-// @Router		/auth/register [post]
+// RegisterUser registers a new user.
+//
+//	@Summary	Create a user
+//	@Tags		auth
+//	@Accept		json
+//	@Produce	json,application/problem+json
+//	@Param		user	body		dtos.CreateUserRequest	true	"User to create"
+//	@Success	201		{object}	models.User
+//	@Failure	400		{object}	apimodels.ProblemDetails
+//	@Failure	409		{object}	apimodels.ProblemDetails
+//	@Failure	422		{object}	apimodels.ProblemDetails
+//	@Failure	500		{object}	apimodels.ProblemDetails
+//	@Router		/auth/register [post]
 func (h *AuthHandler) RegisterUser(c *gin.Context) error {
 	var req dtos.CreateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -73,17 +77,19 @@ func (h *AuthHandler) RegisterUser(c *gin.Context) error {
 	return nil
 }
 
-// @Summary	Create a monk
-// @Tags		auth
-// @Accept		json
-// @Produce	json,application/problem+json
-// @Param		monk	body		dtos.CreateMonkRequest	true	"Monk to create"
-// @Success	201		{object}	models.User
-// @Failure	400		{object}	apimodels.ProblemDetails
-// @Failure	409		{object}	apimodels.ProblemDetails
-// @Failure	422		{object}	apimodels.ProblemDetails
-// @Failure	500		{object}	apimodels.ProblemDetails
-// @Router		/auth/register/monks [post]
+// RegisterMonk registers a new monk.
+//
+//	@Summary	Create a monk
+//	@Tags		auth
+//	@Accept		json
+//	@Produce	json,application/problem+json
+//	@Param		monk	body		dtos.CreateMonkRequest	true	"Monk to create"
+//	@Success	201		{object}	models.User
+//	@Failure	400		{object}	apimodels.ProblemDetails
+//	@Failure	409		{object}	apimodels.ProblemDetails
+//	@Failure	422		{object}	apimodels.ProblemDetails
+//	@Failure	500		{object}	apimodels.ProblemDetails
+//	@Router		/auth/register/monks [post]
 func (h *AuthHandler) RegisterMonk(c *gin.Context) error {
 	var req dtos.CreateMonkRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
