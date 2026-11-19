@@ -6,6 +6,11 @@ import (
 	"example.com/open-monastery/internal/app/apperr"
 )
 
+const (
+	DefaultPageLimit = 20
+	MaxPageLimit     = 100
+)
+
 type ListOptions struct {
 	Limit   int
 	AfterId int64
@@ -14,7 +19,7 @@ type ListOptions struct {
 
 func (o ListOptions) Normalize() (ListOptions, error) {
 	if o.Limit == 0 {
-		o.Limit = 20
+		o.Limit = DefaultPageLimit
 	}
 	if o.Limit < 1 || o.AfterId < 0 {
 		return o, apperr.NewBadRequestWithMsg(
@@ -23,8 +28,8 @@ func (o ListOptions) Normalize() (ListOptions, error) {
 			nil,
 		)
 	}
-	if o.Limit > 100 {
-		o.Limit = 100
+	if o.Limit > MaxPageLimit {
+		o.Limit = MaxPageLimit
 	}
 	o.Search = strings.TrimSpace(o.Search)
 	return o, nil

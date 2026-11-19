@@ -22,7 +22,7 @@ func NewReadingService(
 
 func (s *ReadingService) GetReadings(
 	ctx context.Context,
-	monasteryID, userID int64,
+	actor appmodels.Actor,
 	opts appmodels.ListOptions,
 ) (*appmodels.Paginated[*models.Reading], error) {
 	opts, err := opts.Normalize()
@@ -31,8 +31,7 @@ func (s *ReadingService) GetReadings(
 	}
 	readings, err := s.repo.GetReadingsByUserId(
 		ctx,
-		monasteryID,
-		userID,
+		actor.Id,
 		opts,
 	)
 	if err != nil {
@@ -63,17 +62,4 @@ func (s *ReadingService) CreateReading(
 	}
 
 	return reading, nil
-}
-
-func (s *ReadingService) ClaimReading(
-	ctx context.Context,
-	monasteryID, readingID, userId int64,
-) error {
-	return s.repo.Claim(ctx, monasteryID, readingID, userId)
-}
-
-func (s *ReadingService) AssignReading(
-	ctx context.Context, monasteryID, readingID, monkID int64,
-) error {
-	return s.repo.Assign(ctx, monasteryID, readingID, monkID)
 }

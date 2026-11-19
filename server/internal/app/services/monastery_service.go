@@ -53,13 +53,12 @@ func (s *MonasteryService) GetMonasteries(
 func (s *MonasteryService) CreateMonastery(
 	ctx context.Context,
 	name string,
-	userId int64,
 	actor appmodels.Actor,
 ) (*models.Monastery, error) {
 	if actor.Role != enums.Admin {
 		return nil, apperr.NewForbidden("forbidden")
 	}
-	monastery := models.NewMonastery(name, userId)
+	monastery := models.NewMonastery(name, actor.Id)
 	err := s.repo.Add(ctx, monastery)
 	if err != nil {
 		return nil, err

@@ -5,5 +5,4 @@ type CreateBookCommand struct {
 	Desc        string
 	Price       uint32
 	UserId      int64
-	MonasteryID int64
 }
