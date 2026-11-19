@@ -18,13 +18,13 @@ tasks:
     desc: generate swagger
     cmd: >-
       swag init
-      -d cmd/api,internal/app/appmodels,internal/domain/models,internal/mapi/handlers,internal/mapi/dtos,internal/mapi/apimodels,internal/domain/enums
+      -d cmd/api,internal/app/appmodels,internal/domain/models,internal/api/controllers,internal/api/dtos,internal/api/apimodels,internal/domain/enums
       --parseInternal
   swag-fmt:
     desc: format swagger
     cmd: >-
       swag fmt
-      -d cmd/api,internal/mapi/handlers
+      -d cmd/api,internal/api/controllers
   mig-up:
     desc: run migrations up
     cmd: >-
