@@ -3,13 +3,13 @@ package controllers
 import (
 	"net/http"
 
-	"example.com/open-monastery/internal/app/apperr"
-	_ "example.com/open-monastery/internal/app/appmodels"
-	"example.com/open-monastery/internal/app/services"
 	_ "example.com/open-monastery/internal/api/apimodels"
 	"example.com/open-monastery/internal/api/dtos"
 	"example.com/open-monastery/internal/api/helpers"
 	"example.com/open-monastery/internal/api/middlewares"
+	"example.com/open-monastery/internal/app/apperr"
+	_ "example.com/open-monastery/internal/app/appmodels"
+	"example.com/open-monastery/internal/app/services"
 	"github.com/gin-gonic/gin"
 )
 
