@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"net/http"
-	"strconv"
 	"strings"
 
 	"example.com/open-monastery/internal/app/apperr"
@@ -12,11 +11,12 @@ import (
 	_ "example.com/open-monastery/internal/mapi/apimodels"
 	"example.com/open-monastery/internal/mapi/dtos"
 	"example.com/open-monastery/internal/mapi/helpers"
+	"example.com/open-monastery/internal/mapi/middlewares"
 	"github.com/gin-gonic/gin"
 )
 
 type CategoryController struct {
-	categoryService  *services.CategoryService
+	categoryService *services.CategoryService
 }
 
 func NewCategoryController(service *services.CategoryService) *CategoryController {
@@ -34,11 +34,11 @@ func NewCategoryController(service *services.CategoryService) *CategoryControlle
 //	@Failure	500	{object}	apimodels.ProblemDetails
 //	@Router		/monasteries/{id}/categories [get]
 func (h *CategoryController) GetCategories(c *gin.Context) error {
-	monasteryID, err := helpers.MonasteryID(c)
-	if err != nil {
-		return err
+	var uri dtos.CategoriesURI
+	if err := c.ShouldBindUri(&uri); err != nil {
+		return apperr.NewBadRequest("invalid.uri", err)
 	}
-	result, err := h.categoryService.GetCategories(c.Request.Context(), monasteryID)
+	result, err := h.categoryService.GetCategories(c.Request.Context(), uri.MonasteryId)
 	if err != nil {
 		return err
 	}
@@ -49,7 +49,7 @@ func (h *CategoryController) GetCategories(c *gin.Context) error {
 // AddCategory creates a category in the specified monastery.
 //
 //	@Summary		Create a category
-//	@Description	Requires the Manager role for this monastery or the Admin role.
+//	@Description	Requires the Manager role for this monastery.
 //	@Tags			categories
 //	@Security		BearerAuth
 //	@Accept			json
@@ -62,18 +62,25 @@ func (h *CategoryController) GetCategories(c *gin.Context) error {
 //	@Failure		403			{object}	apimodels.ProblemDetails
 //	@Failure		404			{object}	apimodels.ProblemDetails
 //	@Failure		500			{object}	apimodels.ProblemDetails
-//	@Router			/monasteries/{id}/categories [post]
+//	@Router			/categories [post]
 func (h *CategoryController) AddCategory(c *gin.Context) error {
-	monasteryID, err := monasteryForWrite(c, h.monasteryService)
+	var uri dtos.CategoriesURI
+	if err := c.ShouldBindUri(&uri); err != nil {
+		return apperr.NewBadRequest("invalid.uri", err)
+	}
+	actor, err := middlewares.AuthenticatedActor(c)
 	if err != nil {
 		return err
+	}
+	if actor.MonasteryId != nil && *actor.MonasteryId != uri.MonasteryId {
+		return apperr.NewForbidden("monastery.forbidden")
 	}
 	var req dtos.CreateCategoryRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		return apperr.NewBadRequest("invalid.body", err)
 	}
 	name := strings.TrimSpace(req.Name)
-	result, err := h.categoryService.CreateCategory(c.Request.Context(), monasteryID, name)
+	result, err := h.categoryService.CreateCategory(c.Request.Context(), name, *actor)
 	if err != nil {
 		return err
 	}
@@ -84,7 +91,7 @@ func (h *CategoryController) AddCategory(c *gin.Context) error {
 // AddBook adds an existing book to a category.
 //
 //	@Summary		Add a book to a category
-//	@Description	Requires the Manager role for this monastery or the Admin role.
+//	@Description	Requires the Manager role for this monastery.
 //	@Tags			categories
 //	@Security		BearerAuth
 //	@Accept			json
@@ -100,16 +107,16 @@ func (h *CategoryController) AddCategory(c *gin.Context) error {
 //	@Failure		500	{object}	apimodels.ProblemDetails
 //	@Router			/monasteries/{id}/categories/{categoryId}/books [post]
 func (h *CategoryController) AddBook(c *gin.Context) error {
-	monasteryID, err := monasteryForWrite(c, h.monasteryService)
+	var uri dtos.CategoryURI
+	if err := c.ShouldBindUri(&uri); err != nil {
+		return apperr.NewBadRequest("invalid.uri", err)
+	}
+	actor, err := middlewares.AuthenticatedActor(c)
 	if err != nil {
 		return err
 	}
-	id, err := strconv.ParseInt(c.Param("categoryId"), 10, 64)
-	if err != nil || id <= 0 {
-		return apperr.NewBadRequest(
-			"invalid category id",
-			err,
-		)
+	if actor.MonasteryId != nil && *actor.MonasteryId != uri.MonasteryId {
+		return apperr.NewForbidden("monastery.forbidden")
 	}
 	var req dtos.AddBookToCategoryRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -117,9 +124,9 @@ func (h *CategoryController) AddBook(c *gin.Context) error {
 	}
 	if err := h.categoryService.AddBook(
 		c.Request.Context(),
-		monasteryID,
-		id,
+		uri.CategoryId,
 		req.BookId,
+		*actor,
 	); err != nil {
 		return err
 	}
@@ -142,21 +149,15 @@ func (h *CategoryController) AddBook(c *gin.Context) error {
 //	@Failure	500			{object}	apimodels.ProblemDetails
 //	@Router		/monasteries/{id}/categories/{categoryId}/books [get]
 func (h *CategoryController) GetBooksByCategoryId(c *gin.Context) error {
-	monasteryID, err := helpers.MonasteryID(c)
-	if err != nil {
-		return err
-	}
-	id, err := strconv.ParseInt(c.Param("categoryId"), 10, 64)
-	if err != nil || id <= 0 {
-		return apperr.NewBadRequest(
-			"invalid category id",
-			err)
+	var uri dtos.CategoryURI
+	if err := c.ShouldBindUri(&uri); err != nil {
+		return apperr.NewBadRequest("invalid.uri", err)
 	}
 	options, err := helpers.ToListOpts(c)
 	if err != nil {
 		return err
 	}
-	result, err := h.categoryService.GetBooksByCategoryId(c.Request.Context(), monasteryID, id, options)
+	result, err := h.categoryService.GetBooksByCategoryId(c.Request.Context(), uri.MonasteryId, uri.CategoryId, options)
 	if err != nil {
 		return err
 	}

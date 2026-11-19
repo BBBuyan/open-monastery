@@ -2,25 +2,26 @@ package controllers
 
 import (
 	"net/http"
-	"strconv"
 
 	"example.com/open-monastery/internal/app/apperr"
 	_ "example.com/open-monastery/internal/app/appmodels"
+	"example.com/open-monastery/internal/app/commands"
 	"example.com/open-monastery/internal/app/services"
 	_ "example.com/open-monastery/internal/domain/models"
 	_ "example.com/open-monastery/internal/mapi/apimodels"
 	"example.com/open-monastery/internal/mapi/dtos"
 	"example.com/open-monastery/internal/mapi/helpers"
+	"example.com/open-monastery/internal/mapi/middlewares"
 	"github.com/gin-gonic/gin"
 )
 
 type BookController struct {
-	service          *services.BookService
+	service *services.BookService
 }
 
 func NewBookController(service *services.BookService) *BookController {
 	return &BookController{
-		service:          service,
+		service: service,
 	}
 }
 
@@ -39,19 +40,16 @@ func NewBookController(service *services.BookService) *BookController {
 func (h *BookController) GetBook(
 	c *gin.Context,
 ) error {
-	monasteryID, err := helpers.MonasteryID(c)
-	if err != nil {
-		return err
-	}
-	id, err := strconv.ParseInt(c.Param("bookId"), 10, 64)
-	if err != nil || id <= 0 {
-		return apperr.NewBadRequest(
-			"invalid book id",
-			err,
-		)
+	var uri dtos.BookURI
+	if err := c.ShouldBindUri(&uri); err != nil {
+		return apperr.NewBadRequest("invalid.uri", err)
 	}
 
-	result, err := h.service.GetBook(c.Request.Context(), monasteryID, id)
+	result, err := h.service.GetBook(
+		c.Request.Context(),
+		uri.MonasteryId,
+		uri.BookId,
+	)
 	if err != nil {
 		return err
 	}
@@ -76,15 +74,16 @@ func (h *BookController) GetBook(
 func (h *BookController) GetBooks(
 	c *gin.Context,
 ) error {
-	monasteryID, err := helpers.MonasteryID(c)
-	if err != nil {
-		return err
+	var uri dtos.BooksURI
+	if err := c.ShouldBindUri(&uri); err != nil {
+		return apperr.NewBadRequest("invalid.uri", err)
 	}
 	options, err := helpers.ToListOpts(c)
 	if err != nil {
 		return err
 	}
-	books, err := h.service.GetBooks(c.Request.Context(), monasteryID, options)
+
+	books, err := h.service.GetBooks(c.Request.Context(), uri.MonasteryId, options)
 	if err != nil {
 		return err
 	}
@@ -113,24 +112,23 @@ func (h *BookController) GetBooks(
 func (h *BookController) AddBook(
 	c *gin.Context,
 ) error {
-	monasteryID, err := monasteryForWrite(c, h.monasteryService)
+	var req dtos.CreateBookRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		return err
+	}
+	actor, err := middlewares.AuthenticatedActor(c)
 	if err != nil {
 		return err
 	}
-	var req dtos.CreateBookRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		return apperr.NewBadRequestWithMsg(
-			"invalid.body",
-			err.Error(),
-			err,
-		)
+	cmd := commands.CreateBookCommand{
+		Name:  req.Name,
+		Desc:  req.Description,
+		Price: uint32(req.Price),
 	}
-
 	result, err := h.service.CreateBook(
 		c.Request.Context(),
-		monasteryID,
-		req.Name,
-		req.Description,
+		cmd,
+		*actor,
 	)
 	if err != nil {
 		return err
@@ -153,18 +151,15 @@ func (h *BookController) AddBook(
 func (h *BookController) GetBookCategories(
 	c *gin.Context,
 ) error {
-	monasteryID, err := helpers.MonasteryID(c)
-	if err != nil {
-		return err
+	var uri dtos.BookURI
+	if err := c.ShouldBindUri(&uri); err != nil {
+		return apperr.NewBadRequest("invalid.uri", err)
 	}
-	id, err := strconv.ParseInt(c.Param("bookId"), 10, 64)
-	if err != nil || id <= 0 {
-		return apperr.NewBadRequest(
-			"invalid book id",
-			err,
-		)
-	}
-	result, err := h.service.GetBookCategories(c.Request.Context(), monasteryID, id)
+	result, err := h.service.GetBookCategories(
+		c.Request.Context(),
+		uri.MonasteryId,
+		uri.BookId,
+	)
 	if err != nil {
 		return err
 	}

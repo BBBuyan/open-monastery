@@ -3,7 +3,7 @@ package main
 import (
 	"example.com/open-monastery/internal/infra/db"
 	"example.com/open-monastery/internal/infra/token"
-	"example.com/open-monastery/internal/mapi"
+	"example.com/open-monastery/internal/api"
 )
 
 // devSigningKey is for local development only.
@@ -26,6 +26,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	r := mapi.RegisterAPI(db, jwtIssuer)
+	r := api.RegisterAPI(db, jwtIssuer)
 	r.Run("127.0.0.1:8080")
 }

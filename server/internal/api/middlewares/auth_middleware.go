@@ -5,17 +5,17 @@ import (
 	"slices"
 	"strings"
 
-	"example.com/open-monastery/internal/app/abstractions"
 	"example.com/open-monastery/internal/app/apperr"
-	"example.com/open-monastery/internal/domain/models"
+	"example.com/open-monastery/internal/app/appmodels"
+	"example.com/open-monastery/internal/domain/enums"
 	"example.com/open-monastery/internal/mapi/apimodels"
 	"github.com/gin-gonic/gin"
 )
 
-const identityKey = "authenticatedIdentity"
+const actorKey = "authenticatedActor"
 
 func RequireAuth(
-	validateToken func(string) (abstractions.AccessIdentity, error),
+	validateToken func(string) (appmodels.Actor, error),
 ) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		header := strings.Fields(c.GetHeader("Authorization"))
@@ -24,44 +24,39 @@ func RequireAuth(
 			return
 		}
 
-		identity, err := validateToken(header[1])
-		if err != nil || identity.UserID <= 0 {
+		actor, err := validateToken(header[1])
+		if err != nil || actor.Id <= 0 {
 			abortUnauthorized(c)
 			return
 		}
 
-		c.Set(identityKey, identity)
+		c.Set(actorKey, actor)
 		c.Next()
 	}
 }
 
-func RequireRole(allowed ...models.UserType) func(*gin.Context) error {
+func RequireRole(allowed ...enums.UserType) func(*gin.Context) error {
 	return func(c *gin.Context) error {
-		identity, ok := authenticatedIdentity(c)
-		if !ok {
+		actor, err := AuthenticatedActor(c)
+		if err != nil {
 			abortUnauthorized(c)
 			return nil
 		}
 
-		for _, role := range allowed {
-			if slices.Contains(identity.Roles, role) {
-				return nil
-			}
+		if slices.Contains(allowed, actor.Role) {
+			return nil
 		}
 		return apperr.NewForbidden("user_type.forbidden")
 	}
 }
 
-// UserID returns the authenticated user ID set by RequireAuth.
-func UserID(c *gin.Context) (int64, bool) {
-	identity, ok := authenticatedIdentity(c)
-	return identity.UserID, ok
-}
-
-func authenticatedIdentity(c *gin.Context) (abstractions.AccessIdentity, bool) {
-	value, _ := c.Get(identityKey)
-	identity, ok := value.(abstractions.AccessIdentity)
-	return identity, ok && identity.UserID > 0
+func AuthenticatedActor(c *gin.Context) (*appmodels.Actor, error) {
+	value, _ := c.Get(actorKey)
+	actor, ok := value.(appmodels.Actor)
+	if !ok || actor.Id < 0 {
+		return &actor, apperr.NewInvalid("actor unparseable", nil)
+	}
+	return &actor, nil
 }
 
 func abortUnauthorized(c *gin.Context) {

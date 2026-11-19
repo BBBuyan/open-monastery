@@ -1,4 +1,4 @@
-package mapi
+package api
 
 import (
 	"errors"
@@ -28,23 +28,23 @@ func withProblemDetails(handle func(*gin.Context) error) gin.HandlerFunc {
 }
 
 func problemFromError(err error, path string) (int, any) {
-	if vErr, ok := errors.AsType[validator.ValidationErrors](err); ok {
+	if err, ok := errors.AsType[validator.ValidationErrors](err); ok {
 		var problem apimodels.ValidationProblemDetails
 		problem.Status = http.StatusBadRequest
 		problem.Title = new(validationErrorTitle)
 		problem.Instance = &path
-		problem.Errors = make([]string, 0, len(vErr))
-		for _, e := range vErr {
+		problem.Errors = make([]string, 0, len(err))
+		for _, e := range err {
 			problem.Errors = append(problem.Errors, e.Error())
 		}
 		return problem.Status, problem
 	}
 
 	problem := apimodels.ProblemDetails{Instance: &path}
-	if aErr, ok := errors.AsType[*apperr.AppErr](err); ok {
-		problem.Status = statusFor(aErr.Type)
-		problem.Title = &aErr.Code
-		problem.Detail = aErr.Message
+	if err, ok := errors.AsType[*apperr.AppErr](err); ok {
+		problem.Status = statusFor(err.Type)
+		problem.Title = &err.Code
+		problem.Detail = err.Message
 		return problem.Status, problem
 	}
 

@@ -1,4 +1,4 @@
-package mapi
+package api
 
 import (
 	"database/sql"
@@ -7,6 +7,7 @@ import (
 
 	"example.com/open-monastery/internal/app/abstractions"
 	"example.com/open-monastery/internal/app/services"
+	"example.com/open-monastery/internal/domain/enums"
 	"example.com/open-monastery/internal/domain/models"
 	database "example.com/open-monastery/internal/infra/db"
 	"example.com/open-monastery/internal/infra/password"
@@ -33,7 +34,7 @@ func addBook(
 	}
 	authAPI.POST(
 		"/monasteries/:id/books",
-		withProblemDetails(middlewares.RequireRole(models.Manager, models.Admin)),
+		withProblemDetails(middlewares.RequireRole(enums.Manager, enums.Admin)),
 		withProblemDetails(bookHandler.AddBook),
 	)
 }
@@ -80,16 +81,16 @@ func addReadings(db *sql.DB, authApi *gin.RouterGroup) {
 	readings := authApi.Group("/monasteries/:id/readings")
 	{
 		readings.GET("",
-			withProblemDetails(middlewares.RequireRole(models.Monk)),
+			withProblemDetails(middlewares.RequireRole(enums.Monk)),
 			withProblemDetails(readingHandler.GetReadings),
 		)
 		readings.POST("", withProblemDetails(readingHandler.AddReading))
 		readings.POST("/:readingId/claim",
-			withProblemDetails(middlewares.RequireRole(models.Monk)),
+			withProblemDetails(middlewares.RequireRole(enums.Monk)),
 			withProblemDetails(readingHandler.ClaimReading),
 		)
 		readings.PUT("/:readingId/assignment",
-			withProblemDetails(middlewares.RequireRole(models.Manager)),
+			withProblemDetails(middlewares.RequireRole(enums.Manager)),
 			withProblemDetails(readingHandler.AssignReading),
 		)
 	}
@@ -111,11 +112,11 @@ func addAuth(
 	authRepo := database.NewAuthRepository(db)
 	passHasher := password.NewArgonPasswordHasher()
 	authService := services.NewAuthService(authRepo, passHasher, tokenIssuer)
-	authHandler := controllers.NewAuthController(authService)
+	authController := controllers.NewAuthController(authService)
 
-	api.POST("/auth/login", withProblemDetails(authHandler.Login))
-	api.POST("/auth/register/monks", withProblemDetails(authHandler.RegisterMonk))
-	api.POST("/auth/register/users", withProblemDetails(authHandler.RegisterUser))
+	api.POST("/auth/login", withProblemDetails(authController.Login))
+	api.POST("/auth/register", withProblemDetails(authController.RegisterUser))
+	api.POST("/auth/promotion/monk", withProblemDetails(authController.PromoteToMonk))
 }
 
 func RegisterAPI(

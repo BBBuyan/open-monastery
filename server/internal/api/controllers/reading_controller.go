@@ -1,9 +1,7 @@
 package controllers
 
 import (
-	"errors"
 	"net/http"
-	"strconv"
 
 	"example.com/open-monastery/internal/app/apperr"
 	_ "example.com/open-monastery/internal/app/appmodels"
@@ -17,7 +15,7 @@ import (
 )
 
 type ReadingController struct {
-	service          *services.ReadingService
+	service *services.ReadingService
 }
 
 func NewReadingController(service *services.ReadingService) *ReadingController {
@@ -40,20 +38,20 @@ func NewReadingController(service *services.ReadingService) *ReadingController {
 //	@Failure		500		{object}	apimodels.ProblemDetails
 //	@Router			/monasteries/{id}/readings [get]
 func (h *ReadingController) GetReadings(c *gin.Context) error {
-	monasteryID, err := helpers.MonasteryID(c)
+	var uri dtos.ReadingsURI
+	if err := c.ShouldBindUri(&uri); err != nil {
+		return apperr.NewBadRequest("invalid.uri", err)
+	}
+	actor, err := middlewares.AuthenticatedActor(c)
 	if err != nil {
 		return err
-	}
-	userID, ok := middlewares.UserID(c)
-	if !ok {
-		return errors.New("missing authenticated user ID")
 	}
 	options, err := helpers.ToListOpts(c)
 	if err != nil {
 		return err
 	}
 
-	result, err := h.service.GetReadings(c.Request.Context(), monasteryID, userID, options)
+	result, err := h.service.GetReadings(c.Request.Context(), *actor, options)
 	if err != nil {
 		return err
 	}
@@ -79,13 +77,13 @@ func (h *ReadingController) GetReadings(c *gin.Context) error {
 //	@Failure		500		{object}	apimodels.ProblemDetails
 //	@Router			/monasteries/{id}/readings [post]
 func (h *ReadingController) AddReading(c *gin.Context) error {
-	monasteryID, err := helpers.MonasteryID(c)
+	var uri dtos.ReadingsURI
+	if err := c.ShouldBindUri(&uri); err != nil {
+		return apperr.NewBadRequest("invalid.uri", err)
+	}
+	actor, err := middlewares.AuthenticatedActor(c)
 	if err != nil {
 		return err
-	}
-	userID, ok := middlewares.UserID(c)
-	if !ok {
-		return errors.New("missing authenticated user ID")
 	}
 	var req dtos.CreateReadingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -95,8 +93,8 @@ func (h *ReadingController) AddReading(c *gin.Context) error {
 	result, err := h.service.CreateReading(
 		c.Request.Context(),
 		req.BookId,
-		userID,
-		monasteryID,
+		actor.Id,
+		uri.MonasteryId,
 	)
 	if err != nil {
 		return err
@@ -123,19 +121,15 @@ func (h *ReadingController) AddReading(c *gin.Context) error {
 //	@Failure		500	{object}	apimodels.ProblemDetails
 //	@Router			/monasteries/{id}/readings/{readingId}/claim [post]
 func (h *ReadingController) ClaimReading(c *gin.Context) error {
-	monasteryID, err := helpers.MonasteryID(c)
+	var uri dtos.ReadingURI
+	if err := c.ShouldBindUri(&uri); err != nil {
+		return apperr.NewBadRequest("invalid.uri", err)
+	}
+	actor, err := middlewares.AuthenticatedActor(c)
 	if err != nil {
 		return err
 	}
-	monkID, ok := middlewares.UserID(c)
-	if !ok {
-		return errors.New("missing authenticated user ID")
-	}
-	readingID, err := strconv.ParseInt(c.Param("readingId"), 10, 64)
-	if err != nil || readingID <= 0 {
-		return apperr.NewBadRequest("invalid.id", err)
-	}
-	if err := h.service.ClaimReading(c.Request.Context(), monasteryID, readingID, monkID); err != nil {
+	if err := h.service.ClaimReading(c.Request.Context(), uri.MonasteryId, uri.ReadingId, actor.Id); err != nil {
 		return err
 	}
 	c.Status(http.StatusNoContent)
@@ -145,7 +139,7 @@ func (h *ReadingController) ClaimReading(c *gin.Context) error {
 // AssignReading assigns or reassigns a reading to a monk in the specified monastery.
 //
 //	@Summary		Assign or reassign a reading
-//	@Description	Requires the Manager role for this monastery or the Admin role. The monk must belong to the monastery.
+//	@Description	Requires the Manager role for this monastery. The monk must belong to the monastery.
 //	@Security		BearerAuth
 //	@Tags			readings
 //	@Accept			json
@@ -162,19 +156,22 @@ func (h *ReadingController) ClaimReading(c *gin.Context) error {
 //	@Failure		500	{object}	apimodels.ProblemDetails
 //	@Router			/monasteries/{id}/readings/{readingId}/assignment [put]
 func (h *ReadingController) AssignReading(c *gin.Context) error {
-	monasteryID, err := monasteryForWrite(c, h.monasteryService)
+	var uri dtos.ReadingURI
+	if err := c.ShouldBindUri(&uri); err != nil {
+		return apperr.NewBadRequest("invalid.uri", err)
+	}
+	actor, err := middlewares.AuthenticatedActor(c)
 	if err != nil {
 		return err
 	}
-	readingID, err := strconv.ParseInt(c.Param("readingId"), 10, 64)
-	if err != nil || readingID <= 0 {
-		return apperr.NewBadRequest("invalid.id", err)
+	if actor.MonasteryId == nil || *actor.MonasteryId != uri.MonasteryId {
+		return apperr.NewForbidden("monastery.forbidden")
 	}
 	var req dtos.AssignReadingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		return apperr.NewBadRequest("invalid.body", err)
 	}
-	if err := h.service.AssignReading(c.Request.Context(), monasteryID, readingID, req.MonkId); err != nil {
+	if err := h.service.AssignReading(c.Request.Context(), uri.MonasteryId, uri.ReadingId, req.MonkId); err != nil {
 		return err
 	}
 	c.Status(http.StatusNoContent)

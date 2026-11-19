@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"example.com/open-monastery/internal/app/apperr"
+	"example.com/open-monastery/internal/app/commands"
 	"example.com/open-monastery/internal/app/services"
 	"example.com/open-monastery/internal/mapi/apimodels"
 	"example.com/open-monastery/internal/mapi/dtos"
@@ -66,10 +67,14 @@ func (h *AuthController) RegisterUser(c *gin.Context) error {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		return apperr.NewBadRequest("invalid.body", err)
 	}
-	result, err := h.service.CreateUser(
-		c.Request.Context(), req.FirstName, req.LastName,
-		req.Email, req.PhoneNumber, req.Password,
-	)
+	cmd := commands.CreateUserCommand{
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		Email:     req.Email,
+		Phone:     req.PhoneNumber,
+		Password:  req.Password,
+	}
+	result, err := h.service.CreateUser(c.Request.Context(), cmd)
 	if err != nil {
 		return err
 	}
@@ -90,18 +95,10 @@ func (h *AuthController) RegisterUser(c *gin.Context) error {
 //	@Failure	422		{object}	apimodels.ProblemDetails
 //	@Failure	500		{object}	apimodels.ProblemDetails
 //	@Router		/auth/register/monks [post]
-func (h *AuthController) RegisterMonk(c *gin.Context) error {
+func (h *AuthController) PromoteToMonk(c *gin.Context) error {
 	var req dtos.CreateMonkRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		return apperr.NewBadRequest("invalid.body", err)
 	}
-	monk, err := h.service.CreateMonk(
-		c.Request.Context(), req.FirstName, req.LastName,
-		req.Email, req.PhoneNumber, req.MonasteryId, req.Password,
-	)
-	if err != nil {
-		return err
-	}
-	c.JSON(http.StatusCreated, monk)
 	return nil
 }
