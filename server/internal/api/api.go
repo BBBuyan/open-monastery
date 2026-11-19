@@ -10,7 +10,6 @@ import (
 	"example.com/open-monastery/internal/app/abstractions"
 	"example.com/open-monastery/internal/app/services"
 	"example.com/open-monastery/internal/domain/enums"
-	"example.com/open-monastery/internal/domain/models"
 	database "example.com/open-monastery/internal/infra/db"
 	"example.com/open-monastery/internal/infra/password"
 	"github.com/gin-gonic/gin"
@@ -52,7 +51,7 @@ func addCategory(
 		categories.GET("/:categoryId/books", withProblemDetails(categoryHandler.GetBooksByCategoryId))
 	}
 	authCategories := authAPI.Group("/monasteries/:id/categories",
-		withProblemDetails(middlewares.RequireRole(models.Manager, models.Admin)))
+		withProblemDetails(middlewares.RequireRole(enums.Manager, enums.Admin)))
 	authCategories.POST("", withProblemDetails(categoryHandler.AddCategory))
 	authCategories.POST("/:categoryId/books", withProblemDetails(categoryHandler.AddBook))
 }
@@ -68,10 +67,8 @@ func addMonastery(
 		monasteries.GET("/:id", withProblemDetails(monasteryHandler.GetMonastery))
 		monasteries.GET("", withProblemDetails(monasteryHandler.GetMonasteries))
 	}
-	adminMonasteries := authAPI.Group("/monasteries", withProblemDetails(middlewares.RequireRole(models.Admin)))
+	adminMonasteries := authAPI.Group("/monasteries", withProblemDetails(middlewares.RequireRole(enums.Admin)))
 	adminMonasteries.POST("", withProblemDetails(monasteryHandler.AddMonastery))
-	adminMonasteries.PUT("/:id/managers/:userId", withProblemDetails(monasteryHandler.GrantManager))
-	adminMonasteries.DELETE("/:id/managers/:userId", withProblemDetails(monasteryHandler.RevokeManager))
 }
 
 func addReadings(db *sql.DB, authApi *gin.RouterGroup) {
@@ -85,14 +82,6 @@ func addReadings(db *sql.DB, authApi *gin.RouterGroup) {
 			withProblemDetails(readingHandler.GetReadings),
 		)
 		readings.POST("", withProblemDetails(readingHandler.AddReading))
-		readings.POST("/:readingId/claim",
-			withProblemDetails(middlewares.RequireRole(enums.Monk)),
-			withProblemDetails(readingHandler.ClaimReading),
-		)
-		readings.PUT("/:readingId/assignment",
-			withProblemDetails(middlewares.RequireRole(enums.Manager)),
-			withProblemDetails(readingHandler.AssignReading),
-		)
 	}
 }
 
