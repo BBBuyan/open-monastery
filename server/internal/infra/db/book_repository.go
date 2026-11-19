@@ -124,7 +124,9 @@ func (r *BookRepository) GetCategories(
 	ctx context.Context,
 	monasteryID, bookID int64,
 ) ([]*models.Category, error) {
-	query := `SELECT c.id, c.name, c.monastery_id FROM category c
+	query := `
+		SELECT c.id, c.name, c.monastery_id
+		FROM category c
 		WHERE c.monastery_id = ? AND EXISTS (
 			SELECT 1 FROM category_book cb
 			JOIN book b ON b.id = cb.book_id AND b.monastery_id = c.monastery_id

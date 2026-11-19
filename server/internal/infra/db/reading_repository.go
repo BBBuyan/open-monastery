@@ -29,10 +29,11 @@ func (r *ReadingRepository) Add(
 	ctx context.Context,
 	reading *models.Reading,
 ) error {
-	query := `INSERT INTO reading
-		(book_id, monk_id, customer_id, status, created_at, assigned_at, monastery_id)
-		SELECT b.id, ?, ?, ?, ?, ?, b.monastery_id
-		FROM book b WHERE b.id = ? AND b.monastery_id = ?
+	query := `
+		INSERT INTO reading (book_id, monk_id, customer_id, status, created_at, assigned_at, monastery_id)
+			SELECT b.id, ?, ?, ?, ?, ?, b.monastery_id
+			FROM book b
+			WHERE b.id = ? AND b.monastery_id = ?
 		`
 	result, err := r.db.ExecContext(
 		ctx,
@@ -161,16 +162,17 @@ func (r *ReadingRepository) Assign(ctx context.Context, monasteryID, readingID, 
 // GetReadingsByUserId implements [abstractions.ReadingRepository].
 func (r *ReadingRepository) GetReadingsByUserId(
 	ctx context.Context,
-	monasteryID, userID int64,
+	userID int64,
 	opts appmodels.ListOptions,
 ) ([]*models.Reading, error) {
 	query := `
 	SELECT id, book_id, monk_id, customer_id, status, created_at, assigned_at, monastery_id
 	FROM reading
-	WHERE monastery_id = ? AND customer_id = ? AND id > ?
-	ORDER BY id LIMIT ?
+	WHERE customer_id = ? AND id > ?
+	ORDER BY id
+	LIMIT ?
 	`
-	args := []any{monasteryID, userID, opts.AfterId, opts.Limit + 1}
+	args := []any{userID, opts.AfterId, opts.Limit + 1}
 
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
