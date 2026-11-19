@@ -9,6 +9,7 @@ import (
 	"example.com/open-monastery/internal/app/abstractions"
 	"example.com/open-monastery/internal/app/apperr"
 	"example.com/open-monastery/internal/app/appmodels"
+	"example.com/open-monastery/internal/domain/enums"
 	"example.com/open-monastery/internal/domain/models"
 )
 
@@ -23,7 +24,7 @@ func (r *MonasteryRepository) CanWrite(ctx context.Context, monasteryID, userID 
 			SELECT 1 FROM users WHERE id = ?
 			AND (user_type = ? OR (user_type = ? AND monastery_id = ?))
 		)
-	`, userID, models.Admin, models.Manager, monasteryID).Scan(&allowed)
+	`, userID, enums.Admin, enums.Manager, monasteryID).Scan(&allowed)
 	if err != nil {
 		return false, fmt.Errorf("check monastery write access: %w", err)
 	}
@@ -34,7 +35,7 @@ func (r *MonasteryRepository) GrantManager(ctx context.Context, monasteryID, use
 	result, err := r.db.ExecContext(ctx, `
 		UPDATE users SET user_type = ?, monastery_id = ?
 		WHERE id = ? AND user_type = ?
-	`, models.Manager, monasteryID, userID, models.Customer)
+	`, enums.Manager, monasteryID, userID, enums.Customer)
 	if err != nil {
 		return translateWriteError("grant monastery manager", err)
 	}
@@ -46,7 +47,7 @@ func (r *MonasteryRepository) GrantManager(ctx context.Context, monasteryID, use
 		return nil
 	}
 
-	var role models.UserType
+	var role enums.UserType
 	var assignedMonastery sql.NullInt64
 	err = r.db.QueryRowContext(ctx, `
 		SELECT user_type, monastery_id FROM users WHERE id = ?
@@ -57,7 +58,7 @@ func (r *MonasteryRepository) GrantManager(ctx context.Context, monasteryID, use
 	if err != nil {
 		return fmt.Errorf("check existing manager appointment: %w", err)
 	}
-	if role == models.Manager && assignedMonastery.Valid && assignedMonastery.Int64 == monasteryID {
+	if role == enums.Manager && assignedMonastery.Valid && assignedMonastery.Int64 == monasteryID {
 		return nil
 	}
 	return apperr.NewConflict("user.not_eligible_for_manager", nil)
@@ -67,7 +68,7 @@ func (r *MonasteryRepository) RevokeManager(ctx context.Context, monasteryID, us
 	_, err := r.db.ExecContext(ctx, `
 		UPDATE users SET user_type = ?, monastery_id = NULL
 		WHERE id = ? AND monastery_id = ? AND user_type = ?
-	`, models.Customer, userID, monasteryID, models.Manager)
+	`, enums.Customer, userID, monasteryID, enums.Manager)
 	if err != nil {
 		return fmt.Errorf("revoke monastery manager: %w", err)
 	}
