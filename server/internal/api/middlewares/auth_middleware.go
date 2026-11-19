@@ -5,10 +5,10 @@ import (
 	"slices"
 	"strings"
 
+	"example.com/open-monastery/internal/api/apimodels"
 	"example.com/open-monastery/internal/app/apperr"
 	"example.com/open-monastery/internal/app/appmodels"
 	"example.com/open-monastery/internal/domain/enums"
-	"example.com/open-monastery/internal/api/apimodels"
 	"github.com/gin-gonic/gin"
 )
 

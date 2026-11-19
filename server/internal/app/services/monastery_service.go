@@ -65,4 +65,3 @@ func (s *MonasteryService) CreateMonastery(
 	}
 	return monastery, nil
 }
-

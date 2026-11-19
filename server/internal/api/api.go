@@ -5,14 +5,14 @@ import (
 
 	_ "example.com/open-monastery/docs"
 
+	"example.com/open-monastery/internal/api/controllers"
+	"example.com/open-monastery/internal/api/middlewares"
 	"example.com/open-monastery/internal/app/abstractions"
 	"example.com/open-monastery/internal/app/services"
 	"example.com/open-monastery/internal/domain/enums"
 	"example.com/open-monastery/internal/domain/models"
 	database "example.com/open-monastery/internal/infra/db"
 	"example.com/open-monastery/internal/infra/password"
-	"example.com/open-monastery/internal/api/controllers"
-	"example.com/open-monastery/internal/api/middlewares"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"

@@ -5,8 +5,8 @@ import (
 	"log/slog"
 	"net/http"
 
-	"example.com/open-monastery/internal/app/apperr"
 	"example.com/open-monastery/internal/api/apimodels"
+	"example.com/open-monastery/internal/app/apperr"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 )

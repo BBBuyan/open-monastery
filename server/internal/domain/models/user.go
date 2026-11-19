@@ -32,7 +32,7 @@ func NewUser(
 		Email:        email,
 		PhoneNumber:  phone,
 		PasswordHash: passHash,
-		CreatedAt: time.Now().UTC().Truncate(time.Microsecond),
+		CreatedAt:    time.Now().UTC().Truncate(time.Microsecond),
 	}
 	return user, nil
 }
