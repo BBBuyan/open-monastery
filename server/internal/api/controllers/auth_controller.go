@@ -7,8 +7,8 @@ import (
 	"example.com/open-monastery/internal/app/apperr"
 	"example.com/open-monastery/internal/app/commands"
 	"example.com/open-monastery/internal/app/services"
-	"example.com/open-monastery/internal/mapi/apimodels"
-	"example.com/open-monastery/internal/mapi/dtos"
+	"example.com/open-monastery/internal/api/apimodels"
+	"example.com/open-monastery/internal/api/dtos"
 	"github.com/gin-gonic/gin"
 )
 

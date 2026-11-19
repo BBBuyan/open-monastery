@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"example.com/open-monastery/internal/app/apperr"
-	"example.com/open-monastery/internal/mapi/apimodels"
+	"example.com/open-monastery/internal/api/apimodels"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 )
