@@ -68,6 +68,8 @@ definitions:
         type: string
       name:
         type: string
+      price:
+        type: integer
     type: object
   dtos.CreateCategoryRequest:
     properties:
@@ -121,9 +123,29 @@ definitions:
       phone_number:
         type: string
     required:
+    - email
     - first_name
     - last_name
     - password
+    type: object
+  dtos.CreateUserResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      id:
+        type: integer
+      last_name:
+        type: string
+      monastery_id:
+        type: integer
+      phone_number:
+        type: string
+      user_type:
+        $ref: '#/definitions/enums.UserType'
     type: object
   dtos.LoginRequest:
     properties:
@@ -148,84 +170,122 @@ definitions:
     - Scheduled
     - Cancelled
     - Refunded
+  enums.UserType:
+    enum:
+    - monk
+    - customer
+    - manager
+    - admin
+    type: string
+    x-enum-varnames:
+    - Monk
+    - Customer
+    - Manager
+    - Admin
   models.Book:
     properties:
+      createdAt:
+        type: string
+      createdBy:
+        format: int64
+        type: integer
       description:
         type: string
       id:
+        format: int64
         type: integer
-      monastery_id:
+      monasteryId:
+        format: int64
         type: integer
       name:
         type: string
       price:
+        format: int32
         type: integer
     type: object
   models.Category:
     properties:
-      id:
+      createdAt:
+        type: string
+      createdBy:
+        format: int64
         type: integer
-      monastery_id:
+      id:
+        format: int64
+        type: integer
+      monasteryId:
+        format: int64
         type: integer
       name:
         type: string
+    type: object
+  models.Email:
     type: object
   models.Monastery:
     properties:
+      createdAt:
+        type: string
+      createdBy:
+        format: int64
+        type: integer
       id:
+        format: int64
         type: integer
       name:
         type: string
     type: object
+  models.PhoneNumber:
+    type: object
   models.Reading:
     properties:
-      assigned_at:
+      assignedAt:
         description: AssignedAt is the UTC time when a monk claimed the reading, when
           recorded.
         type: string
-      book_id:
+      bookId:
+        format: int64
         type: integer
-      created_at:
+      createdAt:
         description: CreatedAt is the UTC creation time, when recorded.
         type: string
-      customer_id:
+      customerId:
+        format: int64
         type: integer
       id:
+        format: int64
         type: integer
-      monastery_id:
+      monasteryId:
+        format: int64
         type: integer
-      monk_id:
+      monkId:
+        format: int64
         type: integer
       status:
         $ref: '#/definitions/enums.ReadingStatus'
     type: object
   models.User:
     properties:
-      email:
+      createdAt:
         type: string
-      first_name:
+      email:
+        $ref: '#/definitions/models.Email'
+      firstName:
         type: string
       id:
+        format: int64
         type: integer
-      last_name:
+      lastName:
         type: string
-      monastery_id:
+      monasteryId:
+        format: int64
         type: integer
-      phone_number:
+      passwordHash:
         type: string
-      user_type:
-        $ref: '#/definitions/models.UserType'
+      phoneNumber:
+        $ref: '#/definitions/models.PhoneNumber'
+      userType:
+        $ref: '#/definitions/enums.UserType'
     type: object
-  models.UserType:
-    enum:
-    - monk
-    - customer
-    - admin
-    type: string
-    x-enum-varnames:
-    - Monk
-    - Customer
-    - Admin
 info:
   contact: {}
   description: API for Open Monastery
@@ -284,7 +344,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/models.User'
+            $ref: '#/definitions/dtos.CreateUserResponse'
         "400":
           description: Bad Request
           schema:
@@ -342,6 +402,56 @@ paths:
       summary: Create a monk
       tags:
       - auth
+  /categories:
+    post:
+      consumes:
+      - application/json
+      description: Requires the Manager role for this monastery.
+      parameters:
+      - description: Category to create
+        in: body
+        name: category
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateCategoryRequest'
+      - description: Monastery ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      - application/problem+json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Category'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+      security:
+      - BearerAuth: []
+      summary: Create a category
+      tags:
+      - categories
   /monasteries:
     get:
       parameters:
@@ -398,10 +508,20 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/apimodels.ProblemDetails'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/apimodels.ProblemDetails'
+      security:
+      - BearerAuth: []
       summary: Create a monastery
       tags:
       - monasteries
@@ -476,6 +596,7 @@ paths:
     post:
       consumes:
       - application/json
+      description: Requires the Manager role for this monastery or the Admin role.
       parameters:
       - description: Book to create
         in: body
@@ -500,6 +621,14 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/apimodels.ProblemDetails'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "404":
           description: Not Found
           schema:
@@ -508,6 +637,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/apimodels.ProblemDetails'
+      security:
+      - BearerAuth: []
       summary: Create a book
       tags:
       - books
@@ -608,44 +739,6 @@ paths:
       summary: Get categories
       tags:
       - categories
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: Category to create
-        in: body
-        name: category
-        required: true
-        schema:
-          $ref: '#/definitions/dtos.CreateCategoryRequest'
-      - description: Monastery ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      - application/problem+json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/models.Category'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-      summary: Create a category
-      tags:
-      - categories
   /monasteries/{id}/categories/{categoryId}/books:
     get:
       parameters:
@@ -693,6 +786,7 @@ paths:
     post:
       consumes:
       - application/json
+      description: Requires the Manager role for this monastery.
       parameters:
       - description: Category ID
         in: path
@@ -719,6 +813,14 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/apimodels.ProblemDetails'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/apimodels.ProblemDetails'
         "404":
           description: Not Found
           schema:
@@ -727,6 +829,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/apimodels.ProblemDetails'
+      security:
+      - BearerAuth: []
       summary: Add a book to a category
       tags:
       - categories
@@ -816,55 +920,6 @@ paths:
       security:
       - BearerAuth: []
       summary: Create a reading
-      tags:
-      - readings
-  /monasteries/{id}/readings/{readingId}/claim:
-    post:
-      description: Assigns the reading to the authenticated monk if the monk belongs
-        to the monastery.
-      parameters:
-      - description: Reading ID
-        in: path
-        name: readingId
-        required: true
-        type: integer
-      - description: Monastery ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/problem+json
-      responses:
-        "204":
-          description: No Content
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/apimodels.ProblemDetails'
-      security:
-      - BearerAuth: []
-      summary: Claim an unassigned reading
       tags:
       - readings
 securityDefinitions:

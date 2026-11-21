@@ -56,7 +56,7 @@ func (h *AuthController) Login(c *gin.Context) error {
 //	@Accept		json
 //	@Produce	json,application/problem+json
 //	@Param		user	body		dtos.CreateUserRequest	true	"User to create"
-//	@Success	201		{object}	models.User
+//	@Success	201		{object}	dtos.CreateUserResponse
 //	@Failure	400		{object}	apimodels.ProblemDetails
 //	@Failure	409		{object}	apimodels.ProblemDetails
 //	@Failure	422		{object}	apimodels.ProblemDetails
@@ -78,7 +78,7 @@ func (h *AuthController) RegisterUser(c *gin.Context) error {
 	if err != nil {
 		return err
 	}
-	c.JSON(http.StatusCreated, result)
+	c.JSON(http.StatusCreated, dtos.NewCreateUserResponse(result))
 	return nil
 }
 

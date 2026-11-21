@@ -95,7 +95,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/models.User"
+                            "$ref": "#/definitions/dtos.CreateUserResponse"
                         }
                     },
                     "400": {
@@ -183,6 +183,83 @@ const docTemplate = `{
                 }
             }
         },
+        "/categories": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Requires the Manager role for this monastery.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json",
+                    "application/problem+json"
+                ],
+                "tags": [
+                    "categories"
+                ],
+                "summary": "Create a category",
+                "parameters": [
+                    {
+                        "description": "Category to create",
+                        "name": "category",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CreateCategoryRequest"
+                        }
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Monastery ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.Category"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    }
+                }
+            }
+        },
         "/monasteries": {
             "get": {
                 "produces": [
@@ -235,6 +312,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -266,6 +348,18 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/apimodels.ProblemDetails"
                         }
@@ -382,6 +476,12 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Requires the Manager role for this monastery or the Admin role.",
                 "consumes": [
                     "application/json"
                 ],
@@ -420,6 +520,18 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/apimodels.ProblemDetails"
                         }
@@ -583,63 +695,6 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "post": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json",
-                    "application/problem+json"
-                ],
-                "tags": [
-                    "categories"
-                ],
-                "summary": "Create a category",
-                "parameters": [
-                    {
-                        "description": "Category to create",
-                        "name": "category",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dtos.CreateCategoryRequest"
-                        }
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Monastery ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/models.Category"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/apimodels.ProblemDetails"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/apimodels.ProblemDetails"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/apimodels.ProblemDetails"
-                        }
-                    }
-                }
             }
         },
         "/monasteries/{id}/categories/{categoryId}/books": {
@@ -708,6 +763,12 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Requires the Manager role for this monastery.",
                 "consumes": [
                     "application/json"
                 ],
@@ -749,6 +810,18 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/apimodels.ProblemDetails"
                         }
@@ -901,80 +974,6 @@ const docTemplate = `{
                     }
                 }
             }
-        },
-        "/monasteries/{id}/readings/{readingId}/claim": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Assigns the reading to the authenticated monk if the monk belongs to the monastery.",
-                "produces": [
-                    "application/problem+json"
-                ],
-                "tags": [
-                    "readings"
-                ],
-                "summary": "Claim an unassigned reading",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Reading ID",
-                        "name": "readingId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Monastery ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content"
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/apimodels.ProblemDetails"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/apimodels.ProblemDetails"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/apimodels.ProblemDetails"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/apimodels.ProblemDetails"
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict",
-                        "schema": {
-                            "$ref": "#/definitions/apimodels.ProblemDetails"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/apimodels.ProblemDetails"
-                        }
-                    }
-                }
-            }
         }
     },
     "definitions": {
@@ -1082,6 +1081,9 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "price": {
+                    "type": "integer"
                 }
             }
         },
@@ -1145,6 +1147,7 @@ const docTemplate = `{
         "dtos.CreateUserRequest": {
             "type": "object",
             "required": [
+                "email",
                 "first_name",
                 "last_name",
                 "password"
@@ -1165,6 +1168,35 @@ const docTemplate = `{
                 },
                 "phone_number": {
                     "type": "string"
+                }
+            }
+        },
+        "dtos.CreateUserResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "monastery_id": {
+                    "type": "integer"
+                },
+                "phone_number": {
+                    "type": "string"
+                },
+                "user_type": {
+                    "$ref": "#/definitions/enums.UserType"
                 }
             }
         },
@@ -1199,76 +1231,129 @@ const docTemplate = `{
                 "Refunded"
             ]
         },
+        "enums.UserType": {
+            "type": "string",
+            "enum": [
+                "monk",
+                "customer",
+                "manager",
+                "admin"
+            ],
+            "x-enum-varnames": [
+                "Monk",
+                "Customer",
+                "Manager",
+                "Admin"
+            ]
+        },
         "models.Book": {
             "type": "object",
             "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "createdBy": {
+                    "type": "integer",
+                    "format": "int64"
+                },
                 "description": {
                     "type": "string"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
-                "monastery_id": {
-                    "type": "integer"
+                "monasteryId": {
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "name": {
                     "type": "string"
                 },
                 "price": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int32"
                 }
             }
         },
         "models.Category": {
             "type": "object",
             "properties": {
-                "id": {
-                    "type": "integer"
+                "createdAt": {
+                    "type": "string"
                 },
-                "monastery_id": {
-                    "type": "integer"
+                "createdBy": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "monasteryId": {
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "name": {
                     "type": "string"
                 }
             }
+        },
+        "models.Email": {
+            "type": "object"
         },
         "models.Monastery": {
             "type": "object",
             "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "createdBy": {
+                    "type": "integer",
+                    "format": "int64"
+                },
                 "id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "name": {
                     "type": "string"
                 }
             }
         },
+        "models.PhoneNumber": {
+            "type": "object"
+        },
         "models.Reading": {
             "type": "object",
             "properties": {
-                "assigned_at": {
+                "assignedAt": {
                     "description": "AssignedAt is the UTC time when a monk claimed the reading, when recorded.",
                     "type": "string"
                 },
-                "book_id": {
-                    "type": "integer"
+                "bookId": {
+                    "type": "integer",
+                    "format": "int64"
                 },
-                "created_at": {
+                "createdAt": {
                     "description": "CreatedAt is the UTC creation time, when recorded.",
                     "type": "string"
                 },
-                "customer_id": {
-                    "type": "integer"
+                "customerId": {
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
-                "monastery_id": {
-                    "type": "integer"
+                "monasteryId": {
+                    "type": "integer",
+                    "format": "int64"
                 },
-                "monk_id": {
-                    "type": "integer"
+                "monkId": {
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "status": {
                     "$ref": "#/definitions/enums.ReadingStatus"
@@ -1278,41 +1363,36 @@ const docTemplate = `{
         "models.User": {
             "type": "object",
             "properties": {
-                "email": {
+                "createdAt": {
                     "type": "string"
                 },
-                "first_name": {
+                "email": {
+                    "$ref": "#/definitions/models.Email"
+                },
+                "firstName": {
                     "type": "string"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
-                "last_name": {
+                "lastName": {
                     "type": "string"
                 },
-                "monastery_id": {
-                    "type": "integer"
+                "monasteryId": {
+                    "type": "integer",
+                    "format": "int64"
                 },
-                "phone_number": {
+                "passwordHash": {
                     "type": "string"
                 },
-                "user_type": {
-                    "$ref": "#/definitions/models.UserType"
+                "phoneNumber": {
+                    "$ref": "#/definitions/models.PhoneNumber"
+                },
+                "userType": {
+                    "$ref": "#/definitions/enums.UserType"
                 }
             }
-        },
-        "models.UserType": {
-            "type": "string",
-            "enum": [
-                "monk",
-                "customer",
-                "admin"
-            ],
-            "x-enum-varnames": [
-                "Monk",
-                "Customer",
-                "Admin"
-            ]
         }
     },
     "securityDefinitions": {
