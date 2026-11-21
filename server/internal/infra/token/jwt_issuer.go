@@ -21,10 +21,11 @@ type JwtIssuer struct {
 
 type accessClaims struct {
 	jwt.RegisteredClaims
-	Roles enums.UserType `json:"roles"`
+	Roles       enums.UserType `json:"roles"`
+	MonasteryId *int64
 }
 
-var _ abstractions.TokeIssuer = (*JwtIssuer)(nil)
+var _ abstractions.TokenIssuer = (*JwtIssuer)(nil)
 
 func NewJwtIssuer(signingKey []byte) *JwtIssuer {
 	return &JwtIssuer{
@@ -35,7 +36,11 @@ func NewJwtIssuer(signingKey []byte) *JwtIssuer {
 	}
 }
 
-func (j *JwtIssuer) IssueAccessToken(userID int64, userType enums.UserType) (string, error) {
+func (j *JwtIssuer) IssueAccessToken(
+	userID int64,
+	userType enums.UserType,
+	monasteryId *int64,
+) (string, error) {
 	now := time.Now()
 	claims := accessClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -45,7 +50,8 @@ func (j *JwtIssuer) IssueAccessToken(userID int64, userType enums.UserType) (str
 			IssuedAt:  jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(now.Add(time.Duration(j.ValidMinute) * time.Minute)),
 		},
-		Roles: userType,
+		Roles:       userType,
+		MonasteryId: monasteryId,
 	}
 
 	return jwt.NewWithClaims(j.SigningMethod, claims).SignedString(j.signingKey)
@@ -74,5 +80,5 @@ func (j *JwtIssuer) ValidateToken(tokenStr string) (appmodels.Actor, error) {
 		return appmodels.Actor{}, errors.New("invalid token")
 	}
 
-	return appmodels.Actor{Id: userID, Role: claims.Roles}, nil
+	return appmodels.Actor{Id: userID, Role: claims.Roles, MonasteryId: claims.MonasteryId}, nil
 }

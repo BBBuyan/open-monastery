@@ -20,6 +20,7 @@ func NewReadingService(
 	}
 }
 
+// Deprecated: move to user endpoint
 func (s *ReadingService) GetReadings(
 	ctx context.Context,
 	actor appmodels.Actor,

@@ -25,23 +25,29 @@ func NewAuthRepository(db *sql.DB) *AuthRepository {
 func (r *AuthRepository) FindCredentialsByEmail(
 	ctx context.Context,
 	email string,
-) (int64, string, enums.UserType, error) {
+) (int64, string, enums.UserType, *int64, error) {
 	const query = `
-		SELECT id, password_hash, user_type 
+		SELECT id, password_hash, user_type, monastery_id
 		FROM users 
 		WHERE email = ? AND password_hash IS NOT NULL
 	`
 	var userID int64
 	var hash string
 	var userType enums.UserType
-	err := r.db.QueryRowContext(ctx, query, email).Scan(&userID, &hash, &userType)
+	var monasteryId *int64
+	err := r.db.QueryRowContext(ctx, query, email).Scan(
+		&userID,
+		&hash,
+		&userType,
+		&monasteryId,
+	)
 	if errors.Is(err, sql.ErrNoRows) {
-		return 0, "", "", apperr.NewNotFound("credentials not found", err)
+		return 0, "", "", nil, apperr.NewNotFound("credentials not found", err)
 	}
 	if err != nil {
-		return 0, "", "", fmt.Errorf("find credentials by email: %w", err)
+		return 0, "", "", nil, fmt.Errorf("find credentials by email: %w", err)
 	}
-	return userID, hash, userType, nil
+	return userID, hash, userType, monasteryId, nil
 }
 
 func (r *AuthRepository) AddUser(
@@ -58,8 +64,8 @@ func (r *AuthRepository) AddUser(
 		user.LastName,
 		user.UserType,
 		user.MonasteryId,
-		user.Email,
-		user.PhoneNumber,
+		user.Email.String(),
+		user.PhoneNumber.String(),
 		user.PasswordHash,
 	)
 	if err != nil {

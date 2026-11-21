@@ -18,14 +18,14 @@ var ErrInvalidCredentials = errors.New("invalid credentials")
 type AuthService struct {
 	repo           abstractions.AuthRepository
 	passwordHasher abstractions.PasswordHasher
-	tokenIssuer    abstractions.TokeIssuer
+	tokenIssuer    abstractions.TokenIssuer
 	dummyHash      string
 }
 
 func NewAuthService(
 	repo abstractions.AuthRepository,
 	passwordHasher abstractions.PasswordHasher,
-	tokenIssuer abstractions.TokeIssuer,
+	tokenIssuer abstractions.TokenIssuer,
 ) *AuthService {
 	return &AuthService{
 		repo:           repo,
@@ -45,7 +45,7 @@ func (s *AuthService) Login(
 		return "", apperr.NewInvalid("invalid credentials", err)
 	}
 
-	userID, hash, userType, err := s.repo.FindCredentialsByEmail(ctx, email)
+	userID, hash, userType, monasteryId, err := s.repo.FindCredentialsByEmail(ctx, email)
 	if err != nil {
 		appErr, ok := errors.AsType[*apperr.AppErr](err)
 		if !ok || appErr.Type != apperr.NotFound {
@@ -59,7 +59,7 @@ func (s *AuthService) Login(
 	if !s.passwordHasher.VerifyPassword(password, hash) {
 		return "", ErrInvalidCredentials
 	}
-	return s.tokenIssuer.IssueAccessToken(userID, userType)
+	return s.tokenIssuer.IssueAccessToken(userID, userType, monasteryId)
 }
 
 func (s *AuthService) CreateUser(

@@ -96,7 +96,7 @@ func addSwagger(
 func addAuth(
 	db *sql.DB,
 	api *gin.RouterGroup,
-	tokenIssuer abstractions.TokeIssuer,
+	tokenIssuer abstractions.TokenIssuer,
 ) {
 	authRepo := database.NewAuthRepository(db)
 	passHasher := password.NewArgonPasswordHasher()
@@ -110,7 +110,7 @@ func addAuth(
 
 func RegisterAPI(
 	db *sql.DB,
-	tokenIssuer abstractions.TokeIssuer,
+	tokenIssuer abstractions.TokenIssuer,
 ) *gin.Engine {
 	r := gin.Default()
 	authFunc := middlewares.RequireAuth(tokenIssuer.ValidateToken)
