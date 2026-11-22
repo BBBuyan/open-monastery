@@ -37,21 +37,21 @@ func NewJwtIssuer(signingKey []byte) *JwtIssuer {
 }
 
 func (j *JwtIssuer) IssueAccessToken(
-	userID int64,
-	userType enums.UserType,
-	monasteryId *int64,
+	creds *appmodels.UserCreds,
 ) (string, error) {
 	now := time.Now()
+	exp := now.Add(time.Duration(j.ValidMinute) * time.Minute)
+
 	claims := accessClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
-			Subject:   strconv.FormatInt(userID, 10),
+			Subject:   strconv.FormatInt(creds.UserId, 10),
 			Issuer:    j.Issuer,
 			Audience:  jwt.ClaimStrings(j.Audiences),
 			IssuedAt:  jwt.NewNumericDate(now),
-			ExpiresAt: jwt.NewNumericDate(now.Add(time.Duration(j.ValidMinute) * time.Minute)),
+			ExpiresAt: jwt.NewNumericDate(exp),
 		},
-		Roles:       userType,
-		MonasteryId: monasteryId,
+		Roles:       creds.UserType,
+		MonasteryId: &creds.MonasteryId,
 	}
 
 	return jwt.NewWithClaims(j.SigningMethod, claims).SignedString(j.signingKey)

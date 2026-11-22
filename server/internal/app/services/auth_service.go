@@ -39,27 +39,27 @@ func (s *AuthService) Login(
 	ctx context.Context,
 	email string,
 	password string,
-) (string, error) {
+) (*string, error) {
 	email, err := models.NormalizeEmail(email)
 	if err != nil || password == "" {
-		return "", apperr.NewInvalid("invalid credentials", err)
+		return nil, apperr.NewInvalid("invalid credentials", err)
 	}
-
-	userID, hash, userType, monasteryId, err := s.repo.FindCredentialsByEmail(ctx, email)
+	creds, err := s.repo.FindCredentialsByEmail(ctx, email)
 	if err != nil {
-		appErr, ok := errors.AsType[*apperr.AppErr](err)
-		if !ok || appErr.Type != apperr.NotFound {
-			return "", err
-		}
 		// Match the password verification cost for an account without credentials.
 		s.passwordHasher.VerifyPassword(password, s.dummyHash)
-		return "", ErrInvalidCredentials
+		return nil, err
 	}
 
-	if !s.passwordHasher.VerifyPassword(password, hash) {
-		return "", ErrInvalidCredentials
+	if !s.passwordHasher.VerifyPassword(password, creds.PasswordHash) {
+		return nil, apperr.NewUnauthorized("invalid.credentials", nil)
 	}
-	return s.tokenIssuer.IssueAccessToken(userID, userType, monasteryId)
+	tokenStr, err := s.tokenIssuer.IssueAccessToken(creds)
+	if err != nil {
+		return nil, err
+	}
+
+	return &tokenStr, nil
 }
 
 func (s *AuthService) CreateUser(

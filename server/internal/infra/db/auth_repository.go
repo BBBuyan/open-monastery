@@ -8,6 +8,7 @@ import (
 
 	"example.com/open-monastery/internal/app/abstractions"
 	"example.com/open-monastery/internal/app/apperr"
+	"example.com/open-monastery/internal/app/appmodels"
 	"example.com/open-monastery/internal/domain/enums"
 	"example.com/open-monastery/internal/domain/models"
 )
@@ -25,29 +26,26 @@ func NewAuthRepository(db *sql.DB) *AuthRepository {
 func (r *AuthRepository) FindCredentialsByEmail(
 	ctx context.Context,
 	email string,
-) (int64, string, enums.UserType, *int64, error) {
+) (*appmodels.UserCreds, error) {
 	const query = `
 		SELECT id, password_hash, user_type, monastery_id
 		FROM users 
 		WHERE email = ? AND password_hash IS NOT NULL
 	`
-	var userID int64
-	var hash string
-	var userType enums.UserType
-	var monasteryId *int64
+	var creds appmodels.UserCreds
 	err := r.db.QueryRowContext(ctx, query, email).Scan(
-		&userID,
-		&hash,
-		&userType,
-		&monasteryId,
+		&creds.UserId,
+		&creds.PasswordHash,
+		&creds.UserType,
+		&creds.MonasteryId,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
-		return 0, "", "", nil, apperr.NewNotFound("credentials not found", err)
+		return nil, apperr.NewNotFound("credentials not found", err)
 	}
 	if err != nil {
-		return 0, "", "", nil, fmt.Errorf("find credentials by email: %w", err)
+		return nil, fmt.Errorf("find credentials by email: %w", err)
 	}
-	return userID, hash, userType, monasteryId, nil
+	return &creds, nil
 }
 
 func (r *AuthRepository) AddUser(

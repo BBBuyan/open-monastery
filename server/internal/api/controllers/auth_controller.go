@@ -38,14 +38,11 @@ func (h *AuthController) Login(c *gin.Context) error {
 		return apperr.NewBadRequest("invalid.body", err)
 	}
 	accessToken, err := h.service.Login(c.Request.Context(), req.Email, req.Password)
-	if errors.Is(err, services.ErrInvalidCredentials) {
-		return apperr.NewUnauthorized("invalid.credentials", err)
-	}
 	if err != nil {
 		return err
 	}
 	c.Header("Cache-Control", "no-store")
-	c.JSON(http.StatusOK, apimodels.LoginResponse{AccessToken: accessToken, TokenType: "Bearer"})
+	c.JSON(http.StatusOK, apimodels.LoginResponse{AccessToken: *accessToken, TokenType: "Bearer"})
 	return nil
 }
 
