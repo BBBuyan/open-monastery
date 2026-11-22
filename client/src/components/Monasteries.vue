@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from 'vue'
-import { getMonasteries, getMonastery, type Monastery } from '../api'
+import { getMonasteries } from '../api'
 import { createCatalog } from '../catalog'
 import { monasteryCatalogLink } from '../monasteries'
-import Readings from './Readings.vue'
 
-const props = defineProps<{ selectedId?: number }>()
 const {
   books: monasteries,
   loading,
@@ -15,86 +13,121 @@ const {
   reset,
   dispose,
 } = createCatalog(getMonasteries)
-const selected = ref<Monastery>()
-const selectionLoading = ref(false)
-const selectionError = ref(false)
-const retry = ref(0)
-watch(
-  [() => props.selectedId, retry],
-  async ([id], _, onCleanup) => {
-    selected.value = undefined
-    selectionError.value = false
-    selectionLoading.value = false
-    if (id === undefined) return
-    const controller = new AbortController()
-    onCleanup(() => controller.abort())
-    selectionLoading.value = true
-    try {
-      const monastery = await getMonastery(id, controller.signal)
-      if (!controller.signal.aborted) selected.value = monastery
-    } catch {
-      if (!controller.signal.aborted) selectionError.value = true
-    } finally {
-      if (!controller.signal.aborted) selectionLoading.value = false
-    }
-  },
-  { immediate: true },
-)
+const query = ref('')
+const searchPending = ref(false)
+let searchTimer: ReturnType<typeof setTimeout> | undefined
+
+watch(query, (value) => {
+  clearTimeout(searchTimer)
+  searchPending.value = true
+  void reset(value, false)
+  searchTimer = setTimeout(() => {
+    searchPending.value = false
+    void loadMore()
+  }, 300)
+})
+
 onMounted(() => void reset())
-onUnmounted(dispose)
+onUnmounted(() => {
+  clearTimeout(searchTimer)
+  dispose()
+})
 </script>
 
 <template>
   <div class="monastery-catalog-heading">
     <h1 id="catalog-heading">Choose a monastery</h1>
-    <p>Browse its books and categories.</p>
+    <p>Find a monastery and explore its books.</p>
   </div>
-  <p v-if="loading" role="status">Loading monasteries…</p>
-  <div v-if="error" class="state-panel" role="status">
+  <div class="monastery-search library-toolbar">
+    <label for="monastery-search">
+      Search monasteries
+      <div class="search-field">
+        <svg
+          viewBox="0 0 24 24"
+          width="22"
+          height="22"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          aria-hidden="true"
+        >
+          <circle cx="10.5" cy="10.5" r="6.5" />
+          <path d="m16 16 5 5" />
+        </svg>
+        <input
+          id="monastery-search"
+          v-model="query"
+          type="search"
+          placeholder="Search by monastery name"
+          autocomplete="off"
+        />
+      </div>
+    </label>
+  </div>
+  <p v-if="loading || searchPending" role="status">Loading monasteries.</p>
+  <div v-if="error && !monasteries.length" class="state-panel" role="status">
     <p>The monasteries couldn't be loaded. Please try again.</p>
     <button class="button secondary" type="button" @click="loadMore">
       Try again
     </button>
   </div>
-  <p v-else-if="!loading && !monasteries.length" role="status">
-    No monasteries are listed yet.
-  </p>
-  <ul class="monastery-directory">
+  <div
+    v-else-if="!loading && !searchPending && !monasteries.length"
+    class="state-panel"
+    role="status"
+  >
+    <p>
+      {{
+        query.trim()
+          ? 'No matching monasteries.'
+          : 'No monasteries are listed yet.'
+      }}
+    </p>
+    <button
+      v-if="query.trim()"
+      class="button secondary"
+      type="button"
+      @click="query = ''"
+    >
+      Clear search
+    </button>
+  </div>
+  <ul class="monastery-directory" :aria-busy="loading || searchPending">
     <li v-for="entry in monasteries" :key="entry.id">
-      <a
-        :href="monasteryCatalogLink(entry.id)"
-        :aria-current="entry.id === selectedId ? 'true' : undefined"
-      >
-        <span>{{ entry.name }}</span>
-        <span aria-hidden="true">{{
-          entry.id === selectedId ? '✓' : '→'
-        }}</span>
+      <a :href="monasteryCatalogLink(entry.id)" class="monastery-card">
+        <img
+          class="monastery-logo"
+          src="/monastery-placeholder.png"
+          width="56"
+          height="56"
+          alt=""
+        />
+        <span class="monastery-card-copy">
+          <span class="monastery-card-name">{{ entry.name }}</span>
+          <span class="monastery-card-action">Browse books</span>
+        </span>
       </a>
     </li>
   </ul>
-  <button
-    v-if="hasMore && !error"
-    class="button secondary"
-    type="button"
-    :disabled="loading"
-    @click="loadMore"
-  >
-    Load more monasteries
-  </button>
-  <p v-if="selectionLoading" role="status">Loading the chosen monastery…</p>
-  <div v-if="selectionError" class="state-panel" role="alert">
-    <p>This monastery couldn't be loaded. Choose another or try again.</p>
-    <button class="button secondary" type="button" @click="retry++">
-      Try again
+  <div v-if="monasteries.length" class="catalog-pagination">
+    <p v-if="error" role="status">
+      Couldn't load more monasteries. Please try again.
+    </p>
+    <button
+      v-if="hasMore"
+      class="button secondary"
+      type="button"
+      :disabled="loading || searchPending"
+      @click="loadMore"
+    >
+      {{
+        loading
+          ? 'Loading monasteries.'
+          : error
+            ? 'Try again'
+            : 'Load more monasteries'
+      }}
     </button>
   </div>
-  <section
-    v-if="selected"
-    :key="selected.id"
-    class="monastery-readings"
-    :aria-label="selected.name"
-  >
-    <h2>{{ selected.name }}</h2>
-    <Readings :monastery="selected" />
-  </section>
 </template>

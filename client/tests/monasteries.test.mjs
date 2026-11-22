@@ -40,7 +40,9 @@ test('selected monastery links survive reload and load scoped books and categori
     return Response.json({ Id: 42, Name: 'Monastery' })
   })
   const id = monasteryIdFromHash(monasteryCatalogLink(42))
+  assert.equal(monasteryCatalogLink(42), '#monasteries/42')
   assert.equal(id, 42)
+  assert.equal(monasteryIdFromHash('#readings?monastery=42'), 42)
   assert.deepEqual(await getMonastery(id), { id: 42, name: 'Monastery' })
   assert.deepEqual(await getCategories(id), [{ id: 9, name: 'Protection' }])
   assert.deepEqual(urls, [
@@ -52,6 +54,11 @@ test('selected monastery links survive reload and load scoped books and categori
     '#readings?monastery=-1',
     '#readings?monastery=0',
     '#home?monastery=42',
+    '#monasteries/0',
+    '#monasteries/-1',
+    '#monasteries/invalid',
+    '#monasteries/42/books',
+    '#monasteries/9007199254740992',
   ]) {
     assert.equal(monasteryIdFromHash(hash), undefined)
   }
