@@ -3,9 +3,26 @@ import type { Book } from './api'
 
 export const MAX_QUANTITY = 99
 export const BASKET_KEY = 'open-monastery:basket:v1'
-export type BasketBook = Pick<Book, 'id' | 'name' | 'price'>
+export type BasketBook = Pick<Book, 'id' | 'name' | 'price'> & {
+  monasteryId?: string
+}
 export type BasketItem = { book: BasketBook; quantity: number }
 type BasketStorage = Pick<Storage, 'getItem' | 'setItem'>
+
+export function basketBookKey(id: number, monasteryId?: string) {
+  return monasteryId === undefined ? String(id) : `${id}:${monasteryId}`
+}
+
+function snapshotBook({
+  id,
+  name,
+  price,
+  monasteryId,
+}: BasketBook): BasketBook {
+  return monasteryId === undefined
+    ? { id, name, price }
+    : { id, name, price, monasteryId }
+}
 
 function validBook(value: unknown): value is BasketBook {
   const book = value as Partial<BasketBook> | null
@@ -14,6 +31,9 @@ function validBook(value: unknown): value is BasketBook {
     Number.isSafeInteger(book.id) &&
     Number(book.id) > 0 &&
     typeof book.name === 'string' &&
+    (book.monasteryId === undefined ||
+      (typeof book.monasteryId === 'string' &&
+        book.monasteryId.trim() !== '')) &&
     Number.isSafeInteger(book.price) &&
     Number(book.price) >= 0
   )
@@ -38,13 +58,14 @@ export function createBasket(storage?: BasketStorage) {
       (saved?.version === 1 || saved?.version === 2) &&
       Array.isArray(saved.items)
     ) {
-      const restored = new Map<number, BasketItem>()
+      const restored = new Map<string, BasketItem>()
       for (const item of saved.items) {
         const book = saved.version === 1 ? item?.book : item
         if (!validBook(book) || !validQuantity(item?.quantity)) continue
-        const previous = restored.get(book.id)
-        restored.set(book.id, {
-          book: { id: book.id, name: book.name, price: book.price },
+        const key = basketBookKey(book.id, book.monasteryId)
+        const previous = restored.get(key)
+        restored.set(key, {
+          book: snapshotBook(book),
           quantity: Math.min(
             MAX_QUANTITY,
             (previous?.quantity ?? 0) + item.quantity,
@@ -60,10 +81,8 @@ export function createBasket(storage?: BasketStorage) {
     lines.value = next
     try {
       const items = next.map(({ book, quantity }) => ({
-        id: book.id,
+        ...book,
         quantity,
-        name: book.name,
-        price: book.price,
       }))
       storage?.setItem(BASKET_KEY, JSON.stringify({ version: 2, items }))
       persistent.value = !!storage
@@ -71,40 +90,57 @@ export function createBasket(storage?: BasketStorage) {
       persistent.value = false
     }
   }
-  function quantityOf(id: number) {
-    return lines.value.find((item) => item.book.id === id)?.quantity ?? 0
+  function quantityOf(id: number, monasteryId?: string) {
+    return (
+      lines.value.find(
+        ({ book }) => book.id === id && book.monasteryId === monasteryId,
+      )?.quantity ?? 0
+    )
   }
   function add(book: BasketBook) {
-    if (!validBook(book) || quantityOf(book.id) >= MAX_QUANTITY) return false
-    const quantity = quantityOf(book.id) + 1
+    if (!validBook(book)) return false
+    const { id, monasteryId } = book
+    const quantity = quantityOf(id, monasteryId) + 1
+    if (quantity > MAX_QUANTITY) return false
     const item = {
-      book: { id: book.id, name: book.name, price: book.price },
+      book: snapshotBook(book),
       quantity,
     }
     save(
       quantity === 1
         ? [...lines.value, item]
-        : lines.value.map((line) => (line.book.id === book.id ? item : line)),
+        : lines.value.map((line) =>
+            line.book.id === id && line.book.monasteryId === monasteryId
+              ? item
+              : line,
+          ),
     )
     announcement.value = `${book.name}: ${quantity} in basket.`
     return true
   }
-  function setQuantity(id: number, quantity: number) {
-    if (quantity === 0 && quantityOf(id)) {
-      remove(id)
+  function setQuantity(id: number, quantity: number, monasteryId?: string) {
+    const current = quantityOf(id, monasteryId)
+    if (quantity === 0 && current) {
+      remove(id, monasteryId)
       return true
     }
-    if (!validQuantity(quantity) || !quantityOf(id)) return false
+    if (!validQuantity(quantity) || !current) return false
     save(
       lines.value.map((line) =>
-        line.book.id === id ? { ...line, quantity } : line,
+        line.book.id === id && line.book.monasteryId === monasteryId
+          ? { ...line, quantity }
+          : line,
       ),
     )
     announcement.value = `Quantity updated to ${quantity}.`
     return true
   }
-  function remove(id: number) {
-    save(lines.value.filter((line) => line.book.id !== id))
+  function remove(id: number, monasteryId?: string) {
+    save(
+      lines.value.filter(
+        ({ book }) => book.id !== id || book.monasteryId !== monasteryId,
+      ),
+    )
     announcement.value = 'Book removed from basket.'
   }
   return {

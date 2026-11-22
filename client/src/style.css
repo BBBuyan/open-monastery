@@ -736,6 +736,30 @@ main.home-main {
   padding: 2.5rem 3rem 5rem;
   scroll-margin-top: 1.5rem;
 }
+.monastery-selector {
+  display: grid;
+  gap: 0.7rem;
+  max-width: 24rem;
+  margin-bottom: 1.5rem;
+}
+.monastery-selector label {
+  color: var(--muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.monastery-selector p {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+.monastery-selector .button {
+  margin-top: 0.75rem;
+}
+.unit-price a {
+  color: var(--accent);
+}
+.unit-price a:hover {
+  text-decoration: underline;
+}
 .library-toolbar {
   margin-bottom: 1.5rem;
 }

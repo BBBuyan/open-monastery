@@ -16,7 +16,7 @@ export type UserRegistration = {
 }
 
 export function registerUser(user: UserRegistration, signal?: AbortSignal) {
-  return request<User>('/auth/register/users', {
+  return request<User>('/auth/register', {
     method: 'POST',
     body: JSON.stringify(user),
     signal,
@@ -48,6 +48,7 @@ export type Book = {
   name: string
   description: string
   price: number
+  monasteryId?: string
 }
 
 export type Category = {
@@ -157,8 +158,11 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
       const body = (await response.json()) as {
         error?: string
         message?: string
+        detail?: string
+        title?: string
       }
-      message = body.message || body.error || message
+      message =
+        body.detail || body.message || body.error || body.title || message
     } catch {
       // Keep the status-based fallback for non-JSON errors.
     }
@@ -178,6 +182,59 @@ export type Paginated<T> = {
 
 export type BookPage = Paginated<Book>
 
+export type Monastery = { id: number; name: string }
+
+function monasteryFromResponse(value: unknown): Monastery {
+  const item = value as { Id?: number; Name?: string } | null
+  if (
+    !item ||
+    !Number.isSafeInteger(item.Id) ||
+    !item.Id ||
+    item.Id <= 0 ||
+    typeof item.Name !== 'string'
+  ) {
+    throw new Error('The server returned an invalid monastery.')
+  }
+  return { id: item.Id, name: item.Name }
+}
+
+export async function getMonasteries(
+  options: { signal?: AbortSignal } = {},
+): Promise<Paginated<Monastery>> {
+  const page = await request<Paginated<unknown>>('/monasteries', {
+    signal: options.signal,
+  })
+  if (
+    !Array.isArray(page?.data) ||
+    typeof page.pagination?.hasMore !== 'boolean' ||
+    !(
+      page.pagination.nextCursor === null ||
+      (typeof page.pagination.nextCursor === 'string' &&
+        page.pagination.nextCursor.length > 0)
+    ) ||
+    (page.pagination.hasMore &&
+      (!page.data.length || !page.pagination.nextCursor))
+  ) {
+    throw new Error('The server returned an unexpected monastery page.')
+  }
+  return {
+    data: page.data.map(monasteryFromResponse),
+    pagination: page.pagination,
+  }
+}
+
+export async function getMonastery(
+  id: number,
+  signal?: AbortSignal,
+): Promise<Monastery> {
+  const monastery = monasteryFromResponse(
+    await request<unknown>(`/monasteries/${id}`, { signal }),
+  )
+  if (monastery.id !== id)
+    throw new Error('The server returned a different monastery.')
+  return monastery
+}
+
 export type BookListOptions = {
   limit?: number
   cursor?: string
@@ -187,11 +244,14 @@ export type BookListOptions = {
 
 // Omit categoryId to search across the catalog. Both endpoints are paginated.
 export async function getBooks(
+  monasteryId: number,
   categoryId?: number,
   options: BookListOptions = {},
 ): Promise<BookPage> {
   const path =
-    categoryId === undefined ? '/books' : `/categories/${categoryId}/books`
+    categoryId === undefined
+      ? `/monasteries/${monasteryId}/books`
+      : `/monasteries/${monasteryId}/categories/${categoryId}/books`
   const params = new URLSearchParams({ limit: String(options.limit ?? 20) })
   if (options.cursor !== undefined) params.set('cursor', options.cursor)
   if (options.query?.trim()) params.set('q', options.query.trim())
@@ -213,33 +273,62 @@ export async function getBooks(
     throw new Error('The server returned an unexpected book page.')
   }
   const books = payload.data.map((value) => {
-    const book = value as Partial<Book> | null
-    if (!book || !Number.isSafeInteger(book.id) || Number(book.id) <= 0) {
+    const book = value as unknown as {
+      Id: number
+      Name: string
+      Description: string
+      Price: number
+      MonasteryId: number
+    } | null
+    if (
+      !book ||
+      !Number.isSafeInteger(book.Id) ||
+      book.Id <= 0 ||
+      book.MonasteryId !== monasteryId ||
+      typeof book.Name !== 'string' ||
+      typeof book.Description !== 'string' ||
+      !Number.isSafeInteger(book.Price) ||
+      book.Price < 0
+    ) {
       throw new Error('The server returned an invalid book ID.')
     }
     return {
-      id: Number(book.id),
-      name: String(book.name ?? 'Unnamed book'),
-      description: String(book.description ?? ''),
-      price: Number(book.price ?? 0),
+      id: book.Id,
+      name: book.Name,
+      description: book.Description,
+      price: book.Price,
+      monasteryId: String(monasteryId),
     }
   })
   return { data: books, pagination: payload.pagination }
 }
 
-export async function getCategories(signal?: AbortSignal): Promise<Category[]> {
-  const payload = await request<unknown>('/categories', { signal })
+export async function getCategories(
+  monasteryId: number,
+  signal?: AbortSignal,
+): Promise<Category[]> {
+  const payload = await request<unknown>(
+    `/monasteries/${monasteryId}/categories`,
+    { signal },
+  )
+  if (payload === null) return []
   return pickCollection(payload, 'categories').map((value) => {
-    const category = value as Partial<Category> | null
-    const id = Number(category?.id)
+    const category = value as {
+      Id: number
+      Name: string
+      MonasteryId: number
+    } | null
+    const id = category?.Id
     if (
       !Number.isSafeInteger(id) ||
+      !id ||
       id <= 0 ||
-      typeof category?.name !== 'string'
+      typeof category?.Name !== 'string' ||
+      category.MonasteryId !== monasteryId
     ) {
       throw new Error('The server returned an invalid category.')
     }
-    return { id, name: category.name }
+    return { id, name: category.Name }
   })
 }
 

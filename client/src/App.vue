@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import Readings from './components/Readings.vue'
+import Monasteries from './components/Monasteries.vue'
 import Basket from './components/Basket.vue'
 import UserProfile from './components/UserProfile.vue'
 import PrayerRequests from './components/PrayerRequests.vue'
@@ -10,6 +10,7 @@ import { readSession, saveSession, type Session } from './session'
 import { basket } from './basket'
 import { formatPrice } from './money'
 import { useTheme } from './theme'
+import { monasteryIdFromHash } from './monasteries'
 const { theme, toggle: toggleTheme } = useTheme()
 const session = ref(readSession())
 const registeredEmail = ref('')
@@ -21,7 +22,7 @@ function signIn(value: Session) {
   session.value = value
   saveSession(value)
   registeredEmail.value = ''
-  location.hash = '#profile'
+  location.hash = '#readings'
 }
 function clearSession() {
   session.value = null
@@ -52,7 +53,9 @@ function pageFromHash() {
       : 'home'
 }
 const active = ref(pageFromHash())
+const monasteryId = ref(monasteryIdFromHash(location.hash))
 const requestId = ref<number>()
+let catalogScroll: number | undefined
 watch(
   session,
   (value, _, onCleanup) => {
@@ -67,7 +70,13 @@ watch(
 async function sync() {
   if (location.hash === '#main-content') return
   const previous = active.value
+  const previousMonasteryId = monasteryId.value
   active.value = pageFromHash()
+  if (previous === 'home' && active.value !== 'home')
+    catalogScroll = window.scrollY
+  const requestedMonasteryId = monasteryIdFromHash(location.hash)
+  if (requestedMonasteryId !== undefined)
+    monasteryId.value = requestedMonasteryId
   if (
     !session.value &&
     (active.value === 'profile' || active.value === 'requests')
@@ -83,14 +92,29 @@ async function sync() {
       ? 'Open Monastery'
       : `${active.value === 'login' ? 'Log in' : active.value === 'signup' ? 'Sign up' : active.value === 'requests' ? (requestId.value ? `Prayer request #${requestId.value}` : 'Readings') : active.value === 'profile' ? 'Profile' : active.value === 'basket' ? 'Basket' : 'Checkout'} · Open Monastery`
   await nextTick()
-  if (location.hash === '#readings') {
+  if (
+    active.value === 'home' &&
+    previous !== 'home' &&
+    location.hash !== '#home' &&
+    catalogScroll !== undefined
+  ) {
+    window.scrollTo({ top: catalogScroll, behavior: 'instant' })
+    document.getElementById('main-content')?.focus({ preventScroll: true })
+  } else if (active.value === 'home' && location.hash.startsWith('#readings')) {
     const catalog = document.getElementById('readings')
     catalog?.scrollIntoView({ block: 'start' })
     catalog?.focus({ preventScroll: true })
-  } else if (previous !== active.value || location.hash === '#home') {
+  } else if (
+    previous !== active.value ||
+    previousMonasteryId !== monasteryId.value ||
+    location.hash === '#home'
+  ) {
     window.scrollTo({ top: 0, behavior: 'instant' })
     document.getElementById('main-content')?.focus({ preventScroll: true })
   }
+}
+function focusMain() {
+  document.getElementById('main-content')?.focus()
 }
 onMounted(() => {
   void sync()
@@ -100,7 +124,9 @@ onUnmounted(() => window.removeEventListener('hashchange', sync))
 </script>
 
 <template>
-  <a class="skip-link" href="#main-content">Skip to content</a>
+  <a class="skip-link" href="#main-content" @click.prevent="focusMain">
+    Skip to content
+  </a>
   <div class="app-shell">
     <p
       class="visually-hidden"
@@ -128,7 +154,9 @@ onUnmounted(() => window.removeEventListener('hashchange', sync))
             :aria-label="`Basket, ${basketCount} ${basketCount === 1 ? 'book' : 'books'}, ${formatPrice(basketTotal)}`"
             :aria-current="active === 'basket' ? 'page' : undefined"
           >
-            <span class="basket-link-total">{{ formatPrice(basketTotal) }}</span>
+            <span class="basket-link-total">{{
+              formatPrice(basketTotal)
+            }}</span>
             <svg
               viewBox="0 0 24 24"
               width="20"
@@ -162,7 +190,6 @@ onUnmounted(() => window.removeEventListener('hashchange', sync))
       }"
     >
       <template v-if="active === 'home'">
-        <h1 class="visually-hidden">Open Monastery</h1>
         <section class="monastery-banner" aria-label="Monastery illustration">
           <img
             class="banner-atmosphere"
@@ -178,17 +205,20 @@ onUnmounted(() => window.removeEventListener('hashchange', sync))
           />
           <div class="banner-shade" aria-hidden="true"></div>
         </section>
-        <section
-          id="readings"
-          class="home-catalog"
-          tabindex="-1"
-          aria-label="Books"
-        >
-          <Readings />
-        </section>
       </template>
+      <section
+        v-show="active === 'home'"
+        id="readings"
+        class="home-catalog"
+        tabindex="-1"
+        aria-label="Book catalog"
+      >
+        <KeepAlive>
+          <Monasteries v-if="active === 'home'" :selected-id="monasteryId" />
+        </KeepAlive>
+      </section>
       <div
-        v-else-if="active === 'login' || active === 'signup'"
+        v-if="active === 'login' || active === 'signup'"
         class="catalog-view"
       >
         <LoginPage
@@ -203,7 +233,7 @@ onUnmounted(() => window.removeEventListener('hashchange', sync))
         <UserProfile :email="session.email" />
       </div>
       <div v-else-if="active === 'requests' && session" class="catalog-view">
-        <a class="return-link" href="#readings">← Back to books</a>
+        <a class="return-link" href="#readings">← Browse monasteries</a>
         <PrayerRequests
           :request-id="requestId"
           :session="session"
@@ -215,7 +245,7 @@ onUnmounted(() => window.removeEventListener('hashchange', sync))
         class="catalog-view"
       >
         <a class="return-link" href="#readings"
-          ><span aria-hidden="true">←</span> Back to books</a
+          ><span aria-hidden="true">←</span> Browse monasteries</a
         >
         <Basket :checkout="active === 'checkout'" />
       </div>

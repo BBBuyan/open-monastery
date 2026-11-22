@@ -1,9 +1,22 @@
 <script setup lang="ts">
-import { basket } from '../basket'
+import { computed } from 'vue'
+import { basket, basketBookKey } from '../basket'
+import { monasteryCatalogLink } from '../monasteries'
 import { formatPrice } from '../money'
 import BasketQuantity from './BasketQuantity.vue'
 defineProps<{ checkout?: boolean }>()
 const { items, count, total, persistent } = basket
+const lines = computed(() =>
+  items.value.map((item) => ({
+    ...item,
+    monastery: item.book.monasteryId
+      ? {
+          id: item.book.monasteryId,
+          name: `Monastery #${item.book.monasteryId}`,
+        }
+      : undefined,
+  })),
+)
 </script>
 
 <template>
@@ -17,7 +30,7 @@ const { items, count, total, persistent } = basket
     <div v-if="!items.length" class="state-panel">
       <h2>Your basket is empty</h2>
       <p>Add books to review them here.</p>
-      <a class="button primary" href="#readings">Browse books</a>
+      <a class="button primary" href="#readings">Browse monasteries</a>
     </div>
     <template v-else>
       <p v-if="!persistent" class="basket-notice" role="status">
@@ -25,21 +38,34 @@ const { items, count, total, persistent } = basket
       </p>
       <div class="basket-layout">
         <ul class="basket-list">
-          <li v-for="item in items" :key="item.book.id">
+          <li
+            v-for="item in lines"
+            :key="basketBookKey(item.book.id, item.book.monasteryId)"
+          >
             <div class="book-heading">
               <h2 lang="mn">{{ item.book.name }}</h2>
               <p class="book-price">
                 {{ formatPrice(item.book.price * item.quantity) }}
               </p>
             </div>
-            <p class="unit-price">{{ formatPrice(item.book.price) }} each</p>
+            <p class="unit-price">
+              {{ formatPrice(item.book.price) }} each
+              <span aria-hidden="true"> · </span>
+              <a
+                v-if="item.monastery"
+                :href="monasteryCatalogLink(item.monastery.id)"
+              >
+                {{ item.monastery.name }}
+              </a>
+              <span v-else>Monastery unspecified</span>
+            </p>
             <div class="basket-line-actions">
               <BasketQuantity :book="item.book" />
               <button
                 type="button"
                 class="remove-book"
-                :aria-label="`Remove ${item.book.name} from basket`"
-                @click="basket.remove(item.book.id)"
+                :aria-label="`Remove ${item.book.name}${item.monastery ? ` from ${item.monastery.name}` : ''} from basket`"
+                @click="basket.remove(item.book.id, item.book.monasteryId)"
               >
                 Remove
               </button>
@@ -52,7 +78,9 @@ const { items, count, total, persistent } = basket
             <span>Total</span><strong>{{ formatPrice(total) }}</strong>
           </div>
           <template v-if="checkout">
-            <p class="checkout-notice">Online payments are unavailable.</p>
+            <p class="checkout-notice">
+              Demo checkout. You can review your selection here.
+            </p>
             <a class="basket-secondary-link" href="#readings"
               >Continue browsing</a
             >
