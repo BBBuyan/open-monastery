@@ -7,19 +7,19 @@ type CategoryBook struct {
 	CategoryId  int64
 	BookId      int64
 	MonasteryId int64
-	CreatedBy   int64
+	CreatedBy   *string
 	CreatedAt   time.Time
 }
 
 func NewCategoryBook(
 	categoryId int64,
 	bookId int64,
-	userId int64,
-) (*CategoryBook, error) {
+	createdBy *string,
+) *CategoryBook {
 	return &CategoryBook{
 		CategoryId: categoryId,
 		BookId:     bookId,
-		CreatedBy:  userId,
+		CreatedBy:  createdBy,
 		CreatedAt:  time.Now().UTC().Truncate(time.Microsecond),
-	}, nil
+	}
 }

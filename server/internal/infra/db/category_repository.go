@@ -221,3 +221,36 @@ func (r *CategoryRepository) Add(
 	category.Id = id
 	return nil
 }
+
+func (r *CategoryRepository) AddCategoryBook(
+	ctx context.Context,
+	categoryBook *models.CategoryBook,
+) error {
+	query := `
+		INSERT INTO category_book (category_id, book_id, monastery_id, created_by, created_at)
+		SELECT c.id, b.id, c.monastery_id, ?, ? FROM category c
+		JOIN book b ON b.id = ? AND b.monastery_id = c.monastery_id
+		WHERE c.id = ? AND c.monastery_id = ?
+	`
+
+	result, err := r.db.ExecContext(
+		ctx,
+		query,
+		categoryBook.CreatedBy,
+		categoryBook.CreatedAt,
+		categoryBook.BookId,
+		categoryBook.CategoryId,
+		categoryBook.MonasteryId,
+	)
+	if err != nil {
+		return translateWriteError("AddCategoryBook", err)
+	}
+	added, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("get number of books added to category: %w", err)
+	}
+	if added == 0 {
+		return apperr.NewNotFound("category or book not found", nil)
+	}
+	return nil
+}

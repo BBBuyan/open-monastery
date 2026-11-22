@@ -58,7 +58,7 @@ func (s *MonasteryService) CreateMonastery(
 	if actor.Role != enums.Admin {
 		return nil, apperr.NewForbidden("forbidden")
 	}
-	monastery := models.NewMonastery(name, actor.Id)
+	monastery := models.NewMonastery(name, &actor.Email)
 	err := s.repo.Add(ctx, monastery)
 	if err != nil {
 		return nil, err

@@ -5,17 +5,17 @@ import "time"
 type Monastery struct {
 	Id        int64
 	Name      string
-	CreatedBy int64
+	CreatedBy *string
 	CreatedAt time.Time
 }
 
 func NewMonastery(
 	name string,
-	userId int64,
+	createdBy *string,
 ) *Monastery {
 	return &Monastery{
 		Name:      name,
-		CreatedBy: userId,
+		CreatedBy: createdBy,
 		CreatedAt: time.Now().UTC().Truncate(time.Microsecond),
 	}
 }

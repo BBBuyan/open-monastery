@@ -10,7 +10,7 @@ type Book struct {
 	Description string
 	Price       uint32
 	MonasteryId int64
-	CreatedBy   int64
+	CreatedBy   *string
 	CreatedAt   time.Time
 }
 
@@ -19,14 +19,14 @@ func NewBook(
 	desc string,
 	price uint32,
 	monasteryId int64,
-	userId int64,
+	createdBy *string,
 ) *Book {
 	return &Book{
 		Name:        name,
 		Description: desc,
 		Price:       price,
 		MonasteryId: monasteryId,
-		CreatedBy:   userId,
+		CreatedBy:   createdBy,
 		CreatedAt:   time.Now().UTC().Truncate(time.Microsecond),
 	}
 }

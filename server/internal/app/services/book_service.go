@@ -72,7 +72,7 @@ func (s *BookService) CreateBook(
 		cmd.Desc,
 		cmd.Price,
 		*actor.MonasteryId,
-		actor.Id,
+		&actor.Email,
 	)
 	err := s.repo.Add(ctx, book)
 	if err != nil {

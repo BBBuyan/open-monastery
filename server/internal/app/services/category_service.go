@@ -70,7 +70,9 @@ func (s *CategoryService) AddBook(
 	if actor.MonasteryId == nil {
 		return apperr.NewBadRequest("user has no monastery id", nil)
 	}
-	return s.repo.AddBook(ctx, *actor.MonasteryId, categoryId, bookId)
+	categoryBook := models.NewCategoryBook(categoryId, bookId, &actor.Email)
+
+	return s.repo.AddCategoryBook(ctx, categoryBook)
 }
 
 func (s *CategoryService) RemoveBook(
@@ -98,7 +100,7 @@ func (s *CategoryService) CreateCategory(
 	if actor.MonasteryId == nil {
 		return nil, apperr.NewBadRequest("user has no monastery id", nil)
 	}
-	category := models.NewCategory(name, *actor.MonasteryId, actor.Id)
+	category := models.NewCategory(name, *actor.MonasteryId, &actor.Email)
 	if err := s.repo.Add(ctx, category); err != nil {
 		return nil, err
 	}
