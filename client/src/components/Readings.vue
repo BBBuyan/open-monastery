@@ -29,22 +29,18 @@ const { books, loading, error, hasMore, loadMore, reset, dispose } =
 const query = ref('')
 const selectedCategory = ref<number | undefined>()
 const categories = ref<Category[]>([])
-const categoriesLoading = ref(false)
 const categoriesError = ref(false)
 let categoryController: AbortController | undefined
 async function loadCategories() {
   categoryController?.abort()
   const controller = new AbortController()
   categoryController = controller
-  categoriesLoading.value = true
   categoriesError.value = false
   try {
     const result = await getCategories(props.monastery.id, controller.signal)
     if (!controller.signal.aborted) categories.value = result
   } catch {
     if (!controller.signal.aborted) categoriesError.value = true
-  } finally {
-    if (!controller.signal.aborted) categoriesLoading.value = false
   }
 }
 const hasFilters = computed(
@@ -154,7 +150,6 @@ onUnmounted(() => {
       <div class="category-filter">
         <label id="book-category-label" for="book-category">Category</label>
         <CategoryFilter v-model="selectedCategory" :categories="categories" />
-        <p v-if="categoriesLoading" role="status">Loading categories…</p>
         <p v-if="categoriesError" role="status">
           Categories couldn't be loaded.
           <button
