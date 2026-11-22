@@ -1,5 +1,5 @@
 export function monasteryCatalogLink(id: number | string) {
-  return `#monasteries/${id}`
+  return `#readings?${new URLSearchParams({ monastery: String(id) })}`
 }
 
 export function monasteryIdFromHash(hash: string): number | undefined {

@@ -11,24 +11,22 @@ import {
   monasteryIdFromHash,
 } from '../src/monasteries.ts'
 
-test('monastery list maps Go fields and preserves the next page cursor', async (t) => {
+test('monastery list requests no query parameters and leaves pagination to the server', async (t) => {
   const urls = []
   t.mock.method(globalThis, 'fetch', async (url) => {
-    urls.push(new URL(url, 'http://localhost'))
-    return Response.json(
-      urls.length === 1
-        ? {
-            data: [{ Id: 42, Name: 'Monastery' }],
-            pagination: { hasMore: true, nextCursor: 'opaque/42+=' },
-          }
-        : { data: [], pagination: { hasMore: false, nextCursor: null } },
-    )
+    urls.push(url)
+    return Response.json({
+      data: [{ Id: 42, Name: 'Monastery' }],
+      pagination: { hasMore: true, nextCursor: 'opaque/42+=' },
+    })
   })
   const page = await getMonasteries()
   assert.deepEqual(page.data, [{ id: 42, name: 'Monastery' }])
-  await getMonasteries({ cursor: page.pagination.nextCursor })
-  assert.equal(urls[0].pathname, '/api/v1/monasteries')
-  assert.equal(urls[1].searchParams.get('cursor'), 'opaque/42+=')
+  assert.deepEqual(urls, ['/api/v1/monasteries'])
+  assert.deepEqual(page.pagination, {
+    hasMore: true,
+    nextCursor: 'opaque/42+=',
+  })
 })
 
 test('selected monastery links survive reload and load scoped books and categories', async (t) => {
@@ -40,9 +38,10 @@ test('selected monastery links survive reload and load scoped books and categori
     return Response.json({ Id: 42, Name: 'Monastery' })
   })
   const id = monasteryIdFromHash(monasteryCatalogLink(42))
-  assert.equal(monasteryCatalogLink(42), '#monasteries/42')
+  assert.equal(monasteryCatalogLink(42), '#readings?monastery=42')
   assert.equal(id, 42)
   assert.equal(monasteryIdFromHash('#readings?monastery=42'), 42)
+  assert.equal(monasteryIdFromHash('#monasteries/42'), 42)
   assert.deepEqual(await getMonastery(id), { id: 42, name: 'Monastery' })
   assert.deepEqual(await getCategories(id), [{ id: 9, name: 'Protection' }])
   assert.deepEqual(urls, [

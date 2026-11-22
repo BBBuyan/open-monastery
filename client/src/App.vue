@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import Monasteries from './components/Monasteries.vue'
-import MonasteryBooks from './components/MonasteryBooks.vue'
 import Basket from './components/Basket.vue'
 import UserProfile from './components/UserProfile.vue'
 import PrayerRequests from './components/PrayerRequests.vue'
@@ -42,11 +41,6 @@ function expireSession() {
 
 const { count: basketCount, total: basketTotal, announcement } = basket
 function pageFromHash() {
-  if (
-    location.hash.startsWith('#monasteries/') ||
-    monasteryIdFromHash(location.hash) !== undefined
-  )
-    return 'monastery'
   if (location.hash === '#login') return 'login'
   if (location.hash === '#signup') return 'signup'
   if (/^#(?:requests(?:\/\d+)?|profile\/\d+)$/.test(location.hash))
@@ -61,7 +55,7 @@ function pageFromHash() {
 const active = ref(pageFromHash())
 const monasteryId = ref(monasteryIdFromHash(location.hash))
 const requestId = ref<number>()
-let directoryScroll: number | undefined
+let catalogScroll: number | undefined
 watch(
   session,
   (value, _, onCleanup) => {
@@ -79,8 +73,10 @@ async function sync() {
   const previousMonasteryId = monasteryId.value
   active.value = pageFromHash()
   if (previous === 'home' && active.value !== 'home')
-    directoryScroll = window.scrollY
-  monasteryId.value = monasteryIdFromHash(location.hash)
+    catalogScroll = window.scrollY
+  const requestedMonasteryId = monasteryIdFromHash(location.hash)
+  if (requestedMonasteryId !== undefined)
+    monasteryId.value = requestedMonasteryId
   if (
     !session.value &&
     (active.value === 'profile' || active.value === 'requests')
@@ -94,15 +90,15 @@ async function sync() {
   document.title =
     active.value === 'home'
       ? 'Open Monastery'
-      : `${active.value === 'monastery' ? 'Books' : active.value === 'login' ? 'Log in' : active.value === 'signup' ? 'Sign up' : active.value === 'requests' ? (requestId.value ? `Prayer request #${requestId.value}` : 'Readings') : active.value === 'profile' ? 'Profile' : active.value === 'basket' ? 'Basket' : 'Checkout'} · Open Monastery`
+      : `${active.value === 'login' ? 'Log in' : active.value === 'signup' ? 'Sign up' : active.value === 'requests' ? (requestId.value ? `Prayer request #${requestId.value}` : 'Readings') : active.value === 'profile' ? 'Profile' : active.value === 'basket' ? 'Basket' : 'Checkout'} · Open Monastery`
   await nextTick()
   if (
     active.value === 'home' &&
     previous !== 'home' &&
     location.hash !== '#home' &&
-    directoryScroll !== undefined
+    catalogScroll !== undefined
   ) {
-    window.scrollTo({ top: directoryScroll, behavior: 'instant' })
+    window.scrollTo({ top: catalogScroll, behavior: 'instant' })
     document.getElementById('main-content')?.focus({ preventScroll: true })
   } else if (active.value === 'home' && location.hash.startsWith('#readings')) {
     const catalog = document.getElementById('readings')
@@ -215,17 +211,14 @@ onUnmounted(() => window.removeEventListener('hashchange', sync))
         id="readings"
         class="home-catalog"
         tabindex="-1"
-        aria-labelledby="catalog-heading"
+        aria-label="Book catalog"
       >
         <KeepAlive>
-          <Monasteries v-if="active === 'home'" />
+          <Monasteries v-if="active === 'home'" :selected-id="monasteryId" />
         </KeepAlive>
       </section>
-      <div v-if="active === 'monastery'" class="catalog-view">
-        <MonasteryBooks :monastery-id="monasteryId" />
-      </div>
       <div
-        v-else-if="active === 'login' || active === 'signup'"
+        v-if="active === 'login' || active === 'signup'"
         class="catalog-view"
       >
         <LoginPage

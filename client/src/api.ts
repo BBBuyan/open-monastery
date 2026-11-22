@@ -199,12 +199,9 @@ function monasteryFromResponse(value: unknown): Monastery {
 }
 
 export async function getMonasteries(
-  options: BookListOptions = {},
+  options: { signal?: AbortSignal } = {},
 ): Promise<Paginated<Monastery>> {
-  const params = new URLSearchParams({ limit: String(options.limit ?? 20) })
-  if (options.cursor) params.set('cursor', options.cursor)
-  if (options.query?.trim()) params.set('q', options.query.trim())
-  const page = await request<Paginated<unknown>>(`/monasteries?${params}`, {
+  const page = await request<Paginated<unknown>>('/monasteries', {
     signal: options.signal,
   })
   if (
@@ -216,9 +213,7 @@ export async function getMonasteries(
         page.pagination.nextCursor.length > 0)
     ) ||
     (page.pagination.hasMore &&
-      (!page.data.length ||
-        !page.pagination.nextCursor ||
-        page.pagination.nextCursor === options.cursor))
+      (!page.data.length || !page.pagination.nextCursor))
   ) {
     throw new Error('The server returned an unexpected monastery page.')
   }
