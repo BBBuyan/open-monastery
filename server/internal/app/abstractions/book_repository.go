@@ -8,11 +8,16 @@ import (
 )
 
 type BookRepository interface {
-	FindById(ctx context.Context, id int64) (*models.Book, error)
+	FindById(ctx context.Context, monasteryID, id int64) (*models.Book, error)
 	GetBooks(
 		ctx context.Context,
+		monasteryID int64,
 		options appmodels.ListOptions,
 	) ([]*models.Book, error)
 	Add(ctx context.Context, book *models.Book) error
-	GetCategories(ctx context.Context, bookId int64) ([]*models.Category, error)
+	GetCategories(
+		ctx context.Context,
+		monasteryID int64,
+		bookID int64,
+	) ([]*models.Category, error)
 }

@@ -6,6 +6,10 @@ import (
 
 	"example.com/open-monastery/internal/app/abstractions"
 	"example.com/open-monastery/internal/app/apperr"
+	"example.com/open-monastery/internal/app/appmodels"
+	"example.com/open-monastery/internal/app/commands"
+	"example.com/open-monastery/internal/app/security"
+	"example.com/open-monastery/internal/domain/enums"
 	"example.com/open-monastery/internal/domain/models"
 )
 
@@ -14,14 +18,14 @@ var ErrInvalidCredentials = errors.New("invalid credentials")
 type AuthService struct {
 	repo           abstractions.AuthRepository
 	passwordHasher abstractions.PasswordHasher
-	tokenIssuer    abstractions.TokeIssuer
+	tokenIssuer    abstractions.TokenIssuer
 	dummyHash      string
 }
 
 func NewAuthService(
 	repo abstractions.AuthRepository,
 	passwordHasher abstractions.PasswordHasher,
-	tokenIssuer abstractions.TokeIssuer,
+	tokenIssuer abstractions.TokenIssuer,
 ) *AuthService {
 	return &AuthService{
 		repo:           repo,
@@ -31,74 +35,61 @@ func NewAuthService(
 	}
 }
 
-func (s *AuthService) Login(ctx context.Context, email string, password string) (string, error) {
+func (s *AuthService) Login(
+	ctx context.Context,
+	email string,
+	password string,
+) (*string, error) {
 	email, err := models.NormalizeEmail(email)
 	if err != nil || password == "" {
-		return "", ErrInvalidCredentials
+		return nil, apperr.NewInvalid("invalid credentials", err)
 	}
-
-	userID, hash, userType, err := s.repo.FindCredentialsByEmail(ctx, email)
+	creds, err := s.repo.FindCredentialsByEmail(ctx, email)
 	if err != nil {
-		appErr, ok := errors.AsType[*apperr.AppErr](err)
-		if !ok || appErr.Type != apperr.NotFound {
-			return "", err
-		}
 		// Match the password verification cost for an account without credentials.
 		s.passwordHasher.VerifyPassword(password, s.dummyHash)
-		return "", ErrInvalidCredentials
+		return nil, err
 	}
 
-	if !s.passwordHasher.VerifyPassword(password, hash) {
-		return "", ErrInvalidCredentials
+	if !s.passwordHasher.VerifyPassword(password, creds.PasswordHash) {
+		return nil, apperr.NewUnauthorized("invalid.credentials", nil)
 	}
-	return s.tokenIssuer.IssueAccessToken(userID, userType)
-}
+	tokenStr, err := s.tokenIssuer.IssueAccessToken(creds)
+	if err != nil {
+		return nil, err
+	}
 
-func createBaseUser(
-	firstName string,
-	lastName string,
-	email *string,
-	phone *string,
-) (*models.User, error) {
-	user, err := models.NewUser(firstName, lastName, email, phone)
-	switch {
-	case errors.Is(err, models.ErrContactRequired):
-		return nil, apperr.NewInvalid("empty email and phone number", err)
-	case errors.Is(err, models.ErrEmailTooLong):
-		return nil, apperr.NewInvalidWithMsg(
-			"email is too long", "email must be less than 254 characters", err,
-		)
-	case errors.Is(err, models.ErrEmailNotParseable):
-		return nil, apperr.NewInvalid("email not parseable", err)
-	case errors.Is(err, models.ErrInvalidEmail):
-		return nil, apperr.NewInvalid("invalid email", err)
-	case errors.Is(err, models.ErrPhoneNumberTooLong):
-		return nil, apperr.NewInvalidWithMsg(
-			"phone number is too long", "phone number must be less than 12 characters", err,
-		)
-	case errors.Is(err, models.ErrInvalidPhoneNumber):
-		return nil, apperr.NewInvalidWithMsg(
-			"invalid phone number", "phone number is not mongolian", err,
-		)
-	default:
-		return user, err
-	}
+	return &tokenStr, nil
 }
 
 func (s *AuthService) CreateUser(
 	ctx context.Context,
-	firstName string,
-	lastName string,
-	email *string,
-	phone *string,
-	password string,
+	cmd commands.CreateUserCommand,
 ) (*models.User, error) {
-
-	user, err := createBaseUser(firstName, lastName, email, phone)
+	if err := security.ValidatePassword(cmd.Password); err != nil {
+		return nil, err
+	}
+	passHash := s.passwordHasher.HashPassword(cmd.Password)
+	email, err := models.NewEmail(cmd.Email)
+	if err != nil {
+		return nil, apperr.NewInvalid(err.Error(), err)
+	}
+	var phone *models.PhoneNumber
+	if cmd.Phone != nil {
+		phone, err = models.NewPhoneNumber(*cmd.Phone)
+		if err != nil {
+			return nil, apperr.NewInvalid(err.Error(), err)
+		}
+	}
+	user, err := models.NewUser(
+		cmd.FirstName, cmd.LastName,
+		*email, phone,
+		&passHash,
+	)
 	if err != nil {
 		return nil, err
 	}
-	err = s.addUser(ctx, user, password)
+	err = s.repo.AddUser(ctx, user)
 	if err != nil {
 		return nil, err
 	}
@@ -106,35 +97,32 @@ func (s *AuthService) CreateUser(
 	return user, nil
 }
 
-func (s *AuthService) CreateMonk(
+func (s *AuthService) PromoteToMonk(
 	ctx context.Context,
-	firstName string,
-	lastName string,
-	email *string,
-	phone *string,
-	monasteryId int64,
-	password string,
-) (*models.User, error) {
-	user, err := createBaseUser(firstName, lastName, email, phone)
-	if err != nil {
-		return nil, err
+	userId int64,
+	actor appmodels.Actor,
+) error {
+	if actor.Role != enums.Manager {
+		return apperr.NewForbidden("forbidden")
 	}
+	if actor.MonasteryId == nil {
+		return apperr.NewBadRequest("manager monastery id is empty", nil)
+	}
+	s.repo.PromoteToMonk(ctx, userId, *actor.MonasteryId)
 
-	monk, err := models.NewMonk(user, monasteryId)
-	if err != nil {
-		return nil, err
-	}
-	err = s.addUser(ctx, monk, password)
-	if err != nil {
-		return nil, err
-	}
-
-	return monk, nil
+	return nil
 }
 
-func (s *AuthService) addUser(ctx context.Context, user *models.User, password string) error {
-	if password == "" {
-		return apperr.NewBadRequest("password.required", nil)
+func (s *AuthService) PromoteToManager(
+	ctx context.Context,
+	monkId int64,
+	monasteryId int64,
+	actor appmodels.Actor,
+) error {
+	if actor.Role != enums.Admin {
+		return apperr.NewForbidden("forbidden")
 	}
-	return s.repo.AddUser(ctx, user, s.passwordHasher.HashPassword(password))
+	s.repo.PromoteToManager(ctx, monkId, monasteryId)
+
+	return nil
 }

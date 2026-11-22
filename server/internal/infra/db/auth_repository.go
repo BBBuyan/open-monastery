@@ -8,6 +8,8 @@ import (
 
 	"example.com/open-monastery/internal/app/abstractions"
 	"example.com/open-monastery/internal/app/apperr"
+	"example.com/open-monastery/internal/app/appmodels"
+	"example.com/open-monastery/internal/domain/enums"
 	"example.com/open-monastery/internal/domain/models"
 )
 
@@ -24,28 +26,41 @@ func NewAuthRepository(db *sql.DB) *AuthRepository {
 func (r *AuthRepository) FindCredentialsByEmail(
 	ctx context.Context,
 	email string,
-) (int64, string, models.UserType, error) {
-	const query = `SELECT id, password_hash, user_type FROM users WHERE email = ? AND password_hash IS NOT NULL`
-	var userID int64
-	var hash string
-	var userType models.UserType
-	err := r.db.QueryRowContext(ctx, query, email).Scan(&userID, &hash, &userType)
-	if errors.Is(err, sql.ErrNoRows) {
-		return 0, "", "", apperr.NewNotFound("credentials not found", err)
-	}
+) (*appmodels.UserCreds, error) {
+	const query = `
+		SELECT id, password_hash, user_type, monastery_id, email
+		FROM users 
+		WHERE email = ? AND password_hash IS NOT NULL
+	`
+	var creds appmodels.UserCreds
+	err := r.db.QueryRowContext(ctx, query, email).Scan(
+		&creds.UserId,
+		&creds.PasswordHash,
+		&creds.UserType,
+		&creds.MonasteryId,
+		&creds.Email,
+	)
 	if err != nil {
-		return 0, "", "", fmt.Errorf("find credentials by email: %w", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, apperr.NewNotFound("credentials not found", err)
+		}
+		return nil, fmt.Errorf("find credentials by email: %w", err)
 	}
-	return userID, hash, userType, nil
+	return &creds, nil
 }
 
 func (r *AuthRepository) AddUser(
 	ctx context.Context,
 	user *models.User,
-	passwordHash string,
 ) error {
-	query := `INSERT INTO users (first_name, last_name, user_type, monastery_id, email, phone_number, password_hash)
-	VALUES (?,?,?,?,?,?,?)`
+	query := `INSERT INTO users (first_name, last_name, user_type, monastery_id, email, phone_number, password_hash, created_at)
+	VALUES (?,?,?,?,?,?,?,?)`
+
+	var phoneNumber *string
+	if user.PhoneNumber != nil {
+		phone := user.PhoneNumber.String()
+		phoneNumber = &phone
+	}
 
 	result, err := r.db.ExecContext(
 		ctx,
@@ -54,9 +69,10 @@ func (r *AuthRepository) AddUser(
 		user.LastName,
 		user.UserType,
 		user.MonasteryId,
-		user.Email,
-		user.PhoneNumber,
-		passwordHash,
+		user.Email.String(),
+		phoneNumber,
+		user.PasswordHash,
+		user.CreatedAt,
 	)
 	if err != nil {
 		return translateWriteError("AddUser", err)
@@ -69,4 +85,40 @@ func (r *AuthRepository) AddUser(
 	user.Id = id
 
 	return nil
+}
+
+func (r *AuthRepository) PromoteToMonk(
+	ctx context.Context,
+	userId, monasteryId int64,
+) error {
+	query := `
+		UPDATE users 
+		SET user_type = ?, monastery_id = ? 
+		where id = ?
+	`
+	_, err := r.db.ExecContext(ctx, query,
+		enums.Monk,
+		monasteryId,
+		userId,
+	)
+	return err
+}
+
+func (r *AuthRepository) PromoteToManager(
+	ctx context.Context,
+	userId, monasteryId int64,
+) error {
+	query := `
+		UPDATE users 
+		SET user_type = ?, 
+		monastery_id = ? 
+		where id = ?
+	`
+	_, err := r.db.ExecContext(ctx, query,
+		enums.Manager,
+		monasteryId,
+		userId,
+	)
+
+	return err
 }

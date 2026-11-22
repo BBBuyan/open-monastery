@@ -1,12 +1,12 @@
-package mapi
+package api
 
 import (
 	"errors"
 	"log/slog"
 	"net/http"
 
+	"example.com/open-monastery/internal/api/apimodels"
 	"example.com/open-monastery/internal/app/apperr"
-	"example.com/open-monastery/internal/mapi/apimodels"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 )
@@ -28,27 +28,27 @@ func withProblemDetails(handle func(*gin.Context) error) gin.HandlerFunc {
 }
 
 func problemFromError(err error, path string) (int, any) {
-	if vErr, ok := errors.AsType[validator.ValidationErrors](err); ok {
+	if err, ok := errors.AsType[validator.ValidationErrors](err); ok {
 		var problem apimodels.ValidationProblemDetails
 		problem.Status = http.StatusBadRequest
 		problem.Title = new(validationErrorTitle)
 		problem.Instance = &path
-		problem.Errors = make([]string, 0, len(vErr))
-		for _, e := range vErr {
+		problem.Errors = make([]string, 0, len(err))
+		for _, e := range err {
 			problem.Errors = append(problem.Errors, e.Error())
 		}
 		return problem.Status, problem
 	}
 
 	problem := apimodels.ProblemDetails{Instance: &path}
-	if aErr, ok := errors.AsType[*apperr.AppErr](err); ok {
-		problem.Status = statusFor(aErr.Type)
-		problem.Title = &aErr.Code
-		problem.Detail = aErr.Message
+	if err, ok := errors.AsType[*apperr.AppErr](err); ok {
+		problem.Status = statusFor(err.Type)
+		problem.Title = &err.Code
+		problem.Detail = err.Message
 		return problem.Status, problem
 	}
 
-	slog.Error("Internal Error","error",err)
+	slog.Error("Internal Error", "error", err)
 
 	problem.Status = http.StatusInternalServerError
 	problem.Title = new(internalServerErrorTitle)

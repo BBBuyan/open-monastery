@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"example.com/open-monastery/internal/app/abstractions"
-	"example.com/open-monastery/internal/app/apperr"
 	"example.com/open-monastery/internal/app/appmodels"
 	"example.com/open-monastery/internal/domain/models"
 )
@@ -21,9 +20,10 @@ func NewReadingService(
 	}
 }
 
+// Deprecated: move to user endpoint
 func (s *ReadingService) GetReadings(
 	ctx context.Context,
-	userID int64,
+	actor appmodels.Actor,
 	opts appmodels.ListOptions,
 ) (*appmodels.Paginated[*models.Reading], error) {
 	opts, err := opts.Normalize()
@@ -32,7 +32,7 @@ func (s *ReadingService) GetReadings(
 	}
 	readings, err := s.repo.GetReadingsByUserId(
 		ctx,
-		userID,
+		actor.Id,
 		opts,
 	)
 	if err != nil {
@@ -55,30 +55,12 @@ func (s *ReadingService) CreateReading(
 	ctx context.Context,
 	bookId int64,
 	customerId int64,
+	monasteryId int64,
 ) (*models.Reading, error) {
-	userExists, err := s.repo.UserExists(ctx, customerId)
-	if err != nil {
-		return nil, err
-	}
-	if !userExists {
-		return nil, apperr.NewNotFound("user not found", nil)
-	}
-	bookExists, err := s.repo.BookExists(ctx, bookId)
-	if err != nil {
-		return nil, err
-	}
-	if !bookExists {
-		return nil, apperr.NewNotFound("book not found", nil)
-	}
-
-	reading := models.NewReading(bookId, customerId)
+	reading := models.NewReading(bookId, customerId, monasteryId)
 	if err := s.repo.Add(ctx, reading); err != nil {
 		return nil, err
 	}
 
 	return reading, nil
-}
-
-func (s *ReadingService) ClaimReading(ctx context.Context, readingID, monkID int64) error {
-	return s.repo.Claim(ctx, readingID, monkID)
 }

@@ -95,7 +95,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/models.User"
+                            "$ref": "#/definitions/dtos.CreateUserResponse"
                         }
                     },
                     "400": {
@@ -183,219 +183,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/books": {
-            "get": {
-                "produces": [
-                    "application/json",
-                    "application/problem+json"
-                ],
-                "tags": [
-                    "books"
-                ],
-                "summary": "Get a page of books",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Page size (default 20, capped at 100)",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Last book ID from the previous page",
-                        "name": "cursor",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Search name or description",
-                        "name": "q",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/appmodels.Paginated-models_Book"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/apimodels.ProblemDetails"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/apimodels.ProblemDetails"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json",
-                    "application/problem+json"
-                ],
-                "tags": [
-                    "books"
-                ],
-                "summary": "Create a book",
-                "parameters": [
-                    {
-                        "description": "Book to create",
-                        "name": "book",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dtos.CreateBookRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/models.Book"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/apimodels.ProblemDetails"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/apimodels.ProblemDetails"
-                        }
-                    }
-                }
-            }
-        },
-        "/books/{id}": {
-            "get": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json",
-                    "application/problem+json"
-                ],
-                "tags": [
-                    "books"
-                ],
-                "summary": "Get Book",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Book ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.Book"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/apimodels.ProblemDetails"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/apimodels.ProblemDetails"
-                        }
-                    }
-                }
-            }
-        },
-        "/books/{id}/categories": {
-            "get": {
-                "produces": [
-                    "application/json",
-                    "application/problem+json"
-                ],
-                "tags": [
-                    "books"
-                ],
-                "summary": "Get categories belonging to a book",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Book ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Category"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/apimodels.ProblemDetails"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/apimodels.ProblemDetails"
-                        }
-                    }
-                }
-            }
-        },
         "/categories": {
-            "get": {
-                "produces": [
-                    "application/json",
-                    "application/problem+json"
-                ],
-                "tags": [
-                    "categories"
-                ],
-                "summary": "Get categories",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Category"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/apimodels.ProblemDetails"
-                        }
-                    }
-                }
-            },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Requires the Manager role for this monastery.",
                 "consumes": [
                     "application/json"
                 ],
@@ -416,6 +211,13 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/dtos.CreateCategoryRequest"
                         }
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Monastery ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -431,108 +233,14 @@ const docTemplate = `{
                             "$ref": "#/definitions/apimodels.ProblemDetails"
                         }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/apimodels.ProblemDetails"
-                        }
-                    }
-                }
-            }
-        },
-        "/categories/{id}/books": {
-            "get": {
-                "produces": [
-                    "application/json",
-                    "application/problem+json"
-                ],
-                "tags": [
-                    "categories"
-                ],
-                "summary": "Get books belonging to a category",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Category ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Page size (default 20, capped at 100)",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Last book ID from the previous page",
-                        "name": "cursor",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Search name or description",
-                        "name": "q",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/appmodels.Paginated-models_Book"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/apimodels.ProblemDetails"
                         }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/apimodels.ProblemDetails"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/problem+json"
-                ],
-                "tags": [
-                    "categories"
-                ],
-                "summary": "Add a book to a category",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Category ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Book to add",
-                        "name": "book",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dtos.AddBookToCategoryRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "Book added"
-                    },
-                    "400": {
-                        "description": "Bad Request",
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/apimodels.ProblemDetails"
                         }
@@ -553,7 +261,62 @@ const docTemplate = `{
             }
         },
         "/monasteries": {
+            "get": {
+                "produces": [
+                    "application/json",
+                    "application/problem+json"
+                ],
+                "tags": [
+                    "monasteries"
+                ],
+                "summary": "Get a page of monasteries",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page size (default 20, capped at 100)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Next cursor from the previous page",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by monastery name",
+                        "name": "q",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/appmodels.Paginated-models_Monastery"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    }
+                }
+            },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -585,6 +348,18 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/apimodels.ProblemDetails"
                         }
@@ -642,14 +417,438 @@ const docTemplate = `{
                 }
             }
         },
-        "/readings": {
+        "/monasteries/{id}/books": {
+            "get": {
+                "produces": [
+                    "application/json",
+                    "application/problem+json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Get a page of books",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page size (default 20, capped at 100)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Last book ID from the previous page",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search name or description",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Monastery ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/appmodels.Paginated-models_Book"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Requires the Manager role for this monastery or the Admin role.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json",
+                    "application/problem+json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Create a book",
+                "parameters": [
+                    {
+                        "description": "Book to create",
+                        "name": "book",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CreateBookRequest"
+                        }
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Monastery ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.Book"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    }
+                }
+            }
+        },
+        "/monasteries/{id}/books/{bookId}": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json",
+                    "application/problem+json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Get Book",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Book ID",
+                        "name": "bookId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Monastery ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Book"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    }
+                }
+            }
+        },
+        "/monasteries/{id}/books/{bookId}/categories": {
+            "get": {
+                "produces": [
+                    "application/json",
+                    "application/problem+json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Get categories belonging to a book",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Book ID",
+                        "name": "bookId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Monastery ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Category"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    }
+                }
+            }
+        },
+        "/monasteries/{id}/categories": {
+            "get": {
+                "produces": [
+                    "application/json",
+                    "application/problem+json"
+                ],
+                "tags": [
+                    "categories"
+                ],
+                "summary": "Get categories",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Monastery ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Category"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    }
+                }
+            }
+        },
+        "/monasteries/{id}/categories/{categoryId}/books": {
+            "get": {
+                "produces": [
+                    "application/json",
+                    "application/problem+json"
+                ],
+                "tags": [
+                    "categories"
+                ],
+                "summary": "Get books belonging to a category",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Category ID",
+                        "name": "categoryId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size (default 20, capped at 100)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Last book ID from the previous page",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search name or description",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Monastery ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/appmodels.Paginated-models_Book"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Requires the Manager role for this monastery.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/problem+json"
+                ],
+                "tags": [
+                    "categories"
+                ],
+                "summary": "Add a book to a category",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Category ID",
+                        "name": "categoryId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Book to add",
+                        "name": "book",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.AddBookToCategoryRequest"
+                        }
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Monastery ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Book added"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apimodels.ProblemDetails"
+                        }
+                    }
+                }
+            }
+        },
+        "/monasteries/{id}/readings": {
             "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns readings owned by the authenticated requester.",
+                "description": "Returns readings owned by the authenticated requester at the monastery.",
                 "produces": [
                     "application/json",
                     "application/problem+json"
@@ -670,6 +869,13 @@ const docTemplate = `{
                         "description": "Next cursor from the previous page",
                         "name": "cursor",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Monastery ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -705,7 +911,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Creates a pending reading for the authenticated requester.",
+                "description": "Creates a pending reading for the authenticated requester using a book from the monastery.",
                 "consumes": [
                     "application/json"
                 ],
@@ -726,6 +932,13 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/dtos.CreateReadingRequest"
                         }
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Monastery ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -749,73 +962,6 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/apimodels.ProblemDetails"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/apimodels.ProblemDetails"
-                        }
-                    }
-                }
-            }
-        },
-        "/readings/{id}/claim": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Assigns the reading to the authenticated monk.",
-                "produces": [
-                    "application/problem+json"
-                ],
-                "tags": [
-                    "readings"
-                ],
-                "summary": "Claim an unassigned reading",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Reading ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content"
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/apimodels.ProblemDetails"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/apimodels.ProblemDetails"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/apimodels.ProblemDetails"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/apimodels.ProblemDetails"
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict",
                         "schema": {
                             "$ref": "#/definitions/apimodels.ProblemDetails"
                         }
@@ -888,6 +1034,20 @@ const docTemplate = `{
                 }
             }
         },
+        "appmodels.Paginated-models_Monastery": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Monastery"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/appmodels.PageInfo"
+                }
+            }
+        },
         "appmodels.Paginated-models_Reading": {
             "type": "object",
             "properties": {
@@ -921,6 +1081,9 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "price": {
+                    "type": "integer"
                 }
             }
         },
@@ -984,6 +1147,7 @@ const docTemplate = `{
         "dtos.CreateUserRequest": {
             "type": "object",
             "required": [
+                "email",
                 "first_name",
                 "last_name",
                 "password"
@@ -1004,6 +1168,35 @@ const docTemplate = `{
                 },
                 "phone_number": {
                     "type": "string"
+                }
+            }
+        },
+        "dtos.CreateUserResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "monastery_id": {
+                    "type": "integer"
+                },
+                "phone_number": {
+                    "type": "string"
+                },
+                "user_type": {
+                    "$ref": "#/definitions/enums.UserType"
                 }
             }
         },
@@ -1038,67 +1231,129 @@ const docTemplate = `{
                 "Refunded"
             ]
         },
+        "enums.UserType": {
+            "type": "string",
+            "enum": [
+                "monk",
+                "customer",
+                "manager",
+                "admin"
+            ],
+            "x-enum-varnames": [
+                "Monk",
+                "Customer",
+                "Manager",
+                "Admin"
+            ]
+        },
         "models.Book": {
             "type": "object",
             "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "createdBy": {
+                    "type": "integer",
+                    "format": "int64"
+                },
                 "description": {
                     "type": "string"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "monasteryId": {
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "name": {
                     "type": "string"
                 },
                 "price": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int32"
                 }
             }
         },
         "models.Category": {
             "type": "object",
             "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "createdBy": {
+                    "type": "integer",
+                    "format": "int64"
+                },
                 "id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "monasteryId": {
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "name": {
                     "type": "string"
                 }
             }
+        },
+        "models.Email": {
+            "type": "object"
         },
         "models.Monastery": {
             "type": "object",
             "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "createdBy": {
+                    "type": "integer",
+                    "format": "int64"
+                },
                 "id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "name": {
                     "type": "string"
                 }
             }
         },
+        "models.PhoneNumber": {
+            "type": "object"
+        },
         "models.Reading": {
             "type": "object",
             "properties": {
-                "assigned_at": {
+                "assignedAt": {
                     "description": "AssignedAt is the UTC time when a monk claimed the reading, when recorded.",
                     "type": "string"
                 },
-                "book_id": {
-                    "type": "integer"
+                "bookId": {
+                    "type": "integer",
+                    "format": "int64"
                 },
-                "created_at": {
+                "createdAt": {
                     "description": "CreatedAt is the UTC creation time, when recorded.",
                     "type": "string"
                 },
-                "customer_id": {
-                    "type": "integer"
+                "customerId": {
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
-                "monk_id": {
-                    "type": "integer"
+                "monasteryId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "monkId": {
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "status": {
                     "$ref": "#/definitions/enums.ReadingStatus"
@@ -1108,41 +1363,36 @@ const docTemplate = `{
         "models.User": {
             "type": "object",
             "properties": {
-                "email": {
+                "createdAt": {
                     "type": "string"
                 },
-                "first_name": {
+                "email": {
+                    "$ref": "#/definitions/models.Email"
+                },
+                "firstName": {
                     "type": "string"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
-                "last_name": {
+                "lastName": {
                     "type": "string"
                 },
-                "monastery_id": {
-                    "type": "integer"
+                "monasteryId": {
+                    "type": "integer",
+                    "format": "int64"
                 },
-                "phone_number": {
+                "passwordHash": {
                     "type": "string"
                 },
-                "user_type": {
-                    "$ref": "#/definitions/models.UserType"
+                "phoneNumber": {
+                    "$ref": "#/definitions/models.PhoneNumber"
+                },
+                "userType": {
+                    "$ref": "#/definitions/enums.UserType"
                 }
             }
-        },
-        "models.UserType": {
-            "type": "string",
-            "enum": [
-                "monk",
-                "customer",
-                "admin"
-            ],
-            "x-enum-varnames": [
-                "Monk",
-                "Customer",
-                "Admin"
-            ]
         }
     },
     "securityDefinitions": {

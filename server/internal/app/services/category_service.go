@@ -4,7 +4,9 @@ import (
 	"context"
 
 	"example.com/open-monastery/internal/app/abstractions"
+	"example.com/open-monastery/internal/app/apperr"
 	"example.com/open-monastery/internal/app/appmodels"
+	"example.com/open-monastery/internal/domain/enums"
 	"example.com/open-monastery/internal/domain/models"
 )
 
@@ -18,27 +20,28 @@ func NewCategoryService(repo abstractions.CategoryRepository) *CategoryService {
 
 func (s *CategoryService) GetCategory(
 	ctx context.Context,
-	id int64,
+	monasteryId, id int64,
 ) (*models.Category, error) {
-	return s.repo.FindById(ctx, id)
+	return s.repo.FindById(ctx, monasteryId, id)
 }
 
 func (s *CategoryService) GetCategories(
 	ctx context.Context,
+	monasteryId int64,
 ) ([]*models.Category, error) {
-	return s.repo.GetAll(ctx)
+	return s.repo.GetAll(ctx, monasteryId)
 }
 
 func (s *CategoryService) GetBooksByCategoryId(
 	ctx context.Context,
-	categoryId int64,
+	monasteryId, categoryId int64,
 	opts appmodels.ListOptions,
 ) (*appmodels.Paginated[*models.Book], error) {
 	opts, err := opts.Normalize()
 	if err != nil {
 		return nil, err
 	}
-	books, err := s.repo.GetBooksByCategoryId(ctx, categoryId, opts)
+	books, err := s.repo.GetBooksByCategoryId(ctx, monasteryId, categoryId, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -58,25 +61,46 @@ func (s *CategoryService) GetBooksByCategoryId(
 
 func (s *CategoryService) AddBook(
 	ctx context.Context,
-	categoryId,
-	bookId int64,
+	categoryId, bookId int64,
+	actor appmodels.Actor,
 ) error {
-	return s.repo.AddBook(ctx, categoryId, bookId)
+	if actor.Role != enums.Manager {
+		return apperr.NewForbidden("forbidden")
+	}
+	if actor.MonasteryId == nil {
+		return apperr.NewBadRequest("user has no monastery id", nil)
+	}
+	categoryBook := models.NewCategoryBook(categoryId, bookId, *actor.MonasteryId, &actor.Email)
+
+	return s.repo.AddCategoryBook(ctx, categoryBook)
 }
 
 func (s *CategoryService) RemoveBook(
 	ctx context.Context,
-	categoryId,
-	bookId int64,
+	categoryId, bookId int64,
+	actor appmodels.Actor,
 ) error {
-	return s.repo.RemoveBook(ctx, categoryId, bookId)
+	if actor.Role != enums.Manager {
+		return apperr.NewForbidden("forbidden")
+	}
+	if actor.MonasteryId == nil {
+		return apperr.NewBadRequest("user has no monastery id", nil)
+	}
+	return s.repo.RemoveBook(ctx, *actor.MonasteryId, categoryId, bookId)
 }
 
 func (s *CategoryService) CreateCategory(
 	ctx context.Context,
 	name string,
+	actor appmodels.Actor,
 ) (*models.Category, error) {
-	category := &models.Category{Name: name}
+	if actor.Role != enums.Manager {
+		return nil, apperr.NewForbidden("forbidden")
+	}
+	if actor.MonasteryId == nil {
+		return nil, apperr.NewBadRequest("user has no monastery id", nil)
+	}
+	category := models.NewCategory(name, *actor.MonasteryId, &actor.Email)
 	if err := s.repo.Add(ctx, category); err != nil {
 		return nil, err
 	}

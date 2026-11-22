@@ -1,108 +1,43 @@
 package models
 
 import (
-	"errors"
-	"fmt"
-	"net/mail"
-	"regexp"
-	"strings"
-)
+	"time"
 
-var (
-	ErrContactRequired    = errors.New("at least one contact method is required")
-	ErrEmailTooLong       = errors.New("email is too long")
-	ErrEmailNotParseable  = errors.New("email not parseable")
-	ErrInvalidEmail       = errors.New("invalid email")
-	ErrPhoneNumberTooLong = errors.New("phone number is too long")
-	ErrInvalidPhoneNumber = errors.New("invalid phone number")
-)
-
-var mongolianPhoneRegex = regexp.MustCompile(`^\+976[0-9]{8}$`)
-
-type UserType string
-
-const (
-	Monk     UserType = "monk"
-	Customer UserType = "customer"
-	Admin    UserType = "admin"
+	"example.com/open-monastery/internal/domain/enums"
 )
 
 type User struct {
-	Id          int64    `json:"id"`
-	FirstName   string   `json:"first_name"`
-	LastName    string   `json:"last_name"`
-	UserType    UserType `json:"user_type"`
-	Email       *string  `json:"email"`
-	PhoneNumber *string  `json:"phone_number"`
-	MonasteryId *int64   `json:"monastery_id"`
-}
-
-func NewMonk(
-	user *User,
-	monasteryId int64,
-) (*User, error) {
-	user.MonasteryId = &monasteryId
-	user.UserType = Monk
-
-	return user, nil
+	Id           int64
+	FirstName    string
+	LastName     string
+	PasswordHash *string
+	UserType     enums.UserType
+	Email        Email
+	PhoneNumber  *PhoneNumber
+	MonasteryId  *int64
+	CreatedAt    time.Time
 }
 
 func NewUser(
 	firstName string,
 	lastName string,
-	email *string,
-	phone *string,
+	email Email,
+	phone *PhoneNumber,
+	passHash *string,
 ) (*User, error) {
-	if email == nil && phone == nil {
-		return nil, ErrContactRequired
-	}
-	if email != nil {
-		normalized, err := NormalizeEmail(*email)
-		if err != nil {
-			return nil, err
-		}
-		email = &normalized
-	}
-	if phone != nil {
-		number := *phone
-		if err := validatePhoneNumber(number); err != nil {
-			return nil, err
-		}
-		phone = &number
-	}
-
 	user := &User{
-		FirstName:   firstName,
-		LastName:    lastName,
-		UserType:    Customer,
-		Email:       email,
-		PhoneNumber: phone,
+		FirstName:    firstName,
+		LastName:     lastName,
+		UserType:     enums.Customer,
+		Email:        email,
+		PhoneNumber:  phone,
+		PasswordHash: passHash,
+		CreatedAt:    time.Now().UTC().Truncate(time.Microsecond),
 	}
-
 	return user, nil
 }
 
-func NormalizeEmail(email string) (string, error) {
-	email = strings.TrimSpace(email)
-	if len(email) > 254 {
-		return "", ErrEmailTooLong
-	}
-	address, err := mail.ParseAddress(email)
-	if err != nil {
-		return "", fmt.Errorf("%w: %w", ErrEmailNotParseable, err)
-	}
-	if address.Address != email {
-		return "", ErrInvalidEmail
-	}
-	return address.Address, nil
-}
-
-func validatePhoneNumber(number string) error {
-	if len(number) > 12 {
-		return ErrPhoneNumberTooLong
-	}
-	if !mongolianPhoneRegex.MatchString(number) {
-		return ErrInvalidPhoneNumber
-	}
-	return nil
+func (u *User) PromoteToMonk(monasteryId int64) {
+	u.MonasteryId = &monasteryId
+	u.UserType = enums.Monk
 }
