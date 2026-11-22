@@ -148,7 +148,7 @@ onUnmounted(() => {
         </div>
       </label>
       <div class="category-filter">
-        <label id="book-category-label" for="book-category">Category</label>
+        <label id="book-category-label">Category</label>
         <CategoryFilter v-model="selectedCategory" :categories="categories" />
         <p v-if="categoriesError" role="status">
           Categories couldn't be loaded.

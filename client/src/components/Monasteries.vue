@@ -43,7 +43,7 @@ onUnmounted(() => controller?.abort())
 <template>
   <h1 class="visually-hidden">Books</h1>
   <div class="monastery-selector">
-    <label id="monastery-select-label" for="monastery-select">Monastery</label>
+    <label id="monastery-select-label">Monastery</label>
     <SelectDropdown
       id="monastery-select"
       label-id="monastery-select-label"
