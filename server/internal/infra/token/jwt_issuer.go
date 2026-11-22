@@ -22,7 +22,8 @@ type JwtIssuer struct {
 type accessClaims struct {
 	jwt.RegisteredClaims
 	Roles       enums.UserType `json:"roles"`
-	MonasteryId *int64
+	MonasteryId *int64         `json:"monastery_id"`
+	Email       string         `json:"email"`
 }
 
 var _ abstractions.TokenIssuer = (*JwtIssuer)(nil)
@@ -51,7 +52,8 @@ func (j *JwtIssuer) IssueAccessToken(
 			ExpiresAt: jwt.NewNumericDate(exp),
 		},
 		Roles:       creds.UserType,
-		MonasteryId: &creds.MonasteryId,
+		MonasteryId: creds.MonasteryId,
+		Email:       creds.Email,
 	}
 
 	return jwt.NewWithClaims(j.SigningMethod, claims).SignedString(j.signingKey)
@@ -80,5 +82,10 @@ func (j *JwtIssuer) ValidateToken(tokenStr string) (appmodels.Actor, error) {
 		return appmodels.Actor{}, errors.New("invalid token")
 	}
 
-	return appmodels.Actor{Id: userID, Role: claims.Roles, MonasteryId: claims.MonasteryId}, nil
+	return appmodels.Actor{
+		Id:          userID,
+		Role:        claims.Roles,
+		MonasteryId: claims.MonasteryId,
+		Email:       claims.Email,
+	}, nil
 }

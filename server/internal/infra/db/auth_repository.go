@@ -28,7 +28,7 @@ func (r *AuthRepository) FindCredentialsByEmail(
 	email string,
 ) (*appmodels.UserCreds, error) {
 	const query = `
-		SELECT id, password_hash, user_type, monastery_id
+		SELECT id, password_hash, user_type, monastery_id, email
 		FROM users 
 		WHERE email = ? AND password_hash IS NOT NULL
 	`
@@ -38,11 +38,12 @@ func (r *AuthRepository) FindCredentialsByEmail(
 		&creds.PasswordHash,
 		&creds.UserType,
 		&creds.MonasteryId,
+		&creds.Email,
 	)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, apperr.NewNotFound("credentials not found", err)
-	}
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, apperr.NewNotFound("credentials not found", err)
+		}
 		return nil, fmt.Errorf("find credentials by email: %w", err)
 	}
 	return &creds, nil

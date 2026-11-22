@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"errors"
 	"net/http"
 
 	"example.com/open-monastery/internal/api/apimodels"

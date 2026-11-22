@@ -6,4 +6,5 @@ type Actor struct {
 	Id          int64
 	MonasteryId *int64
 	Role        enums.UserType
+	Email       string
 }
