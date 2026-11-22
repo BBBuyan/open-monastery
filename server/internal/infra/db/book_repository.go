@@ -24,7 +24,7 @@ func (r *BookRepository) GetBooks(
 	options appmodels.ListOptions,
 ) ([]*models.Book, error) {
 	query := `
-		SELECT id, name, description, price, monastery_id
+		SELECT id, name, description, price, monastery_id, created_by, created_at
 		FROM book WHERE monastery_id = ? AND id > ?
 	`
 	args := []any{monasteryID, options.AfterId}
@@ -48,6 +48,8 @@ func (r *BookRepository) GetBooks(
 			&found.Description,
 			&found.Price,
 			&found.MonasteryId,
+			&found.CreatedBy,
+			&found.CreatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan book: %w", err)
 		}
@@ -69,7 +71,7 @@ func (r *BookRepository) FindById(
 	ctx context.Context,
 	monasteryID, id int64,
 ) (*models.Book, error) {
-	query := `SELECT id, name, description, price, monastery_id FROM book WHERE monastery_id = ? AND id = ?`
+	query := `SELECT id, name, description, price, monastery_id, created_by, created_at FROM book WHERE monastery_id = ? AND id = ?`
 
 	var foundBook models.Book
 	err := r.db.QueryRowContext(ctx, query, monasteryID, id).Scan(
@@ -78,6 +80,8 @@ func (r *BookRepository) FindById(
 		&foundBook.Description,
 		&foundBook.Price,
 		&foundBook.MonasteryId,
+		&foundBook.CreatedBy,
+		&foundBook.CreatedAt,
 	)
 
 	if errors.Is(err, sql.ErrNoRows) {
@@ -97,7 +101,7 @@ func (r *BookRepository) Add(
 	ctx context.Context,
 	book *models.Book,
 ) error {
-	query := `INSERT INTO book (name, description, price, monastery_id) VALUES (?, ?, ?, ?)`
+	query := `INSERT INTO book (name, description, price, monastery_id, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?)`
 	result, err := r.db.ExecContext(
 		ctx,
 		query,
@@ -105,6 +109,8 @@ func (r *BookRepository) Add(
 		book.Description,
 		book.Price,
 		book.MonasteryId,
+		book.CreatedBy,
+		book.CreatedAt,
 	)
 
 	if err != nil {
@@ -125,7 +131,7 @@ func (r *BookRepository) GetCategories(
 	monasteryID, bookID int64,
 ) ([]*models.Category, error) {
 	query := `
-		SELECT c.id, c.name, c.monastery_id
+		SELECT c.id, c.name, c.monastery_id, c.created_by, c.created_at
 		FROM category c
 		WHERE c.monastery_id = ? AND EXISTS (
 			SELECT 1 FROM category_book cb
@@ -141,7 +147,7 @@ func (r *BookRepository) GetCategories(
 	categories := make([]*models.Category, 0)
 	for rows.Next() {
 		var found models.Category
-		if err := rows.Scan(&found.Id, &found.Name, &found.MonasteryId); err != nil {
+		if err := rows.Scan(&found.Id, &found.Name, &found.MonasteryId, &found.CreatedBy, &found.CreatedAt); err != nil {
 			return nil, fmt.Errorf("scan book category: %w", err)
 		}
 		categories = append(categories, &found)

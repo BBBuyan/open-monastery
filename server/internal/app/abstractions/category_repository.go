@@ -16,7 +16,6 @@ type CategoryRepository interface {
 		options appmodels.ListOptions,
 	) ([]*models.Book, error)
 	Add(ctx context.Context, category *models.Category) error
-	AddBook(ctx context.Context, monasteryID, categoryId, bookId int64) error
 	RemoveBook(ctx context.Context, monasteryID, categoryId, bookId int64) error
 	AddCategoryBook(ctx context.Context, categoryBook *models.CategoryBook) error
 }

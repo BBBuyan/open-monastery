@@ -14,11 +14,13 @@ type CategoryBook struct {
 func NewCategoryBook(
 	categoryId int64,
 	bookId int64,
+	monasteryId int64,
 	createdBy *string,
 ) *CategoryBook {
 	return &CategoryBook{
 		CategoryId: categoryId,
 		BookId:     bookId,
+		MonasteryId: monasteryId,
 		CreatedBy:  createdBy,
 		CreatedAt:  time.Now().UTC().Truncate(time.Microsecond),
 	}

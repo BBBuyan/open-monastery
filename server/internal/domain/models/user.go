@@ -10,7 +10,7 @@ type User struct {
 	Id           int64
 	FirstName    string
 	LastName     string
-	PasswordHash string
+	PasswordHash *string
 	UserType     enums.UserType
 	Email        Email
 	PhoneNumber  *PhoneNumber
@@ -23,7 +23,7 @@ func NewUser(
 	lastName string,
 	email Email,
 	phone *PhoneNumber,
-	passHash string,
+	passHash *string,
 ) (*User, error) {
 	user := &User{
 		FirstName:    firstName,

@@ -1,15 +1,8 @@
--- monastery and users reference each other.
-SET @previous_foreign_key_checks = @@SESSION.foreign_key_checks;
-SET SESSION foreign_key_checks = 0;
-
 CREATE TABLE IF NOT EXISTS monastery (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    created_by BIGINT NULL,
-    created_at DATETIME(6) NULL,
-
-    CONSTRAINT fk_monastery_created_by FOREIGN KEY (created_by)
-        REFERENCES users(id)
+    created_by VARCHAR(254) NULL,
+    created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
 );
 
 CREATE TABLE IF NOT EXISTS users (
@@ -18,16 +11,15 @@ CREATE TABLE IF NOT EXISTS users (
     last_name VARCHAR(255) NOT NULL,
     user_type VARCHAR(50) NOT NULL,
     monastery_id BIGINT,
-    email VARCHAR(254) NULL,
+    email VARCHAR(254) NOT NULL,
     password_hash VARCHAR(255) NULL,
     phone_number VARCHAR(12) NULL,
+    created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
 
     UNIQUE KEY uq_users_email (email),
     CONSTRAINT fk_users_monastery FOREIGN KEY (monastery_id)
         REFERENCES monastery(id)
 );
-
-SET SESSION foreign_key_checks = @previous_foreign_key_checks;
 
 CREATE TABLE IF NOT EXISTS book (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -35,13 +27,11 @@ CREATE TABLE IF NOT EXISTS book (
     description TEXT NOT NULL,
     price INT UNSIGNED NOT NULL,
     monastery_id BIGINT NOT NULL,
-    created_by BIGINT NULL,
-    created_at DATETIME(6) NULL,
+    created_by VARCHAR(254) NULL,
+    created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
 
     CONSTRAINT fk_book_monastery FOREIGN KEY (monastery_id)
-        REFERENCES monastery(id),
-    CONSTRAINT fk_book_created_by FOREIGN KEY (created_by)
-        REFERENCES users(id)
+        REFERENCES monastery(id)
 ) CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
@@ -69,24 +59,27 @@ CREATE TABLE IF NOT EXISTS category (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     monastery_id BIGINT NOT NULL,
-    created_by BIGINT NULL,
-    created_at DATETIME(6) NULL,
+    created_by VARCHAR(254) NULL,
+    created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
 
     CONSTRAINT fk_category_monastery FOREIGN KEY (monastery_id)
-        REFERENCES monastery(id),
-    CONSTRAINT fk_category_created_by FOREIGN KEY (created_by)
-        REFERENCES users(id)
+        REFERENCES monastery(id)
 );
 
 CREATE TABLE IF NOT EXISTS category_book (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     book_id BIGINT NOT NULL,
     category_id BIGINT NOT NULL,
+    monastery_id BIGINT NOT NULL,
+    created_by VARCHAR(254) NULL,
+    created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
 
     CONSTRAINT fk_category_book_book FOREIGN KEY (book_id)
         REFERENCES book(id),
     CONSTRAINT fk_category_book_category FOREIGN KEY (category_id)
         REFERENCES category(id),
+    CONSTRAINT fk_category_book_monastery FOREIGN KEY (monastery_id)
+        REFERENCES monastery(id),
 
     INDEX idx_category_book_category_book (category_id, book_id)
 );

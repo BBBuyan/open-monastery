@@ -53,8 +53,14 @@ func (r *AuthRepository) AddUser(
 	ctx context.Context,
 	user *models.User,
 ) error {
-	query := `INSERT INTO users (first_name, last_name, user_type, monastery_id, email, phone_number, password_hash)
-	VALUES (?,?,?,?,?,?,?)`
+	query := `INSERT INTO users (first_name, last_name, user_type, monastery_id, email, phone_number, password_hash, created_at)
+	VALUES (?,?,?,?,?,?,?,?)`
+
+	var phoneNumber *string
+	if user.PhoneNumber != nil {
+		phone := user.PhoneNumber.String()
+		phoneNumber = &phone
+	}
 
 	result, err := r.db.ExecContext(
 		ctx,
@@ -64,8 +70,9 @@ func (r *AuthRepository) AddUser(
 		user.UserType,
 		user.MonasteryId,
 		user.Email.String(),
-		user.PhoneNumber.String(),
+		phoneNumber,
 		user.PasswordHash,
+		user.CreatedAt,
 	)
 	if err != nil {
 		return translateWriteError("AddUser", err)

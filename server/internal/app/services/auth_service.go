@@ -84,7 +84,7 @@ func (s *AuthService) CreateUser(
 	user, err := models.NewUser(
 		cmd.FirstName, cmd.LastName,
 		*email, phone,
-		passHash,
+		&passHash,
 	)
 	if err != nil {
 		return nil, err

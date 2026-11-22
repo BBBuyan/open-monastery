@@ -87,13 +87,15 @@ func (r *MonasteryRepository) FindById(
 	ctx context.Context,
 	id int64,
 ) (*models.Monastery, error) {
-	query := `SELECT id, name FROM monastery WHERE id = ?`
+	query := `SELECT id, name, created_by, created_at FROM monastery WHERE id = ?`
 
 	var foundMonastery models.Monastery
 
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&foundMonastery.Id,
 		&foundMonastery.Name,
+		&foundMonastery.CreatedBy,
+		&foundMonastery.CreatedAt,
 	)
 
 	if errors.Is(err, sql.ErrNoRows) {
@@ -112,8 +114,8 @@ func (r *MonasteryRepository) Add(
 	ctx context.Context,
 	monastery *models.Monastery,
 ) error {
-	query := `INSERT INTO monastery (name) VALUES(?)`
-	result, err := r.db.ExecContext(ctx, query, monastery.Name)
+	query := `INSERT INTO monastery (name, created_by, created_at) VALUES (?, ?, ?)`
+	result, err := r.db.ExecContext(ctx, query, monastery.Name, monastery.CreatedBy, monastery.CreatedAt)
 
 	if err != nil {
 		return translateWriteError("AddMonastery", err)
@@ -132,7 +134,7 @@ func (r *MonasteryRepository) GetMonasteries(
 	ctx context.Context,
 	opts appmodels.ListOptions,
 ) ([]*models.Monastery, error) {
-	query := "SELECT id, name FROM monastery WHERE id > ?"
+	query := "SELECT id, name, created_by, created_at FROM monastery WHERE id > ?"
 	args := []any{opts.AfterId}
 	if opts.Search != "" {
 		query += " AND LOCATE(?, name) > 0"
@@ -150,7 +152,7 @@ func (r *MonasteryRepository) GetMonasteries(
 	monasteries := make([]*models.Monastery, 0)
 	for rows.Next() {
 		var monastery models.Monastery
-		if err := rows.Scan(&monastery.Id, &monastery.Name); err != nil {
+		if err := rows.Scan(&monastery.Id, &monastery.Name, &monastery.CreatedBy, &monastery.CreatedAt); err != nil {
 			return nil, fmt.Errorf("scan monastery: %w", err)
 		}
 		monasteries = append(monasteries, &monastery)

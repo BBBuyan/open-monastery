@@ -70,7 +70,7 @@ func (s *CategoryService) AddBook(
 	if actor.MonasteryId == nil {
 		return apperr.NewBadRequest("user has no monastery id", nil)
 	}
-	categoryBook := models.NewCategoryBook(categoryId, bookId, &actor.Email)
+	categoryBook := models.NewCategoryBook(categoryId, bookId, *actor.MonasteryId, &actor.Email)
 
 	return s.repo.AddCategoryBook(ctx, categoryBook)
 }
