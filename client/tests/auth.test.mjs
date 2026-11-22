@@ -18,7 +18,7 @@ test('email signup and login use the existing auth routes and payloads', async (
   const expires = Math.floor(Date.now() / 1000) + 900
   const token = tokenWith({ sub: '7', exp: expires })
   const fetch = t.mock.method(globalThis, 'fetch', async (url) =>
-    url.endsWith('/users')
+    url.endsWith('/register')
       ? Response.json({ id: 7 }, { status: 201 })
       : Response.json({ access_token: token, token_type: 'Bearer' }),
   )
@@ -31,7 +31,7 @@ test('email signup and login use the existing auth routes and payloads', async (
       JSON.parse(options.body),
     ],
   )
-  assert.deepEqual(registration, ['/api/v1/auth/register/users', 'POST', user])
+  assert.deepEqual(registration, ['/api/v1/auth/register', 'POST', user])
   assert.deepEqual(login, [
     '/api/v1/auth/login',
     'POST',

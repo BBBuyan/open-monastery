@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { basket, basketBookKey } from '../basket'
-import { demoMonasteries, monasteryCatalogLink } from '../demo-catalog'
+import { monasteryCatalogLink } from '../monasteries'
 import { formatPrice } from '../money'
 import BasketQuantity from './BasketQuantity.vue'
 defineProps<{ checkout?: boolean }>()
@@ -9,7 +9,12 @@ const { items, count, total, persistent } = basket
 const lines = computed(() =>
   items.value.map((item) => ({
     ...item,
-    monastery: demoMonasteries.find(({ id }) => id === item.book.monasteryId),
+    monastery: item.book.monasteryId
+      ? {
+          id: item.book.monasteryId,
+          name: `Monastery #${item.book.monasteryId}`,
+        }
+      : undefined,
   })),
 )
 </script>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import Readings from './components/Readings.vue'
+import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import Monasteries from './components/Monasteries.vue'
 import Basket from './components/Basket.vue'
 import UserProfile from './components/UserProfile.vue'
 import PrayerRequests from './components/PrayerRequests.vue'
@@ -10,11 +10,7 @@ import { readSession, saveSession, type Session } from './session'
 import { basket } from './basket'
 import { formatPrice } from './money'
 import { useTheme } from './theme'
-import {
-  demoMonasteries,
-  monasteryCatalogLink,
-  monasteryIdFromHash,
-} from './demo-catalog'
+import { monasteryIdFromHash } from './monasteries'
 const { theme, toggle: toggleTheme } = useTheme()
 const session = ref(readSession())
 const registeredEmail = ref('')
@@ -26,7 +22,7 @@ function signIn(value: Session) {
   session.value = value
   saveSession(value)
   registeredEmail.value = ''
-  location.hash = '#profile'
+  location.hash = '#readings'
 }
 function clearSession() {
   session.value = null
@@ -58,9 +54,6 @@ function pageFromHash() {
 }
 const active = ref(pageFromHash())
 const monasteryId = ref(monasteryIdFromHash(location.hash))
-const monastery = computed(() =>
-  demoMonasteries.find(({ id }) => id === monasteryId.value),
-)
 const requestId = ref<number>()
 watch(
   session,
@@ -90,12 +83,10 @@ async function sync() {
     : undefined
   document.title =
     active.value === 'home'
-      ? monastery.value
-        ? `${monastery.value.name} · Open Monastery`
-        : 'Open Monastery'
+      ? 'Open Monastery'
       : `${active.value === 'login' ? 'Log in' : active.value === 'signup' ? 'Sign up' : active.value === 'requests' ? (requestId.value ? `Prayer request #${requestId.value}` : 'Readings') : active.value === 'profile' ? 'Profile' : active.value === 'basket' ? 'Basket' : 'Checkout'} · Open Monastery`
   await nextTick()
-  if (location.hash === '#readings') {
+  if (location.hash.startsWith('#readings')) {
     const catalog = document.getElementById('readings')
     catalog?.scrollIntoView({ block: 'start' })
     catalog?.focus({ preventScroll: true })
@@ -202,33 +193,7 @@ onUnmounted(() => window.removeEventListener('hashchange', sync))
           tabindex="-1"
           aria-labelledby="catalog-heading"
         >
-          <div class="monastery-catalog-heading">
-            <h1 id="catalog-heading">Choose a monastery</h1>
-            <p>Demo catalogs and prices</p>
-          </div>
-          <p v-if="monasteryId && !monastery" class="monastery-link-message">
-            This monastery is unavailable. Choose one below to browse its
-            books.
-          </p>
-          <ul class="monastery-directory">
-            <li v-for="entry in demoMonasteries" :key="entry.id">
-              <a
-                :href="monasteryCatalogLink(entry.id)"
-                :aria-current="entry.id === monasteryId ? 'true' : undefined"
-              >
-                <span>{{ entry.name }}</span>
-                <span aria-hidden="true">{{
-                  entry.id === monasteryId ? '✓' : '→'
-                }}</span>
-              </a>
-            </li>
-          </ul>
-          <Readings
-            v-if="monastery"
-            :key="monastery.id"
-            :monastery="monastery"
-            class="monastery-readings"
-          />
+          <Monasteries :selected-id="monasteryId" />
         </section>
       </template>
       <div

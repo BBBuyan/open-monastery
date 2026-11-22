@@ -10,22 +10,43 @@ import {
 } from 'vue'
 import { createCatalog } from '../catalog'
 import {
-  getDemoBooks,
-  getDemoCategories,
-  type DemoBook,
-  type DemoMonastery,
-} from '../demo-catalog'
+  getBooks,
+  getCategories,
+  type Book,
+  type Category,
+  type Monastery,
+} from '../api'
 import { formatPrice } from '../money'
 import BasketQuantity from './BasketQuantity.vue'
 import BookDescription from './BookDescription.vue'
 import CategoryFilter from './CategoryFilter.vue'
 
-const props = defineProps<{ monastery: DemoMonastery }>()
+const props = defineProps<{ monastery: Monastery }>()
 const { books, loading, error, hasMore, loadMore, reset, dispose } =
-  createCatalog((options) => getDemoBooks(props.monastery, options))
+  createCatalog((options) =>
+    getBooks(props.monastery.id, options.categoryId, options),
+  )
 const query = ref('')
 const selectedCategory = ref<number | undefined>()
-const categories = computed(() => getDemoCategories(props.monastery))
+const categories = ref<Category[]>([])
+const categoriesLoading = ref(false)
+const categoriesError = ref(false)
+let categoryController: AbortController | undefined
+async function loadCategories() {
+  categoryController?.abort()
+  const controller = new AbortController()
+  categoryController = controller
+  categoriesLoading.value = true
+  categoriesError.value = false
+  try {
+    const result = await getCategories(props.monastery.id, controller.signal)
+    if (!controller.signal.aborted) categories.value = result
+  } catch {
+    if (!controller.signal.aborted) categoriesError.value = true
+  } finally {
+    if (!controller.signal.aborted) categoriesLoading.value = false
+  }
+}
 const hasFilters = computed(
   () => !!query.value.trim() || selectedCategory.value !== undefined,
 )
@@ -36,7 +57,7 @@ function clearFilters() {
 }
 const searchPending = ref(false)
 const busy = computed(() => loading.value || searchPending.value)
-const retainedBooks = shallowRef<DemoBook[]>([])
+const retainedBooks = shallowRef<Book[]>([])
 const displayedBooks = computed(() =>
   busy.value && !books.value.length ? retainedBooks.value : books.value,
 )
@@ -78,6 +99,7 @@ watch([loading, hasMore, error, searchPending], async () => {
 })
 
 onMounted(() => {
+  void loadCategories()
   if ('IntersectionObserver' in window) {
     observer = new IntersectionObserver(
       (entries) => {
@@ -94,6 +116,7 @@ onMounted(() => {
   void reset()
 })
 onUnmounted(() => {
+  categoryController?.abort()
   clearTimeout(searchTimer)
   observer?.disconnect()
   observer = undefined
@@ -131,6 +154,17 @@ onUnmounted(() => {
       <div class="category-filter">
         <label id="book-category-label" for="book-category">Category</label>
         <CategoryFilter v-model="selectedCategory" :categories="categories" />
+        <p v-if="categoriesLoading" role="status">Loading categories…</p>
+        <p v-if="categoriesError" role="status">
+          Categories couldn't be loaded.
+          <button
+            type="button"
+            class="button secondary"
+            @click="loadCategories"
+          >
+            Try again
+          </button>
+        </p>
       </div>
     </div>
     <p
